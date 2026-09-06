@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | KNS PORTAL</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body class="portal-body">
+<div class="portal-layout">
+    <div class="workspace">
+        <main class="portal-main">
+            <div class="flash-message" role="status">
+            <section class="admin-heading" id="overview"><div><span class="section-kicker">Wednesday, September 2</span><h1>Admin dashboard</h1><p>Review urgent requests, then manage the content students see.</p></div><a class="button primary" href="#requests">Review pending request</a></section>
+
+            <section class="priority"><span class="priority-icon">!</span><div><strong>1 request is waiting for review</strong><p>REQ-260828-031 is a module request submitted by Anton Banda three school days ago.</p></div><a href="#requests">Review now</a></section>
+
+            <section class="metric-grid" aria-label="Administrative summary">
+                <article class="metric"><span>ST</span><div><small>Active students</small><strong>1,284</strong><p>36 added this semester</p></div></article>
+                <article class="metric"><span>RQ</span><div><small>Pending requests</small><strong>1</strong><p>Oldest wait: 3 days</p></div></article>
+                <article class="metric"><span>RS</span><div><small>Results published</small><strong>42</strong><p>No failed uploads</p></div></article>
+            </section>
+
+            <section class="panel">
+                <div class="section-heading"><div><span class="section-kicker">Content tools</span><h2>Manage portal content</h2><p>Upload, update, and publish the information students need.</p></div></div>
+                <div class="admin-action-grid">
+                    <button type="button" data-dialog-open="student-dialog"><span>ST</span><strong>Student records</strong><p>Search and update official information.</p><small>Open records</small></button>
+                    <button type="button" data-dialog-open="results-dialog"><span>RS</span><strong>Academic results</strong><p>Upload, validate, and publish scores.</p><small>Upload results</small></button>
+                    <button type="button" data-dialog-open="announcement-dialog"><span>AN</span><strong>Announcements</strong><p>Create and update official school notices.</p><small>New announcement</small></button>
+                </div>
+            </section>
+
+            <section class="panel" id="students">
+                <div class="section-heading"><div><span class="section-kicker">Student database</span><h2>Student records</h2><p>Review and update official student information.</p></div><button class="button primary" type="button" data-dialog-open="student-dialog">Add student</button></div>
+                <input class="table-search" type="search" placeholder="Search student ID or name" aria-label="Search student records" data-table-search="student-table">
+                <div class="table-wrap"><table id="student-table"><thead><tr><th>Student</th><th>Program</th><th>Year / Section</th><th>Status</th><th>Action</th></tr></thead><tbody><?php foreach ($students as $student): ?><tr><td><strong><?= escape($student['name']) ?></strong><small><?= escape($student['id']) ?></small></td><td><?= escape($student['program']) ?></td><td><?= escape($student['year']) ?></td><td><?= statusBadge($student['status']) ?></td><td><button class="small-button" type="button" data-dialog-open="student-dialog">Edit</button></td></tr><?php endforeach; ?></tbody></table></div>
+            </section>
+
+            <section class="panel" id="results">
+                <div class="section-heading"><div><span class="section-kicker">Academic content</span><h2>Academic results</h2><p>Enter, upload, validate, and publish assessment scores.</p></div><button class="button primary" type="button" data-dialog-open="results-dialog">Upload results</button></div>
+                <div class="table-wrap"><table><thead><tr><th>Assessment</th><th>Subject</th><th>Students</th><th>Status</th><th>Action</th></tr></thead><tbody><?php foreach (array_slice($results, 0, 3) as $index => $result): ?><tr><td><strong><?= escape($result['title']) ?></strong><small><?= escape($result['type']) ?></small></td><td><?= escape($result['subject']) ?></td><td><?= $index === 1 ? '39 / 41' : '42 / 42' ?></td><td><?= statusBadge($result['status']) ?></td><td><button class="small-button" type="button" data-dialog-open="results-dialog">Update</button></td></tr><?php endforeach; ?></tbody></table></div>
+            </section>
+
+            <section class="panel" id="requests">
+                <div class="section-heading"><div><span class="section-kicker">Service queue</span><h2>Student requests</h2><p>Approve requests and attach downloadable files when available.</p></div></div>
+                <div class="table-wrap"><table><thead><tr><th>Request</th><th>Student</th><th>Subject</th><th>Status</th><th>Action</th></tr></thead><tbody><tr><td><strong>Module request</strong><small>REQ-260828-031</small></td><td><strong>Anton Banda</strong><small>2026-00123</small></td><td>CS 301 — Web Systems</td><td><?= statusBadge('Pending') ?></td><td><div class="inline-actions"><form method="post"><input type="hidden" name="csrf_token" value="<?= escape(csrfToken()) ?>"><input type="hidden" name="action" value="reject-request"><button class="small-button danger" type="submit">Reject</button></form><form method="post"><input type="hidden" name="csrf_token" value="<?= escape(csrfToken()) ?>"><input type="hidden" name="action" value="approve-request"><button class="small-button approve" type="submit">Approve</button></form></div></td></tr></tbody></table></div>
+            </section>
+
+            <section class="panel" id="announcements">
+                <div class="section-heading"><div><span class="section-kicker">Published updates</span><h2>School announcements</h2><p>Create, preview, update, and publish official notices.</p></div><button class="button primary" type="button" data-dialog-open="announcement-dialog">New announcement</button></div>
+                <div class="announcement-grid"><?php foreach ($announcements as $index => $announcement): ?><article class="announcement"><div><?= statusBadge($index === 2 ? 'Pending' : 'Published') ?><time><?= escape($announcement['date']) ?></time></div><h3><?= escape($announcement['title']) ?></h3><p><?= escape($announcement['summary']) ?></p><button class="small-button" type="button" data-dialog-open="announcement-dialog">Edit announcement</button></article><?php endforeach; ?></div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<dialog class="portal-dialog" id="student-dialog"><form method="post"><div class="dialog-header"><div><span class="section-kicker">Student records</span><h2>Add or update student</h2></div><button type="button" data-dialog-close aria-label="Close">×</button></div><input type="hidden" name="csrf_token" value="<?= escape(csrfToken()) ?>"><input type="hidden" name="action" value="save-student"><div class="dialog-grid"><label>Student ID<input name="student_id" value="2026-00123" required></label><label>Full name<input name="student_name" value="Anton Banda" required></label><label class="full-field">Program<input name="program" value="BS Computer Science" required></label></div><div class="dialog-actions"><button class="button secondary" type="button" data-dialog-close>Cancel</button><button class="button primary" type="submit">Save student</button></div></form></dialog>
+
+<dialog class="portal-dialog" id="results-dialog"><form method="post" enctype="multipart/form-data"><div class="dialog-header"><div><span class="section-kicker">Academic content</span><h2>Upload academic results</h2></div><button type="button" data-dialog-close aria-label="Close">×</button></div><input type="hidden" name="csrf_token" value="<?= escape(csrfToken()) ?>"><input type="hidden" name="action" value="upload-results"><div class="dialog-grid"><label>Assessment type<select name="assessment_type"><option>Exam</option><option>Quiz</option><option>Activity</option></select></label><label>Result file<input name="result_file" type="file" accept=".csv,.xlsx"></label><label class="full-field">Publication note<textarea name="publication_note" placeholder="Optional note for this upload"></textarea></label></div><div class="dialog-actions"><button class="button secondary" type="button" data-dialog-close>Cancel</button><button class="button primary" type="submit">Validate upload</button></div></form></dialog>
+
+<dialog class="portal-dialog" id="announcement-dialog"><form method="post"><div class="dialog-header"><div><span class="section-kicker">School updates</span><h2>Create or update announcement</h2></div><button type="button" data-dialog-close aria-label="Close">×</button></div><input type="hidden" name="csrf_token" value="<?= escape(csrfToken()) ?>"><input type="hidden" name="action" value="save-announcement"><div class="dialog-grid"><label>Category<select name="category"><option>Academic</option><option>Enrollment</option><option>Campus</option></select></label><label>Publish date<input name="publish_date" type="date" value="2026-09-02"></label><label class="full-field">Title<input name="title" required placeholder="Announcement title"></label><label class="full-field">Message<textarea name="message" required placeholder="Write the official announcement"></textarea></label></div><div class="dialog-actions"><button class="button secondary" type="button" data-dialog-close>Cancel</button><button class="button primary" type="submit">Save announcement</button></div></form></dialog>
+
+<div class="toast" id="portal-toast" role="status" hidden></div>
+<script src="admin.js"></script>
+</body>
+</html>
