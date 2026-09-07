@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+<!--LOGIN-LEFT-CONTIANER-->
+
+    <div class="left-contianer">
+            <div class="school-title"> 
+                    <div class="logo-container">
+                        <img class="logo" src="asset/logo/273844945_520328949759168_1274024641438937791_n.jpg"></div>
+                    <div class="log-in-title">   
+                        <div class="KNS-top-title"><p>KNS Portal</p></div>
+                        <div class="KNS-bottom-title"> <p>Kolehiyo ng Subic</p></div>
+                    </div>
+            </div>
+        <div class="login-story-copy">
+            <div class="login-story">
+                <div class="hat-box">
+                    <img class="graduate-hat" src="asset/logo/graduate-hat.png">
+                    <div class="Your-school"><p>Your school, one portal</p></div>
+                    
+             </div>
+                <div class="third-layer">
+                    <h1>School services made simpler.</h1>
+                </div>
+            </div>
+            <div class="fourth-layer">
+                <p>Check your progress, submit requests, and stay informed from one secure workspace.</p>
+            </div>
+            <div class="benefits-box">
+                <img class="status-logo"src="asset/logo/status-update.png">
+                <p>View exam, quiz, and activity results</p>
+            </div> 
+              <div class="benefits-box">
+                <img class="status-logo"src="asset/logo/job-application.png">
+                <p>View exam, quiz, and activity results</p>
+            </div>  
+              <div class="benefits-box">
+                <img class="status-logo"src="asset/logo/megaphone.png">
+                <p>View exam, quiz, and activity results</p>
+            </div>     
+        </div>   
+    </div>
+<!--RIGHT-LOGIN CONTIANER-->   
+
+    <div class="right-contianer">
+        <div class="left-form">
+            <div class="wel">
+                <p>Welcome</p>
+            </div>
+            <div class="sign">Sign in to your portal</div>
+            <div class="choose">Choose your account type to continue.</div>
+
+            <div class="user-choose">
+                <div class="user-student">
+                    <div class="hat-boxxy"><img class="user-student-logo" src="asset/logo/student.svg"></div>
+                    <p class="user-student-text">student</p>
+                </div>
+                 <div class="user-student">
+                    <div class="hat-boxxy"><img class="user-student-logo" src="asset/logo/admin-alt.svg"></div>
+                    <p class="user-student-text">Admin</p>
+                </div>
+                
+            </div>
+            <p class="stu">student ID</p>
+            <div class="id-input">
+                <img class="user-input"src="asset/logo/user.svg">
+                <input type="text"
+                    placeholder="24-1923">
+            </div>
+             <p class="stu">Password</p>
+            <div class="password-enter">
+                <img class="user-input"src="asset/logo/user.svg">
+                <input type="password"
+                    placeholder="password"
+                    class="password-input">
+            </div>
+            <div class="forget-checkbox">
+                <div>
+                 <input type="checkbox" id="remember">
+                 <label class="remem" for="remember">Remember me</label>
+                </div>
+                <div><a href="">Forget password?</a></div>
+            </div>
+            <button type="submit">Sign in to student portal</button>
+
+        </div>
+        
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <script>
+const options = document.querySelectorAll(".user-student, .id-input, .password-enter");
+
+options.forEach(option => {
+    option.addEventListener("click", function () {
+
+        options.forEach(item => {
+            item.classList.remove("selected");
+        });
+
+        this.classList.add("selected");
+    });
+});
+</script>
+</body>
+</html>
