@@ -322,7 +322,27 @@ html{
     border-left-width: 5px;
     border-color: rgba(181, 181, 8, 0.845);
 }
+.overview-button.selected{
+    border-style: solid;
+    border-width: 1px;
+    border-color: #ffffff30;
+    background-color: rgba(255, 255, 255, 0.104);
+    cursor: pointer;
+    border-left-style: solid;
+    border-left-width: 5px;
+    border-color: rgba(181, 181, 8, 0.845);
+}
 .results-button:hover{
+    border-style: solid;
+    border-width: 1px;
+    border-color: #ffffff30;
+    background-color: rgba(255, 255, 255, 0.104);
+    cursor: pointer;
+    border-left-style: solid;
+    border-left-width: 5px;
+    border-color: rgba(181, 181, 8, 0.845);
+}
+.results-button.selected{
     border-style: solid;
     border-width: 1px;
     border-color: #ffffff30;
@@ -342,6 +362,16 @@ html{
     border-left-width: 5px;
     border-color: rgba(181, 181, 8, 0.845);
 }
+.may-request-button.selected{
+    border-style: solid;
+    border-width: 1px;
+    border-color: #ffffff30;
+    background-color: rgba(255, 255, 255, 0.104);
+    cursor: pointer;
+    border-left-style: solid;
+    border-left-width: 5px;
+    border-color: rgba(181, 181, 8, 0.845);
+}
 .student-information-button:hover{
     border-style: solid;
     border-width: 1px;
@@ -352,7 +382,27 @@ html{
     border-left-width: 5px;
     border-color: rgba(181, 181, 8, 0.845);
 }
+.student-information-button.selected{
+    border-style: solid;
+    border-width: 1px;
+    border-color: #ffffff30;
+    background-color: rgba(255, 255, 255, 0.104);
+    cursor: pointer;
+    border-left-style: solid;
+    border-left-width: 5px;
+    border-color: rgba(181, 181, 8, 0.845);
+}
 .announcement-button:hover{
+    border-style: solid;
+    border-width: 1px;
+    border-color: #ffffff30;
+    background-color: rgba(255, 255, 255, 0.104);
+    cursor: pointer;
+    border-left-style: solid;
+    border-left-width: 5px;
+    border-color: rgba(181, 181, 8, 0.845);
+}
+.announcement-button.selected{
     border-style: solid;
     border-width: 1px;
     border-color: #ffffff30;
