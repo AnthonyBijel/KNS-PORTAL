@@ -55,17 +55,25 @@
         </div>
         <div class="sidebar-navigator">
             <h1 class="menu-text">MAIN MENU</h1>
-            <div class="overview-button">
+                
+            <div class="overview-button"
+            onclick ="loadPage('../module/overview.html')">
                 <img class="overview-logo" src="../asset/logo/overview (1).png">
                 <p>Overview</p>
             </div>
-            <div class="results-button">
-                <img class="overview-logo" src="../asset/logo/stats (1).png">
-                <p>Results</p>
-            </div>
+
+
+            
+                <div class="results-button"
+                onclick ="loadPage('../module/module-results.html')">
+                
+                    <img class="overview-logo" src="../asset/logo/stats (1).png">
+                    <p>Results</p>
+                </div>
+           
             <div class="may-request-button">
                 <img class="overview-logo" src="../asset/logo/suggestion (1).png">
-                <p>Results</p>
+                <p>My request</p>
             </div>
             <div class="student-information-button">
                 <img class="overview-logo" src="../asset/logo/user.png">
@@ -85,160 +93,12 @@
             <p>LOG OUT</p>
         </div>
     </div>
-<!--MAIN-CONTENT-CONTIANER-->
-    <div class="main-content-contianer">
-        <div class="greeting-contianer">
-            <div class="welcome-text-box">
-                <p class="date-layer">Wednesday, September 2</p>
-                <h1 class="greet-layer">Good afternoon, Anton.</h1>
-                <p class="request-review">Your latest result is ready, and Student Services is reviewing your module request.</p>
-                
-                <div class="result-request">
-                    <div class="check-lates-result">
-                        <img class="stats "src="../asset/logo/stats.png">
-                        <p class="stat-text">Check latest results</p>
-                    </div>
-                    <div class="create-request">
-                        <img class="stat" src="../asset/logo/add-document.png">
-                        <p class="stat-text">Check latest results</p>
-                    </div>
-                </div>
-                
-            </div>
-            <div class="GPA-box">
-                <div class="GPA-container">
-                        <p class="GPA-score">1.76</p>
-                        <p  class="GPA-status">current GPA</p>
-                </div>
-            </div>
-
-        </div>
-<!--IMPORTANT SCHEDULE-->
-        <div class="important-schedule">
-            <div class="sched-logo-box"><img class="sched-logo"src="../asset/logo/calendar-clock.png"></div>
-            
-            <div class="sched-text-contianer">
-                <h1>Your next important date</h1>
-                <p>Preliminary examinations begin September 14. Review the official schedule before exam week.</p>                             
-            </div>
-            <div class="views-schedule-button">
-                <p>View schedule</p>
-            </div>
-        </div>
-<!--ANNNOUNCEMENT SECTION-->
-        <div class="announcement-type-selection">
-            <div class="announcement-type">
-                <p>For You</p>
-            </div>
-            <div class="announcement-type">
-                <p>Academic</p>
-            </div>
-            <div class="announcement-type">
-                <p>Events</p>
-            </div>
-            <div class="announcement-type">
-                <p>Guidelines</p>
-            </div>
-            <div class="announcement-type">
-                <p>Others</p>
-            </div>
-        </div>
-<!--ANNOUNCEMENT-CONTENT-SECTION-->
-        <div class="announcement-content">
-            <div class="post-content"> 
-                <div class="post-user-name">
-                    <div class="post-logo">
-                        <img class="post-profile"src="../asset/logo/273844945_520328949759168_1274024641438937791_n.jpg">
-                    </div>
-                    <div class="post-name">
-                        <h1>kolehiyo ng Subic</h1>
-                        <p>2 hours ago</p>
-                    </div>
-                </div>
-                <div class="description-box">
-                    <p class="description-text">
-                        ID PROCESSING FOR OLD STUDENTS (THOSE WHO SHIFTED AND STILL HAVEN’T RECEIVED THEIR ID’S) 
-                        To facilitate the processing of your official school ID, please accomplish the Google ID Processing Form through the link provided by the school.
-                        Important Reminders:
-                        Make sure that you really haven't received your I.D. yet or you shifted course before proceeding;
-                        1. Fill out the form completely and accurately.
-                        2. Use your correct and complete name as reflected in your enrollment records.
-                        3. Upload a recent 1x1 ID picture with a white background and proper collar attire.
-                        4. Ensure that the photo is clear, properly cropped, and follows the prescribed ID picture guidelines.
-                        5. Rename your 1x1 ID picture document using your FULL NAME as file name. 
-                        6. Accepted 1x1 picture format are JPEG, PNG, and JPG. 
-                        7. Double-check all information before submitting the form.
-                        8. Submit your response on or before SEPTEMBER 4, 2026
-                        Your cooperation will help ensure the timely preparation and release of your school ID
-                    </p>
-                    <button class="see-more-btn">See more</button>
-                </div>
-                <div class="post-image">
-                    <img src="../asset/logo/785281576_1481739193972382_7242574960101637577_n.jpg">
-                </div>
-                <div class="share-button">
-                    <img src="../asset/logo/share-square.png">
-                    <p>SHARE</p>
-                </div>
-            </div>
-        </div>
-    </div>
+<!--main-content-->
+    <div class="main-content-contianer" id="main-content-contianer"></div>
+   
 
 
 
-
-
-
-
-
-
-<script>
-const options = document.querySelectorAll(".announcement-type");
-const type = document.querySelectorAll(" .overview-button, .results-button, .may-request-button, .student-information-button, .announcement-button");
-
-options.forEach(option => {
-    option.addEventListener("click", function () {
-
-        options.forEach(item => {
-            item.classList.remove("selected");
-        });
-
-        this.classList.add("selected");
-    });
-});
-
-type.forEach(option => {
-    option.addEventListener("click", function () {
-
-        type.forEach(item => {
-            item.classList.remove("selected");
-        });
-
-        this.classList.add("selected");
-    });
-});
-</script>
-
-
-
-<script>
-document.querySelectorAll(".see-more-btn").forEach(button => {
-
-    button.addEventListener("click", function () {
-
-        const text = this.parentElement.querySelector(".description-text");
-
-        text.classList.toggle("expanded");
-
-        if (text.classList.contains("expanded")) {
-            this.textContent = "See less";
-        } else {
-            this.textContent = "See more";
-        }
-
-    });
-
-});
-</script>
+<script src="dashboard.js"></script>
 </body>
 </html>
