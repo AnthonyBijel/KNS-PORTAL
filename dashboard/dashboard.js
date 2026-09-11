@@ -47,7 +47,7 @@ function initAnnouncement() {
     });
 }
 
-const type = document.querySelectorAll(".overview-button, .results-button, .may-request-button, .student-information-button, .announcement-button");
+const type = document.querySelectorAll(".overview-button, .results-button, .may-request-button, .student-information-button");
 type.forEach(option => {
     option.addEventListener("click", function () {
         type.forEach(item => {
