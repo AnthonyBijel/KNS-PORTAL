@@ -794,3 +794,288 @@ html{
     font-weight: 600;
     cursor: pointer;
 }
+
+/*TAGLINE-CONTIANER-RESULTS-PAGE*/
+.tagline-contianer{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    height:140px;
+    background: linear-gradient(135deg, #0d4b2e, #27835a);
+    padding: 15px 30px;
+    border-radius: 10px;
+}
+.tagline-text{
+    display: flex;
+    flex-direction: column;
+}
+.tagline-text p{
+    margin: 0;
+    font-size: 12px;
+    font-weight: 400;
+    color: rgb(250, 245, 245);
+}
+.tagline-text h1{
+    margin: 0;
+    font-size: 40px;
+    font-weight: bold;
+    color: rgb(248, 245, 245);
+    padding: 3px 0px 0px 0px;
+    line-height: 1;
+    letter-spacing: -1.5px;
+}
+.tagline-text .celebrate{
+    color: rgb(203, 203, 0);
+    margin: 0;
+    padding: 0 0 3px 0;
+}
+.right-tagline{
+    display: flex;
+    flex-direction: column;
+    width: 100px;
+    height: 100%;
+    position: relative;
+}
+
+.right-tagline p{
+    margin: 0;
+    position: absolute;
+    bottom: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgb(203, 203, 0);
+
+}
+/*for academin year-sem*/
+.academicsemyear {
+      display: flex;
+      gap: 24px;
+      padding: 5px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      height: auto;
+      margin-top: 12px;
+    }
+    .academicsemyear select {
+        width: 100%;
+        height: 36px;
+        min-height: 36px;
+        padding: 0px 10px;
+        box-sizing: border-box;
+
+        color: #1e293b;
+        -webkit-text-fill-color: #1e293b;
+        background-color: #ffffff;
+
+        font-size: 13px;
+        line-height: normal;
+        text-indent: 0;
+        opacity: 1;
+
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        }
+     .academicsemyear select option {
+        color: #1e293b;
+        background-color: #ffffff;
+        font-size: 12px;
+    }
+
+
+    .filter-field {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .filter-field label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #344767;
+    }
+
+    .filter-field select {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: white;
+      color: #1e293b;
+      cursor: pointer;
+    }
+
+    .filter-field select:focus {
+      outline: 2px solid #007a58;
+      outline-offset: 2px;
+    }
+
+    #selection-summary {
+      font-size: 12px;
+      color: #475569;
+    }
+
+    @media (max-width: 600px) {
+      .academicsemyear {
+        flex-direction: column;
+      }
+    }
+/*GARDE TABLE*/
+.grades-card,
+.assessment {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(20, 50, 80, 0.04);
+  font-family: Arial, sans-serif;
+}
+
+.grades-card h2,
+.assessment h2 {
+  margin: 0 0 5px;
+  color: #101334;
+  font-size: 24px;
+}
+
+.grades-card p {
+  margin: 0 0 14px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* Allows horizontal scrolling on small screens */
+.table-container,
+.assessment-contianer {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+}
+
+.grades-table, 
+.assessment-table{
+  width: 100%;
+  min-width: 650px;
+  border-collapse: collapse;
+  color: #253858;
+  font-size: 14px;
+}
+
+.grades-table th,
+.grades-table td,
+.assessment-table th,
+.assessment-table td{
+  padding: 12px 18px;
+  text-align: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Vertical lines between columns */
+.grades-table th + th,
+.grades-table td + td,
+.assessment-table th + th,
+.assessment-table td + td {
+  border-left: 1px solid #e2e8f0;
+}
+
+.grades-table th,
+.assessment-table th {
+  background: #eff4fa;
+  color: #425779;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Subject names align to the left */
+.grades-table th:first-child,
+.grades-table td:first-child,
+.assessment-table th:first-child,
+.assessment-table td:first-child {
+  width: 40%;
+  text-align: left;
+}
+
+.grades-table tbody tr:last-child td,
+.assessment-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.grades-table tbody tr:hover {
+  background: #f0fdf7;
+}
+
+/* Highlighted subject */
+
+
+.grade-note {
+  display: block;
+  margin-top: 12px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.grades-table tbody tr {
+  cursor: pointer;
+}
+
+.grades-table tbody tr.selected {
+  background-color: #e2f8ee;
+}
+
+.grades-table tbody tr.selected td:first-child {
+  box-shadow: inset 4px 0 0 #07845e;
+}
+/*ASSESSMENT-SECTION*/
+
+.assessment{
+    margin-top: 20px;
+    }
+    .assess{
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    .assessment-button{
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        height: 30px;
+        margin: 5px 0 5px 0;
+       
+    }
+    .assessment-button button{
+        width: 100%;
+        border-radius: 5px;
+        border: 1px solid rgb(146, 147, 146);
+        transition: background-color 0.8s;
+        margin-right: 2px;
+    }
+     .assessment button:hover{
+       background-color: rgba(17, 157, 17, 0.842);
+       color: white;
+       
+     }
+    .assessment button.selected{
+       background-color: rgba(17, 157, 17, 0.842);
+       color: white;
+       
+     }
+
+    .assess label {
+      font-size: 15px;
+      font-weight: 600;
+      color: #344767;
+    }
+
+    .assess select {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: white;
+      color: #1e293b;
+      cursor: pointer;
+    }
