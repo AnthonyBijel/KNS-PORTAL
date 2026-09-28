@@ -13,6 +13,7 @@ function loadPage(page) {
             initializeacademicsemyear();
             initResults();
             initassessment();
+    
 
             if (page.includes("overview.html")) {
                 initAnnouncement();
@@ -142,5 +143,6 @@ function initializeacademicsemyear() {
 
   yearSelect.dataset.initialized = "true";
   updateSelection();
-    }
+}
+
 
