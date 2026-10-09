@@ -3,7 +3,7 @@
 // Page configuration and shared state.
 // Register each new admin page here, together with its setup functions.
 const ADMIN_PAGES = {
-    "overview.html": {
+    "overview.php": {
         navigation: ".overview-button",
         initializers: [initAnnouncements, initMediaPreview],
     },
@@ -134,7 +134,7 @@ function initAdminDashboard() {
     if (!document.getElementById("main-content-contianer")) return;
 
     dashboardInitialized = true;
-    return loadPage("overview.html");
+    return loadPage("overview.php");
 }
 
 if (document.readyState === "loading") {
