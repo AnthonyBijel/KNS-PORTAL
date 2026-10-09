@@ -9,7 +9,7 @@ const ADMIN_PAGES = {
     },
     "results.html": {
         navigation: ".results-button",
-        initializers: [initAcademicYear, initResults],
+        initializers: [],
     },
     "requests.html": {
         navigation: ".may-request-button",
@@ -76,23 +76,8 @@ function updateNavigation(activeSelector) {
     });
 }
 
-// Shared selection behavior for tabs, grade rows, and assessment buttons.
-function initSelectionGroup(container, selector) {
-    const items = container.querySelectorAll(selector);
-
-    items.forEach(item => {
-        // Assignment keeps repeated initialization from adding duplicate handlers.
-        item.onclick = () => {
-            items.forEach(option => {
-                option.classList.toggle("selected", option === item);
-            });
-        };
-    });
-}
-
 // Overview: announcement categories and expandable descriptions.
 function initAnnouncements(container) {
-    initSelectionGroup(container, ".announcement-type");
 
     container.querySelectorAll(".see-more-btn").forEach(button => {
         button.onclick = () => {
@@ -141,53 +126,6 @@ function initMediaPreview(container) {
         media.src = mediaPreviewURL;
         preview.appendChild(media);
     };
-}
-
-// Results: academic year, semester summary, and selected rows/buttons.
-function initAcademicYear(container) {
-    const yearSelect = container.querySelector("#academic-year");
-    const semesterSelect = container.querySelector("#semester");
-    const summary = container.querySelector("#selection-summary");
-    if (!yearSelect || !semesterSelect) return;
-
-    if (yearSelect.dataset.initialized !== "true") {
-        const today = new Date();
-        const startMonth = 8; // The academic year starts in August.
-        const startYear = today.getMonth() + 1 >= startMonth
-            ? today.getFullYear()
-            : today.getFullYear() - 1;
-
-        yearSelect.replaceChildren();
-
-        for (let i = 0; i < 5; i++) {
-            const year = startYear - i;
-            const option = document.createElement("option");
-            option.value = `${year}-${year + 1}`;
-            option.textContent = `${year} \u2013 ${year + 1}`;
-            yearSelect.appendChild(option);
-        }
-
-        yearSelect.dataset.initialized = "true";
-    }
-
-    function updateSummary() {
-        if (!summary) return;
-
-        const year = yearSelect.selectedOptions[0];
-        const semester = semesterSelect.selectedOptions[0];
-        summary.textContent = year && semester
-            ? `Selected: ${year.textContent} \u2022 ${semester.textContent}`
-            : "";
-    }
-
-    yearSelect.onchange = updateSummary;
-    semesterSelect.onchange = updateSummary;
-    updateSummary();
-}
-
-function initResults(container) {
-    initSelectionGroup(container, ".grades-table tbody tr");
-    initSelectionGroup(container, ".assessment button");
 }
 
 // Startup: run once, after the dashboard shell is available.
