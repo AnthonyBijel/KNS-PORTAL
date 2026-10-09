@@ -1,56 +1,108 @@
-//THIS IS FOR LOADING PAGES INSIDE OF DASHBOARD MAIN CONTIANER.
-function loadPage(page) {
-    return fetch(page)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Failed to load ${page}: ${response.status}`);
-            }
+// Load dashboard fragments and initialize their controls after insertion.
+let latestPageRequest = 0;
+let announcementResizeObserver = null;
 
-            return response.text();
-        })
-        .then(html => {
-            document.getElementById("main-content-contianer").innerHTML = html;
-            initializeacademicsemyear();
-            initResults();
-            initassessment();
-    
+async function loadPage(page) {
+    const container = document.getElementById("main-content-contianer");
+    if (!container) return;
 
-            if (page.includes("overview.html")) {
-                initAnnouncement();
-            }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-        });
+    const requestId = ++latestPageRequest;
+    container.setAttribute("aria-busy", "true");
+
+    try {
+        const response = await fetch(page, { cache: "no-cache" });
+        if (!response.ok) {
+            throw new Error(`Failed to load ${page}: ${response.status}`);
+        }
+        const html = await response.text();
+        if (requestId !== latestPageRequest) return;
+
+        if (announcementResizeObserver) {
+            announcementResizeObserver.disconnect();
+            announcementResizeObserver = null;
+        }
+        container.innerHTML = html;
+        initAnnouncement(container);
+        initializeacademicsemyear();
+        initResults();
+        initassessment();
+    } catch (error) {
+        if (requestId !== latestPageRequest) return;
+        console.error("Error loading dashboard page:", error);
+        const message = document.createElement("p");
+        message.setAttribute("role", "alert");
+        message.textContent = "Unable to load this page. Please try the menu button again.";
+        container.replaceChildren(message);
+    } finally {
+        if (requestId === latestPageRequest) {
+            container.setAttribute("aria-busy", "false");
+        }
+    }
 }
-//ANNOUNCEMENT TYPE .
-function initAnnouncement() {
-    const options = document.querySelectorAll(".announcement-type");
+
+function initAnnouncement(container) {
+    const filterBar = container.querySelector(".announcement-type-selection");
+    if (!filterBar) return;
+
+    const options = filterBar.querySelectorAll(".announcement-type");
+    const posts = container.querySelectorAll(".announcement-content > .post-content");
+    const emptyMessage = container.querySelector(".announcement-empty");
+    const descriptions = [];
+
+    posts.forEach(post => {
+        const text = post.querySelector(".description-text");
+        const button = post.querySelector(".see-more-btn");
+        if (!text || !button) return;
+        descriptions.push({ post, text, button });
+
+        button.onclick = () => {
+            const expanded = text.classList.toggle("expanded");
+            button.textContent = expanded ? "See less" : "See more";
+            button.setAttribute("aria-expanded", String(expanded));
+            updateDescriptionButtons();
+        };
+    });
+
+    function updateDescriptionButtons() {
+        descriptions.forEach(({ post, text, button }) => {
+            if (post.hidden) return;
+            button.hidden = !text.classList.contains("expanded") &&
+                text.scrollHeight <= text.clientHeight + 1;
+        });
+    }
+
+    function applyFilter(category) {
+        let visibleCount = 0;
+        posts.forEach(post => {
+            const matches = category === "all" || post.dataset.category === category;
+            post.hidden = !matches;
+            if (matches) visibleCount++;
+        });
+        options.forEach(option => {
+            const selected = option.dataset.category === category;
+            option.classList.toggle("selected", selected);
+            option.setAttribute("aria-pressed", String(selected));
+        });
+        if (emptyMessage) {
+            emptyMessage.hidden = visibleCount > 0;
+            emptyMessage.textContent = category === "all"
+                ? "No announcements yet."
+                : "No announcements in this category yet.";
+        }
+        updateDescriptionButtons();
+    }
+
     options.forEach(option => {
-        option.addEventListener("click", function () {
-            options.forEach(item => {
-                item.classList.remove("selected");
-            });
-
-            this.classList.add("selected");
-        });
+        option.onclick = () => applyFilter(option.dataset.category);
     });
+    applyFilter("all");
 
-
-document.querySelectorAll(".see-more-btn").forEach(button => {
-        button.addEventListener("click", function () {
-            const text = this.parentElement.querySelector(".description-text");
-
-            text.classList.toggle("expanded");
-
-            if (text.classList.contains("expanded")) {
-                this.textContent = "See less";
-            } else {
-                this.textContent = "See more";
-            }
-        });
-    });
+    if (typeof ResizeObserver !== "undefined") {
+        announcementResizeObserver = new ResizeObserver(updateDescriptionButtons);
+        announcementResizeObserver.observe(container);
+    }
 }
+
 //FOR ASSESSMENT.
 function initassessment() {
     const activitys = document.querySelectorAll(".assessment button");
@@ -94,7 +146,7 @@ type.forEach(option => {
     });
 });
 
-loadPage("../module/overview.html");
+loadPage("../module/overview.php");
 
 
 //FOR RESULTS YEAR AND SEMESTER.
