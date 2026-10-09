@@ -1,114 +1,230 @@
-<div class="request-contianer">
-    <h1>Requests</h1>
-    <p>Access the module and grade records you need</p>
-
-    <div class="grid-container">
-        <div>
-            <div class="module-request-form">
-                <h1>Request a Module</h1>
-                <p>Choose your subjectand module below</p>
-                <div class="year-course-sem">
-                    <div class="course-contianer">                
-                        <label for="course">Course</label>
-                        <select id="Course" name="course">
-                            <option value="1">BSCS</option>
-                            <option value="2">BSED</option>
-                            <option value="3">BSBA</option>
-                            <option value="4">BSHM</option>
-                            <option value="5">HRM</option>
-                        </select>
-                        
-                    </div>
-                    <div class="year-contianer">
-                        <label for="year">Year</label>
-                        <select id="year" name="course">
-                            <option value="1">1st</option>
-                            <option value="2">2nd</option>
-                            <option value="3">3rd</option>
-                            <option value="4">4th</option>
-                        </select>
-                    </div>
-                    <div class="semester-contianer">
-                        <label for="sem-box">Sem</label>
-                        <select id="sem-box" name="sem-box">
-                            <option value="1">1st</option>
-                            <option value="2">2nd</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="module-type-title">
-                    <p>Subject</p>
-                    <input type="text"
-                        placeholder="">
-                </div>
-                <button>Request</button>
-            </div>
-            <div class="record-request-form">
-                <h1>Request a GradeRecord</h1>
-        
-                <div class="year-course-sem-record">
-                    <div class="course-contianer-record">                
-                        <label for="course-record">Course</label>
-                        <select id="Course-record" name="course-record">
-                            <option value="1">BSCS</option>
-                            <option value="2">BSED</option>
-                            <option value="3">BSBA</option>
-                            <option value="4">BSHM</option>
-                            <option value="5">HRM</option>
-                        </select>
-                        
-                    </div>
-                    <div class="year-contianer-record">
-                        <label for="year-record">Year</label>
-                        <select id="year-record" name="course-record">
-                            <option value="1">1st</option>
-                            <option value="2">2nd</option>
-                            <option value="3">3rd</option>
-                            <option value="4">4th</option>
-                        </select>
-                    </div>
-                    <div class="semester-contianer-record">
-                        <label for="sem-box-record">Sem</label>
-                        <select id="sem-box-record" name="sem-box-record">
-                            <option value="1">1st</option>
-                            <option value="2">2nd</option>
-                        </select>
-                    </div>
-                </div>
-                <button>Request</button>
-            </div>
+<div class="request-container">
+    <div class="header-request-box">
+        <h1>Request</h1>
+        <p>Submit and track your school-related request</p>
+    </div>
+    <div class="request-main-container">
+        <div class="request-content-header">
+            <h1>Submit a Request</h1>
+            <p>Choose a request and fill out the details below</p>
         </div>
-        
-        <div class="download-contianer">
-            <h1>DOWNLOADS</h1>
-            <section class="request-download-files">
-               
-                    <div class="module-file">
-                        <img src="../asset/logo/open-book.png" alt="loading">
-                        <div class="file-type">
-                            <h1>Introduction to programming</h1>
-                            <p> Module</p>
-                        </div>
-                        <button class="download-button">
-                            <img src="..//asset/logo/download.svg">
-                            <p>Download</p>
-                        </button>
-                    </div>
-                    <div class="grade-file">
-                        <img src="../asset/logo/failed.gif" alt="loading">
-                        <div class="grade-type">
-                            <h1>2nd sem 2025-2026</h1>
-                            <p> GradeRecord</p>
-                        </div>
-                        <button class="download-button">
-                            <img src="..//asset/logo/download.svg">
-                            <p>Download</p>
-                        </button>
+        <div class="request-type-box">
+           
+                <p>Request Type</p>
+            
+            <div class="request-option-type">
+                <div class="file-request-selection">
+                    <div class="Module-request-icon">
+                        <img src="..//asset/logo/eeb429a8-88ac-48cc-8318-b486b0f446c9.png">
                     </div>
                     
+                    <div class="request-file-type">
+                        <h1>Module Request</h1>
+                        <p>Request for a copy of Modules(s) for your subject.</p>
+                    </div>
+                </div>
+
+                <!---------------------->
+                <div class="file-request-selection">
+                    <div class="grade-request-icon">
+                        <img src="..//asset/logo/97449f32-ab7c-4d3b-8aa4-6d19b6e097c2.png">
+                    </div>
+                    
+                    <div class="request-file-type">
+                        <h1>Grade Record Request</h1>
+                        <p>Request for certification of grade / grade report.</p>
+                    </div>
+                </div>
+                <!--------------------------->
+                <div class="file-request-selection">
+                    <div class="enrollment-request-icon">
+                        <img src="..//asset/logo/3b6cf263-3e57-44ea-a922-bfd7ed4dd966.png">
+                    </div>
+                    
+                    <div class="request-file-type">
+                        <h1>Certification of Enrollment</h1>
+                        <p>Request for Certificate of Enrollment (COE).</p>
+                    </div>
+                </div>
+                <!---------------------------->
+                <div class="file-request-selection">
+                    <div class="goodMoral-request-icon">
+                        <img src="..//asset/logo/d7443ff6-c3fa-4280-8ad7-33384362167b.png">
+                    </div>
+                    
+                    <div class="request-file-type">
+                        <h1>Certificate of Godd Moral Character</h1>
+                        <p>Request of Good Moral Certificate</p>
+                    </div>
+                </div>
+                <!----------------------------------->
+                <div class="file-request-selection">
+                    <div class="candidacy-request-icon">
+                        <img src="..//asset/logo/aa01dd60-1dea-43df-8f2b-6a4ae8525b20.png">
+                    </div>
+                    
+                    <div class="request-file-type">
+                        <h1>Certificate of Candidacy</h1>
+                        <p>Request for Certificate of Candidacy.</p>
+                    </div>
+                </div>
+
+                <!---------------------->
+                <div class="file-request-selection">
+                    <div class="dismmissal-request-icon">
+                        <img src="..//asset/logo/ca3cc1ec-71e7-442c-bbf6-68291ba2d8c4.png">
+                    </div>
+                    
+                    <div class="request-file-type">
+                        <h1>Honorable Dismissal</h1>
+                        <p>Request for Honorable Dismissal(Transfer).</p>
+                    </div>
+                </div>
+                <!--------------------------->
+                <div class="file-request-selection">
+                    <div class="id-request-icon">
+                        <img src="..//asset/logo/e6fdd8c7-212a-4d18-8031-2d1f9c6ddd0f.png">
+                    </div>
+                    
+                    <div class="request-file-type">
+                        <h1>Student ID Replacement</h1>
+                        <p>Request for replacement of lost/damage ID.</p>
+                    </div>
+                </div>
+                <!---------------------------->
+                <div class="file-request-selection">
+                    <div class="other-request-icon">
+                        <img src="..//asset/logo/39224212-842b-4818-9814-973b9a497818.png">
+                    </div>
+                    
+                    <div class="request-file-type">
+                        <h1>Other Request</h1>
+                        <p>Other school-related request(specify in the detailed).</p>
+                    </div>
+                </div>
+
+                   
+            </div>
+
+             <p>Request Details</p> 
+<!---REQUEST DETAILS-->
+            <div class="details-section-box">
                
-            </section>
+
+                <div class="details-type">
+                    <label for="">Academic Year</label>
+                    <select>
+                        <option value="">2025-2026</option>
+                        <option value="">2026-2027</option>
+                        <option value="">2027-2028</option>
+                        <option value="">2028-2029</option>
+                    </select>
+                </div>
+
+                <div class="details-type">
+                    <label for="">Semester</label>
+                    <select>
+                        <option value="">first Semester</option>
+                        <option value="">Second Semester</option>
+                    </select>
+                </div>
+
+                <div class="details-type">
+                    <label for="">Subject (if application)</label>
+                    <select>
+                        <option value="">subject</option>
+                        <option value="">subject</option>
+                        <option value="">subject</option>
+                        <option value="">subject</option>
+                    </select>
+                </div>
+                
+                    
+            
+            </div>
+            <p>Purpose / Additional Details</p>
+            <div class="details-input">
+                <textarea placeholder="Type your request details here...."></textarea>
+            </div>
+            <div class="attachment-support-container">
+                <div class="attachment-header">
+                    <div class="attachment-icon">
+                        <img src="..//asset/logo/cbdbb162-a39e-4ff5-aa9f-1b7c99bdcaed.png">
+                    </div>
+                    <div class="attachment-header-text">
+                        <h1>Attach Supporting Files (Optional)</h1>
+                        <p>Upload files if needed (PNG, JPG, PDF | Max 5MD each)</p>
+                    </div>
+                </div>
+
+                <div class="upload-attachment-box">
+                <div class="file-upload">
+                        <input
+                            type="file"
+                            id="fileInput"
+                            accept=".png,.jpg,.jpeg,.pdf"
+                            multiple
+                            hidden
+                        >
+
+                        <label for="fileInput" class="upload-box">
+                            <!-- Upload Icon -->
+                            <svg
+                                width="32"
+                                height="32"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path d="M12 3v12"></path>
+                                <path d="m7 8 5-5 5 5"></path>
+                                <path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"></path>
+                            </svg>
+
+                            <p class="upload-title">
+                                Click to upload or drag and drop
+                            </p>
+
+                            <span class="upload-info">
+                                PNG, JPG, PDF (Max 5MB each)
+                            </span>
+                        </label>
+
+                        <div id="fileList"></div>
+                </div>
+                <div class="require-file">
+                    <p>Common Attachment</p>
+                    <ul>
+                        <li>Valid ID</li>
+                        <li>Form (if required)</li>
+                        <li>Previous document</li>
+                        <li>Other suppporting files</li>
+                    </ul>
+                </div>
+
+                </div>
+                
+            </div>
+            <div class="request-button">
+                <button class="cancelButton">Cancel</button>
+                <button class="submitButton">Submit</button>
+            </div>
         </div>
     </div>
-   
+    <div class="pending-status-table">
+        <div class="table-header">
+            <div class="table-header-text">
+                <div class="header-table-icon">
+                   <img src="..//asset/logo/2c8f1bb4-0644-4e28-8243-d59799e254b5.png">
+                </div>
+                <div class="header-text">
+                    <h1>My Requests</h1>
+                    <p>Track the status of your submitted requests.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
