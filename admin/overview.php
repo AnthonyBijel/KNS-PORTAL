@@ -105,58 +105,42 @@
 
        </div>
 
-       <?php foreach ($announcements as $post): ?>
-
-           <div class="post-content">
-               <div class="post-user-name">
-                   <div class="post-logo">
-                       <img class="post-profile" src="../asset/logo/273844945_520328949759168_1274024641438937791_n.jpg">
+       <div class="announcement-feed">
+           <?php foreach ($announcements as $post): ?>
+               <div class="post-content">
+                   <div class="post-user-name">
+                       <div class="post-logo">
+                           <img class="post-profile" src="../asset/logo/273844945_520328949759168_1274024641438937791_n.jpg" alt="Kolehiyo ng Subic">
+                       </div>
+                       <div class="post-name">
+                           <h1>kolehiyo ng Subic</h1>
+                           <p><?= date('F j, Y g:i A', strtotime($post['created_at'])) ?></p>
+                       </div>
                    </div>
-                   <div class="post-name">
-                       <h1>kolehiyo ng Subic</h1>
-                       <p>
-                           <?= date(
-                                "F j,Y g:i A",
-                                strtotime($post["created_at"])
-                            )
-                            ?>
+                   <div class="description-box">
+                       <p class="description-text"><?= htmlspecialchars($post['description'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
+                       <button type="button" class="see-more-btn">See more</button>
+                   </div>
 
-                       </p>
+                   <?php if (!empty($post['media_path'])): ?>
+                       <?php if ($post['media_type'] === 'image'): ?>
+                           <div class="post-image">
+                               <img src="../<?= htmlspecialchars($post['media_path'], ENT_QUOTES, 'UTF-8') ?>" alt="Announcement image">
+                           </div>
+                       <?php elseif ($post['media_type'] === 'video'): ?>
+                           <div class="post-image">
+                               <video controls preload="metadata">
+                                   <source src="../<?= htmlspecialchars($post['media_path'], ENT_QUOTES, 'UTF-8') ?>">
+                               </video>
+                           </div>
+                       <?php endif; ?>
+                   <?php endif; ?>
+
+                   <div class="share-button">
+                       <img src="../asset/logo/share-square.png" alt="">
+                       <p>SHARE</p>
                    </div>
                </div>
-               <div class="description-box">
-                   <p class="description-text">
-                       <?= nl2br(
-                            htmlspecialchars(
-                                $post["description"]
-                            )
-                        ) ?>
-                   </p>
-                   <button class="see-more-btn">See more</button>
-               </div>
-
-
-               <?php if (!empty($post["media_path"])): ?>
-                   <?php if ($post["media_type"] === "image"): ?>
-                       <div class="post-image">
-
-                           <img src="../<?= htmlspecialchars($post["media_path"]) ?>">
-
-                       </div>
-                   <?php elseif ($post["media_type"] === "video"): ?>
-                       <div class="post-image">
-                           <video control>
-                               <source src="../<?= htmlspecialchars($post["media_path"]) ?>">
-                           </video>
-                       </div>
-
-                       <div class="share-button">
-                           <img src="../asset/logo/share-square.png">
-                           <p>SHARE</p>
-                       </div>
-           </div>
+           <?php endforeach; ?>
+       </div>
    </div>
-
-   <?php endif; ?>
-   <?php endif; ?>
-   <?php endforeach; ?>
