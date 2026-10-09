@@ -91,7 +91,7 @@ function initSelectionGroup(container, selector) {
 }
 
 // Overview: announcement categories and expandable descriptions.
-function initAnnouncements(container) {
+function  initAnnouncements(container) {
     initSelectionGroup(container, ".announcement-type");
 
     container.querySelectorAll(".see-more-btn").forEach(button => {
