@@ -1868,7 +1868,11 @@ html{
                 brightness(95%) contrast(90%);
                 }
 
-
+                .academic-text{
+                    display: flex;
+                    justify-content: center;
+                    flex-direction: column;
+                }
                 .academic-text h2 {
                 margin: 0 0 1px;
                 font-weight: 700;
