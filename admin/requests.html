@@ -1,114 +1,284 @@
-<div class="request-contianer">
-    <h1>Requests</h1>
-    <p>Access the module and grade records you need</p>
-
-    <div class="grid-container">
-        <div>
-            <div class="module-request-form">
-                <h1>Request a Module</h1>
-                <p>Choose your subjectand module below</p>
-                <div class="year-course-sem">
-                    <div class="course-contianer">                
-                        <label for="course">Course</label>
-                        <select id="Course" name="course">
-                            <option value="1">BSCS</option>
-                            <option value="2">BSED</option>
-                            <option value="3">BSBA</option>
-                            <option value="4">BSHM</option>
-                            <option value="5">HRM</option>
-                        </select>
-                        
-                    </div>
-                    <div class="year-contianer">
-                        <label for="year">Year</label>
-                        <select id="year" name="course">
-                            <option value="1">1st</option>
-                            <option value="2">2nd</option>
-                            <option value="3">3rd</option>
-                            <option value="4">4th</option>
-                        </select>
-                    </div>
-                    <div class="semester-contianer">
-                        <label for="sem-box">Sem</label>
-                        <select id="sem-box" name="sem-box">
-                            <option value="1">1st</option>
-                            <option value="2">2nd</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="module-type-title">
-                    <p>Subject</p>
-                    <input type="text"
-                        placeholder="">
-                </div>
-                <button>Request</button>
-            </div>
-            <div class="record-request-form">
-                <h1>Request a GradeRecord</h1>
-        
-                <div class="year-course-sem-record">
-                    <div class="course-contianer-record">                
-                        <label for="course-record">Course</label>
-                        <select id="Course-record" name="course-record">
-                            <option value="1">BSCS</option>
-                            <option value="2">BSED</option>
-                            <option value="3">BSBA</option>
-                            <option value="4">BSHM</option>
-                            <option value="5">HRM</option>
-                        </select>
-                        
-                    </div>
-                    <div class="year-contianer-record">
-                        <label for="year-record">Year</label>
-                        <select id="year-record" name="course-record">
-                            <option value="1">1st</option>
-                            <option value="2">2nd</option>
-                            <option value="3">3rd</option>
-                            <option value="4">4th</option>
-                        </select>
-                    </div>
-                    <div class="semester-contianer-record">
-                        <label for="sem-box-record">Sem</label>
-                        <select id="sem-box-record" name="sem-box-record">
-                            <option value="1">1st</option>
-                            <option value="2">2nd</option>
-                        </select>
-                    </div>
-                </div>
-                <button>Request</button>
-            </div>
+<!-- HEADER -->
+<header class="request-header">
+    <div class="request-header-content">
+        <div class="request-header-text">
+            <span class="request-header-label">REQUEST MANAGEMENT</span>
+            <h1>Student Requests</h1>
+            <p>Review, approve, and process student requests.</p>
         </div>
-        
-        <div class="download-contianer">
-            <h1>DOWNLOADS</h1>
-            <section class="request-download-files">
-               
-                    <div class="module-file">
-                        <img src="../asset/logo/open-book.png" alt="loading">
-                        <div class="file-type">
-                            <h1>Introduction to programming</h1>
-                            <p> Module</p>
-                        </div>
-                        <button class="download-button">
-                            <img src="..//asset/logo/download.svg">
-                            <p>Download</p>
-                        </button>
-                    </div>
-                    <div class="grade-file">
-                        <img src="../asset/logo/failed.gif" alt="loading">
-                        <div class="grade-type">
-                            <h1>2nd sem 2025-2026</h1>
-                            <p> GradeRecord</p>
-                        </div>
-                        <button class="download-button">
-                            <img src="..//asset/logo/download.svg">
-                            <p>Download</p>
-                        </button>
-                    </div>
-                    
-               
-            </section>
+
+        <div class="request-header-search">
+            <input
+                type="search"
+                placeholder="Search by reference no., student name or type..."
+                aria-label="Search student requests"
+            >
+            <button type="button" aria-label="Search">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <path d="m16 16 4 4"></path>
+                </svg>
+            </button>
         </div>
     </div>
-   
-</div>
+</header>
+
+<section class="request-management">
+
+    <!-- FILTER BAR -->
+    <div class="request-filters">
+
+        <div class="request-filter-group">
+            <label for="request-year">Academic Year</label>
+            <select id="request-year">
+                <option>2026 - 2027</option>
+                <option>2025 - 2026</option>
+            </select>
+        </div>
+
+        <div class="request-filter-group">
+            <label for="request-semester">Semester</label>
+            <select id="request-semester">
+                <option>All Semesters</option>
+                <option>1st Semester</option>
+                <option>2nd Semester</option>
+            </select>
+        </div>
+
+        <div class="request-filter-group">
+            <label for="request-type">Request Type</label>
+            <select id="request-type">
+                <option>All Types</option>
+                <option>Grade Record</option>
+                <option>Certificate of Enrollment</option>
+                <option>Good Moral Certificate</option>
+                <option>Honorable Dismissal</option>
+                <option>Student ID Replacement</option>
+            </select>
+        </div>
+
+        <div class="request-filter-group">
+            <label for="request-status">Status</label>
+            <select id="request-status">
+                <option>All Status</option>
+                <option>Pending</option>
+                <option>Processing</option>
+                <option>Approved</option>
+                <option>Rejected</option>
+            </select>
+        </div>
+
+        <button type="button" class="request-reset-btn">
+            <span>⭯</span> Reset
+        </button>
+
+        <button type="button" class="request-apply-btn">
+            <span>🝖</span> Apply
+        </button>
+
+    </div>
+
+
+    <!-- SUMMARY CARDS -->
+    <div class="request-summary">
+
+        <div class="request-summary-card summary-total">
+            <div class="summary-icon">▤</div>
+            <div>
+                <span class="summary-label">Total Requests</span>
+                <strong>24</strong>
+            </div>
+        </div>
+
+        <div class="request-summary-card summary-pending">
+            <div class="summary-icon">▣</div>
+            <div>
+                <span class="summary-label">Pending</span>
+                <strong>8</strong>
+            </div>
+        </div>
+
+        <div class="request-summary-card summary-processing">
+            <div class="summary-icon">▤</div>
+            <div>
+                <span class="summary-label">Processing</span>
+                <strong>5</strong>
+            </div>
+        </div>
+
+        <div class="request-summary-card summary-approved">
+            <div class="summary-icon">✓</div>
+            <div>
+                <span class="summary-label">Approved</span>
+                <strong>9</strong>
+            </div>
+        </div>
+
+        <div class="request-summary-card summary-rejected">
+            <div class="summary-icon">✖</div>
+            <div>
+                <span class="summary-label">Rejected</span>
+                <strong>2</strong>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- REQUESTS TABLE -->
+    <div class="request-table-card">
+
+        <div class="request-table-scroll">
+            <table class="request-table">
+
+                <thead>
+                    <tr>
+                        <th class="request-check-col">
+                            <input type="checkbox" aria-label="Select all requests">
+                        </th>
+                        <th>#</th>
+                        <th>Reference No.</th>
+                        <th>Student Name</th>
+                        <th>Request Type</th>
+                        <th>Date Requested</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td><input type="checkbox" aria-label="Select request 1"></td>
+                        <td>1</td>
+                        <td>REQ-2026-0001</td>
+                        <td>John Michael R. Abaca</td>
+                        <td>Module Request</td>
+                        <td>Sep 15, 2026</td>
+                        <td><span class="request-status-badge badge-pending">Pending</span></td>
+                        <td>
+                            <button class="request-view-btn" type="button" aria-label="View request 1">⌕</button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><input type="checkbox" aria-label="Select request 2"></td>
+                        <td>2</td>
+                        <td>REQ-2026-0002</td>
+                        <td>Maria Angela S. Aguilar</td>
+                        <td>Grade Record Request</td>
+                        <td>Sep 14, 2026</td>
+                        <td><span class="request-status-badge badge-pending">Pending</span></td>
+                        <td>
+                            <button class="request-view-btn" type="button" aria-label="View request 2">⌕</button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><input type="checkbox" aria-label="Select request 3"></td>
+                        <td>3</td>
+                        <td>REQ-2026-0003</td>
+                        <td>Kyle Daniel T. Bautista</td>
+                        <td>Certificate of Enrollment</td>
+                        <td>Sep 13, 2026</td>
+                        <td><span class="request-status-badge badge-processing">Processing</span></td>
+                        <td>
+                            <button class="request-view-btn" type="button" aria-label="View request 3">⌕</button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><input type="checkbox" aria-label="Select request 4"></td>
+                        <td>4</td>
+                        <td>REQ-2026-0004</td>
+                        <td>Andrea Mae P. Dela Cruz</td>
+                        <td>Good Moral Certificate</td>
+                        <td>Sep 12, 2026</td>
+                        <td><span class="request-status-badge badge-pending">Pending</span></td>
+                        <td>
+                            <button class="request-view-btn" type="button" aria-label="View request 4">⌕</button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><input type="checkbox" aria-label="Select request 5"></td>
+                        <td>5</td>
+                        <td>REQ-2026-0005</td>
+                        <td>Christian Jay M. Garcia</td>
+                        <td>Honorable Dismissal</td>
+                        <td>Sep 11, 2026</td>
+                        <td><span class="request-status-badge badge-approved">Approved</span></td>
+                        <td>
+                            <button class="request-view-btn" type="button" aria-label="View request 5">⌕</button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><input type="checkbox" aria-label="Select request 6"></td>
+                        <td>6</td>
+                        <td>REQ-2026-0006</td>
+                        <td>Kimberly Joy A. Lopez</td>
+                        <td>Student ID Replacement</td>
+                        <td>Sep 10, 2026</td>
+                        <td><span class="request-status-badge badge-pending">Pending</span></td>
+                        <td>
+                            <button class="request-view-btn" type="button" aria-label="View request 6">⌕</button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><input type="checkbox" aria-label="Select request 7"></td>
+                        <td>7</td>
+                        <td>REQ-2026-0007</td>
+                        <td>Paolo Miguel C. Mendoza</td>
+                        <td>Certificate of Candidacy</td>
+                        <td>Sep 09, 2026</td>
+                        <td><span class="request-status-badge badge-rejected">Rejected</span></td>
+                        <td>
+                            <button class="request-view-btn" type="button" aria-label="View request 7">⌕</button>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td><input type="checkbox" aria-label="Select request 8"></td>
+                        <td>8</td>
+                        <td>REQ-2026-0008</td>
+                        <td>Trisha Mae V. Reyes</td>
+                        <td>Other Request</td>
+                        <td>Sep 08, 2026</td>
+                        <td><span class="request-status-badge badge-processing">Processing</span></td>
+                        <td>
+                            <button class="request-view-btn" type="button" aria-label="View request 8">⌕</button>
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+        </div>
+
+
+        <!-- TABLE FOOTER -->
+        <div class="request-table-footer">
+
+            <div class="request-entries">
+                <span>Show</span>
+                <select aria-label="Requests per page">
+                    <option>10</option>
+                    <option>25</option>
+                    <option>50</option>
+                </select>
+                <span>entries</span>
+            </div>
+
+            <div class="request-pagination">
+                <button type="button" aria-label="Previous page">‹</button>
+                <button type="button" class="page-active">1</button>
+                <button type="button">2</button>
+                <button type="button">3</button>
+                <button type="button" aria-label="Next page">›</button>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
