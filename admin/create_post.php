@@ -112,6 +112,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         ":media_type"        => $mediaType
     ]);
 
-    header("Location: dashboard.html?posted=success");
+    header("Location: dashboard.php?posted=success");
     exit;
 }
