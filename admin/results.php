@@ -1,23 +1,21 @@
+<header class="student-list-header">
+    <div class="student-list-header-content">
+        <span class="student-list-header-label">STUDENT MANAGEMENT</span>
 
+        <h1>Students List</h1>
 
-    <header class="student-list-header">
-        <div class="student-list-header-content">
-            <span class="student-list-header-label">STUDENT MANAGEMENT</span>
-
-            <h1>Students List</h1>
-
-            <p>
-                Manage student accounts, information, and grades.
-                Use filters or search to quickly find a student.
-            </p>
-        </div>
-    </header>
-
-    <div class="student-list-upload">
-      
+        <p>
+            Manage student accounts, information, and grades.
+            Use filters or search to quickly find a student.
+        </p>
     </div>
+</header>
 
-    <section class="student-list-upload">
+<div class="student-list-upload">
+
+</div>
+
+<section class="student-list-upload">
 
     <!-- Upload Student List -->
     <div class="upload-card student-card">
@@ -34,10 +32,24 @@
             </a>
         </div>
 
-        <button class="upload-btn green-btn">
-            <span>↥</span>
-            Upload Students
-        </button>
+        <form
+            action="../php/admin/upload_students_zip.php"
+            method="POST"
+            enctype="multipart/form-data"
+            class="student-upload-form">
+            <input
+                type="file"
+                name="student_zip"
+                accept=".zip"
+                required>
+
+            <button
+                type="submit"
+                class="upload-btn green-btn">
+                <span>↑</span>
+                Upload Students
+            </button>
+        </form>
     </div>
 
 
@@ -50,7 +62,7 @@
         <div class="upload-info">
             <h3>Upload Grades (Excel)</h3>
             <p>Upload student scores/grades for selected subject,<br>
-               year and semester.</p>
+                year and semester.</p>
 
             <a href="#" class="template-link">
                 <span>↓</span> Download Grade Template
@@ -128,119 +140,129 @@
     </div>
 
     <button type="button" class="filter-reset">
-       ⭯ <span>Reset</span>
+        ⭯ <span>Reset</span>
     </button>
 
     <button type="button" class="filter-apply">
-       🝖 <span>Apply Filter</span>
+        🝖 <span>Apply Filter</span>
     </button>
 
 </section>
 
 <div class="results-main-table">
 
-  <div class="results-main-table-header">
-    <img src="..//asset/logo/people.png" alt="">
-    <h1>Students List</h1>
-    
-    <div class="studentlist-total">
-      <h1>Total Student:</h1>
-      <p>214</p>
+    <div class="results-main-table-header">
+        <img src="..//asset/logo/people.png" alt="">
+        <h1>Students List</h1>
+
+        <div class="studentlist-total">
+            <h1>Total Student:</h1>
+            <p>214</p>
+        </div>
+        <div class="searchbox">
+            <img src="..//asset/logo/image.png" alt="">
+            <input class="searchbar" type="text" placeholder="Search by name, student, or section...">
+        </div>
+
     </div>
-      <div class="searchbox" >
-        <img src="..//asset/logo/image.png" alt="">
-        <input class="searchbar" type="text" placeholder="Search by name, student, or section..."> 
-      </div>
 
-  </div>
-
-  <table class="results-table">
-    <thead>
-      <tr>
-        <th> <input type="checkbox"></th>
-        <th>#</th>
-        <th>Student Number</th>
-        <th>Student Name</th>
-        <th>course</th>
-        <th>Year Level</th>
-        <th>Section</th>
-        <th>Status</th> 
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><input type="checkbox"></td>
-        <td>1</td>
-        <td>2024-2025</td>
-        <td>Abca,john B.</td>
-        <td>BSCS</td>
-        <td>1st year</td>
-        <td>BSCS H</td>
-        <td><div class="student-active-list">
-          <span class="status-dot-table"></span>
+    <table class="results-table">
+        <thead>
+            <tr>
+                <th> <input type="checkbox"></th>
+                <th>#</th>
+                <th>Student Number</th>
+                <th>Student Name</th>
+                <th>course</th>
+                <th>Year Level</th>
+                <th>Section</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><input type="checkbox"></td>
+                <td>1</td>
+                <td>2024-2025</td>
+                <td>Abca,john B.</td>
+                <td>BSCS</td>
+                <td>1st year</td>
+                <td>BSCS H</td>
+                <td>
+                    <div class="student-active-list">
+                        <span class="status-dot-table"></span>
                         <span>Active</span>
-        </div></td>
-      </tr>
+                    </div>
+                </td>
+            </tr>
 
-      <tr>
-        <td><input type="checkbox"></td>
-        <td>1</td>
-        <td>2024-2025</td>
-        <td>Abca,john B.</td>
-        <td>BSCS</td>
-        <td>1st year</td>
-        <td>BSCS H</td>
-        <td><div class="student-active-list">
-        <span class="status-dot-table"></span>
-                    <span>Active</span>
-        </div></td>
-      </tr>
-
-      <tr>
-        <td><input type="checkbox"></td>
-        <td>1</td>
-        <td>2024-2025</td>
-        <td>Abca,john B.</td>
-        <td>BSCS</td>
-        <td>1st year</td>
-        <td>BSCS H</td>
-        <td><div class="student-active-list">
-          <span class="status-dot-table"></span>
+            <tr>
+                <td><input type="checkbox"></td>
+                <td>1</td>
+                <td>2024-2025</td>
+                <td>Abca,john B.</td>
+                <td>BSCS</td>
+                <td>1st year</td>
+                <td>BSCS H</td>
+                <td>
+                    <div class="student-active-list">
+                        <span class="status-dot-table"></span>
                         <span>Active</span>
-        </div></td>
-      </tr>
+                    </div>
+                </td>
+            </tr>
 
-      <tr>
-        <td><input type="checkbox"></td>
-        <td>1</td>
-        <td>2024-2025</td>
-        <td>Abca,john B.</td>
-        <td>BSCS</td>
-        <td>1st year</td>
-        <td>BSCS H</td>
-        <td class="status-cell"><div class="student-active-list">
-          <span class="status-dot-table"></span>
+            <tr>
+                <td><input type="checkbox"></td>
+                <td>1</td>
+                <td>2024-2025</td>
+                <td>Abca,john B.</td>
+                <td>BSCS</td>
+                <td>1st year</td>
+                <td>BSCS H</td>
+                <td>
+                    <div class="student-active-list">
+                        <span class="status-dot-table"></span>
                         <span>Active</span>
-        </div></td>
-      </tr>
+                    </div>
+                </td>
+            </tr>
 
-      <tr>
-        <td><input type="checkbox"></td>
-        <td>1</td>
-        <td>2024-2025</td>
-        <td>Abca,john B.</td>
-        <td>BSCS</td>
-        <td>1st year</td>
-        <td>BSCS H</td>
-        <td><div class="student-active-list">
-          <span class="status-dot-table"></span>
+            <tr>
+                <td><input type="checkbox"></td>
+                <td>1</td>
+                <td>2024-2025</td>
+                <td>Abca,john B.</td>
+                <td>BSCS</td>
+                <td>1st year</td>
+                <td>BSCS H</td>
+                <td class="status-cell">
+                    <div class="student-active-list">
+                        <span class="status-dot-table"></span>
                         <span>Active</span>
-        </div></td>
-      </tr>
-    </tbody>
-  </table>
+                    </div>
+                </td>
+            </tr>
 
-  <!-- BOTTOM CONTROLS -->
+            <tr>
+                <td><input type="checkbox"></td>
+                <td>1</td>
+                <td>2024-2025</td>
+                <td>Abca,john B.</td>
+                <td>BSCS</td>
+                <td>1st year</td>
+                <td>BSCS H</td>
+                <td>
+                    <div class="student-active-list">
+                        <span class="status-dot-table"></span>
+                        <span>Active</span>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- BOTTOM CONTROLS -->
     <div class="student-table-footer">
 
         <!-- Show entries -->
@@ -276,7 +298,4 @@
 
         </div>
 
-</div>
-
-
-  
+    </div>

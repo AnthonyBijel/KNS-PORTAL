@@ -7,7 +7,7 @@ const ADMIN_PAGES = {
         navigation: ".overview-button",
         initializers: [initAnnouncements, initMediaPreview],
     },
-    "results.html": {
+    "results.php": {
         navigation: ".results-button",
         initializers: [],
     },
@@ -15,9 +15,9 @@ const ADMIN_PAGES = {
         navigation: ".may-request-button",
         initializers: [],
     },
-    "profile.html": {
+    "profile.php": {
         navigation: ".student-information-button",
-        initializers: [],
+        initializers: [initAdminProfile],
     },
 };
 
@@ -40,7 +40,11 @@ async function loadPage(page) {
     container.setAttribute("aria-busy", "true");
 
     try {
-        const response = await fetch(page);
+        const response = await fetch(page, { cache: "no-store" });
+        if (response.redirected) {
+            window.location.assign(response.url);
+            return;
+        }
         if (!response.ok) {
             throw new Error(`Failed to load ${page}: ${response.status}`);
         }
@@ -128,13 +132,95 @@ function initMediaPreview(container) {
     };
 }
 
+// Profile: save the signed-in admin's details and refresh the dashboard labels.
+function initAdminProfile(container) {
+    const form = container.querySelector("#admin-profile-form");
+    if (!form) return;
+
+    const message = form.querySelector("#admin-profile-message");
+    const fieldset = form.querySelector("fieldset");
+    const saveButton = form.querySelector("button[type='submit']");
+
+    form.addEventListener("input", event => {
+        event.target.removeAttribute("aria-invalid");
+    });
+    form.addEventListener("reset", () => {
+        message.textContent = "";
+        message.removeAttribute("data-state");
+        form.querySelectorAll("[aria-invalid]").forEach(field => field.removeAttribute("aria-invalid"));
+    });
+
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+        const body = new FormData(form);
+        fieldset.disabled = true;
+        saveButton.textContent = "Saving...";
+        message.textContent = "Saving changes...";
+        message.dataset.state = "pending";
+        form.querySelectorAll("[aria-invalid]").forEach(field => field.removeAttribute("aria-invalid"));
+        let firstInvalidField = null;
+
+        try {
+            const response = await fetch(form.action, {
+                method: "POST",
+                body,
+                headers: { Accept: "application/json" },
+            });
+            const data = await response.json();
+
+            if (response.status === 401) {
+                window.location.assign("../login.php");
+                return;
+            }
+            if (!response.ok || !data.ok) {
+                Object.entries(data.errors || {}).forEach(([name]) => {
+                    const field = form.elements.namedItem(name);
+                    if (field) {
+                        field.setAttribute("aria-invalid", "true");
+                        firstInvalidField ||= field;
+                    }
+                });
+                throw new Error(Object.values(data.errors || {}).join(" ") || data.message || "Unable to save your profile.");
+            }
+
+            Object.entries(data.profile).forEach(([name, value]) => {
+                const field = form.elements.namedItem(name);
+                if (field) {
+                    field.value = value ?? "";
+                    field.defaultValue = value ?? "";
+                }
+            });
+            const labels = {
+                admin_name: "[data-admin-name]",
+                role: "[data-admin-role]",
+                school_name: "[data-school-name]",
+            };
+            Object.entries(labels).forEach(([name, selector]) => {
+                document.querySelectorAll(selector).forEach(label => {
+                    label.textContent = data.profile[name] ?? "";
+                });
+            });
+            message.textContent = data.message;
+            message.dataset.state = "success";
+        } catch (error) {
+            message.textContent = error.message || "Unable to save your profile. Please try again.";
+            message.dataset.state = "error";
+        } finally {
+            fieldset.disabled = false;
+            saveButton.textContent = "Save Changes";
+            if (firstInvalidField) firstInvalidField.focus();
+        }
+    });
+}
+
 // Startup: run once, after the dashboard shell is available.
 function initAdminDashboard() {
     if (dashboardInitialized) return;
     if (!document.getElementById("main-content-contianer")) return;
 
     dashboardInitialized = true;
-    return loadPage("overview.php");
+    const page = new URLSearchParams(window.location.search).get("view") === "profile" ? "profile.php" : "overview.php";
+    return loadPage(page);
 }
 
 if (document.readyState === "loading") {
