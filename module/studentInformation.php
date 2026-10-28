@@ -39,6 +39,9 @@ if (!$student) {
     exit('Student record not found.');
 }
 
+$photoFeedback = $_SESSION['student_photo_feedback'] ?? null;
+unset($_SESSION['student_photo_feedback']);
+
 function e($value): string
 {
     return htmlspecialchars(
@@ -79,11 +82,29 @@ $profilePhoto = !empty($student['profile_photo'])
 
     <div class="profile">
 
-        <div class="person-profile">
-            <img
-                src="<?= e($profilePhoto) ?>"
-                alt="Student profile photo">
-        </div>
+        <form id="student-photo-form" class="student-photo-form"
+            action="../php/student/upload_profile_photo.php" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="csrf" value="<?= e($_SESSION['csrf']) ?>">
+            <input type="hidden" name="MAX_FILE_SIZE" value="2097152">
+            <input id="student-profile-photo" type="file" name="profile_photo"
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                aria-label="Choose a new profile photo" hidden required>
+            <button type="button" class="person-profile student-photo-button" data-choose-photo
+                aria-label="Change profile photo. Your selected photo is saved automatically."
+                aria-describedby="student-photo-help" title="Change profile photo (JPG, PNG, or WEBP; maximum 2 MB)">
+                <img src="<?= e($profilePhoto) ?>" alt="Student profile photo" data-student-photo>
+                <span class="student-photo-overlay" aria-hidden="true"><span data-photo-label>Change photo</span></span>
+                <span class="student-photo-badge" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                        <path d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-1.5-2Z"></path>
+                        <circle cx="12" cy="13" r="3"></circle>
+                    </svg>
+                </span>
+            </button>
+            <span id="student-photo-help" class="student-photo-help">Click your profile photo to choose a replacement.
+                It saves automatically. JPG/JPEG, PNG, or WEBP; maximum 2 MB, 4096 pixels per side, and 12 megapixels.</span>
+        </form>
 
         <div class="student-name">
             <h1><?= e($fullName) ?></h1>
@@ -100,6 +121,9 @@ $profilePhoto = !empty($student['profile_photo'])
         </div>
 
     </div>
+
+    <p id="student-photo-message" class="student-photo-message" role="status" aria-live="polite"
+        data-state="<?= !empty($photoFeedback['ok']) ? 'success' : 'error' ?>"><?= e($photoFeedback['message'] ?? '') ?></p>
 
     <div class="student-information">
 

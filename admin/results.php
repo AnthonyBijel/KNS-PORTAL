@@ -1,3 +1,20 @@
+<?php
+require __DIR__ . '/../php/auth/session.php';
+if (empty($_SESSION['admin_id'])) {
+    header('Location: ../login.php');
+    exit;
+}
+require_once __DIR__ . '/../db.php';
+
+$studentStatement = $pdo->query(
+    'SELECT student_number, first_name, middle_name, last_name, course, year_level, section, status
+     FROM students
+     ORDER BY id DESC'
+);
+$students = $studentStatement->fetchAll(PDO::FETCH_ASSOC);
+$totalStudents = (int) $pdo->query('SELECT COUNT(*) FROM students')->fetchColumn();
+?>
+
 <header class="student-list-header">
     <div class="student-list-header-content">
         <span class="student-list-header-label">STUDENT MANAGEMENT</span>
@@ -25,22 +42,24 @@
 
         <div class="upload-info">
             <h3>Upload Student List (Excel)</h3>
-            <p>Register student accounts using an Excel file.</p>
+            <p>Upload an .xlsx or .xls workbook directly (maximum 10 MB). Students upload their own profile photos in Student Information.</p>
 
-            <a href="#" class="template-link">
+            <a href="../downloads/KNS_Student_Upload_Template.xlsx" class="template-link" download>
                 <span>↓</span> Download Excel Template
             </a>
         </div>
 
         <form
-            action="../php/admin/upload_students_zip.php"
+            action="../php/admin/upload_students.php"
             method="POST"
             enctype="multipart/form-data"
             class="student-upload-form">
+            <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf'], ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="MAX_FILE_SIZE" value="10485760">
             <input
                 type="file"
-                name="student_zip"
-                accept=".zip"
+                name="student_excel"
+                accept=".xlsx,.xls"
                 required>
 
             <button
@@ -64,18 +83,50 @@
             <p>Upload student scores/grades for selected subject,<br>
                 year and semester.</p>
 
-            <a href="#" class="template-link">
-                <span>↓</span> Download Grade Template
-            </a>
+            <div>
+                <a href="../downloads/KNS_Grade_Upload_Template.xlsx" class="template-link" download>
+                    <span aria-hidden="true">&#8595;</span> Download Grade Template
+                </a>
+            </div>
+            <div>
+                <a href="../downloads/KNS_Assessment_Scores_Template.xlsx" class="template-link" download>
+                    <span aria-hidden="true">&#8595;</span> Download Assessment Template
+                </a>
+            </div>
+            <form id="grade-upload-form" action="../php/admin/upload_grades.php"
+                method="post" enctype="multipart/form-data" hidden>
+                <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf'], ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="MAX_FILE_SIZE" value="10485760">
+                <input type="file" name="grades_excel" accept=".xlsx"
+                    aria-label="Choose a grade or assessment workbook" required>
+            </form>
+            <p id="grade-upload-message" role="status" aria-live="polite"></p>
         </div>
 
-        <button class="upload-btn blue-btn">
+        <button type="button" class="upload-btn blue-btn" form="grade-upload-form"
+            data-grade-upload-picker title="Upload a grade or assessment workbook (.xlsx, maximum 10 MB)">
             <span>↥</span>
-            Upload Grades
+            <span class="grade-upload-label" data-grade-upload-label>Upload Grades</span>
         </button>
     </div>
 
 </section>
+
+<details class="student-import-instructions">
+    <summary>Student import instructions</summary>
+    <p>Use the Student Upload sheet (or the first sheet) with headers in row 1 and one student per row.
+        Required columns: student_number, first_name, last_name, course, year_level, section.
+        Supply password for new accounts; leave it blank to keep an existing password.</p>
+    <p>Other template columns are optional. Missing optional columns keep existing data; blank cells in
+        supplied optional columns clear that field. Blank status defaults to Active for a new account
+        and keeps the current status for an existing account.</p>
+    <p>Headers allow case, space, hyphen, and underscore variations, including Student Number and student_number.
+        Extra columns are ignored; duplicate recognized headers must be corrected.
+        Use 3 or 3rd Year for year_level. Birth dates accept Excel dates, YYYY-MM-DD,
+        MM/DD/YYYY (month/day for ambiguous dates), or 15 June 2005.</p>
+    <p>Blank rows are skipped. Valid rows are saved even when other rows have errors; results show counts
+        and the Excel row number and reason for each error. Existing student numbers update the same account.</p>
+</details>
 
 <section class="student-list-filters">
 
@@ -157,7 +208,7 @@
 
         <div class="studentlist-total">
             <h1>Total Student:</h1>
-            <p>214</p>
+            <p><?= htmlspecialchars((string) $totalStudents, ENT_QUOTES, 'UTF-8') ?></p>
         </div>
         <div class="searchbox">
             <img src="..//asset/logo/image.png" alt="">
@@ -180,85 +231,34 @@
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td><input type="checkbox"></td>
-                <td>1</td>
-                <td>2024-2025</td>
-                <td>Abca,john B.</td>
-                <td>BSCS</td>
-                <td>1st year</td>
-                <td>BSCS H</td>
-                <td>
-                    <div class="student-active-list">
-                        <span class="status-dot-table"></span>
-                        <span>Active</span>
-                    </div>
-                </td>
-            </tr>
-
-            <tr>
-                <td><input type="checkbox"></td>
-                <td>1</td>
-                <td>2024-2025</td>
-                <td>Abca,john B.</td>
-                <td>BSCS</td>
-                <td>1st year</td>
-                <td>BSCS H</td>
-                <td>
-                    <div class="student-active-list">
-                        <span class="status-dot-table"></span>
-                        <span>Active</span>
-                    </div>
-                </td>
-            </tr>
-
-            <tr>
-                <td><input type="checkbox"></td>
-                <td>1</td>
-                <td>2024-2025</td>
-                <td>Abca,john B.</td>
-                <td>BSCS</td>
-                <td>1st year</td>
-                <td>BSCS H</td>
-                <td>
-                    <div class="student-active-list">
-                        <span class="status-dot-table"></span>
-                        <span>Active</span>
-                    </div>
-                </td>
-            </tr>
-
-            <tr>
-                <td><input type="checkbox"></td>
-                <td>1</td>
-                <td>2024-2025</td>
-                <td>Abca,john B.</td>
-                <td>BSCS</td>
-                <td>1st year</td>
-                <td>BSCS H</td>
-                <td class="status-cell">
-                    <div class="student-active-list">
-                        <span class="status-dot-table"></span>
-                        <span>Active</span>
-                    </div>
-                </td>
-            </tr>
-
-            <tr>
-                <td><input type="checkbox"></td>
-                <td>1</td>
-                <td>2024-2025</td>
-                <td>Abca,john B.</td>
-                <td>BSCS</td>
-                <td>1st year</td>
-                <td>BSCS H</td>
-                <td>
-                    <div class="student-active-list">
-                        <span class="status-dot-table"></span>
-                        <span>Active</span>
-                    </div>
-                </td>
-            </tr>
+            <?php if (empty($students)): ?>
+                <tr>
+                    <td colspan="8">No students found.</td>
+                </tr>
+            <?php else: ?>
+                <?php foreach ($students as $index => $student): ?>
+                    <?php
+                    $studentName = trim(
+                        $student['first_name'] . ' ' . ($student['middle_name'] ?? '') . ' ' . $student['last_name']
+                    );
+                    ?>
+                    <tr>
+                        <td><input type="checkbox"></td>
+                        <td><?= htmlspecialchars((string) ($index + 1), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= htmlspecialchars((string) ($student['student_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= htmlspecialchars($studentName, ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= htmlspecialchars((string) ($student['course'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= htmlspecialchars((string) ($student['year_level'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= htmlspecialchars((string) ($student['section'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td>
+                            <div class="student-active-list">
+                                <span class="status-dot-table"></span>
+                                <span><?= htmlspecialchars((string) ($student['status'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </tbody>
     </table>
 

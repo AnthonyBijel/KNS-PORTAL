@@ -51,7 +51,7 @@ function e($value)
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard.org</title>
-    <link rel="stylesheet" href="admin.css?v=e3a04f3f6082">
+    <link rel="stylesheet" href="admin.css?v=grade-upload-20261029">
 </head>
 
 <body>
@@ -155,7 +155,7 @@ function e($value)
 
 
 
-    <script src="admin.js?v=d7a19d57f502"></script>
+    <script src="admin.js?v=grade-upload-20261029"></script>
 </body>
 
 </html>
