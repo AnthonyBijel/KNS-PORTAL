@@ -64,7 +64,7 @@ $initials = strtoupper(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard.org</title>
-    <link rel="stylesheet" href="dashboard.css?v=6661f8c280c3">
+    <link rel="stylesheet" href="dashboard.css?v=academic-results-20261029">
 </head>
 
 <body>
@@ -169,7 +169,7 @@ $initials = strtoupper(
 
 
 
-    <script src="dashboard.js?v=c72deac39c6c"></script>
+    <script src="dashboard.js?v=academic-results-20261029"></script>
 </body>
 
 </html>

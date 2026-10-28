@@ -2482,3 +2482,29 @@ html{
 #admin-profile-message:empty { display: none; }
 #admin-profile-message[data-state="success"] { color: #17623f; }
 #admin-profile-message[data-state="error"] { color: #b42318; }
+
+
+.student-list-upload .student-card { flex-wrap: wrap; }
+.student-upload-form { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; max-width: 100%; }
+.student-upload-form input[type="file"] { max-width: 100%; }
+.student-import-instructions {
+    margin: 10px 0;
+    padding: 12px 16px;
+    border: 1px solid #c9ecdf;
+    border-radius: 9px;
+    background: #f5fcf8;
+    color: #204b37;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.student-import-instructions summary { cursor: pointer; font-weight: 600; }
+.student-import-instructions p { margin: 10px 0; }
+
+/* Keep the existing grade card and button layout while displaying upload feedback. */
+.student-list-upload .upload-btn .grade-upload-label { font: inherit; }
+.student-list-upload .upload-btn:disabled { cursor: wait; opacity: .65; }
+#grade-upload-message { margin: 8px 0 0; overflow-wrap: anywhere; }
+#grade-upload-message:empty { display: none; }
+#grade-upload-message[data-state="pending"] { color: #4c4bd8; }
+#grade-upload-message[data-state="success"] { color: #17623f; }
+#grade-upload-message[data-state="error"] { color: #b42318; }

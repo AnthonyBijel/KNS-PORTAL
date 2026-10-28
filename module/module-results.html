@@ -1,176 +1,64 @@
-<div class="main-results">
-   <div class="tagline-contianer">
-      <div class="tagline-text">
-         <p>ACADEMIC RESULTS</p>
-         <h1>See Your Progress</h1>
-         <h1 class="celebrate">Celebrate Every Achievement</h1>
-         <p>Your activity scores, quiz results, exam scores,  and subjects grade in one place.</p>
-      </div>
-      <div class="right-tagline">
-         <p>Learn Today<br>
-            Lead tomorrow</p>
-      </div>
-   </div>
-   <div class="academicsemyear">
-     
+<div class="main-results" data-academic-results data-results-url="../php/module/get-results.php">
+  <div class="tagline-contianer">
+    <div class="tagline-text">
+      <p>ACADEMIC RESULTS</p>
+      <h1>See Your Progress</h1>
+      <h1 class="celebrate">Celebrate Every Achievement</h1>
+      <p>Your activity scores, quiz results, exam scores, and subject grades in one place.</p>
+    </div>
+    <div class="right-tagline"><p>Learn Today<br>Lead tomorrow</p></div>
+  </div>
+  <div class="academicsemyear">
     <div class="filter-field">
       <label for="academic-year">Academic Year</label>
-      <select id="academic-year" name="academic_year"></select>
+      <select id="academic-year" name="academic_year" disabled><option value="">Loading...</option></select>
     </div>
-
     <div class="filter-field">
       <label for="semester">Semester</label>
-      <select id="semester" name="semester">
-        <option value="1">1st Semester</option>
-        <option value="2">2nd Semester</option>
-      </select>
+      <select id="semester" name="semester" disabled><option value="">Loading...</option></select>
     </div>
   </div>
-
-      <p
-        id="selection-summary"
-        class="selection-summary"
-        aria-live="polite"
-      ></p>
-
+  <p id="selection-summary" class="selection-summary" aria-live="polite"></p>
+  <p id="academic-results-message" role="status" aria-live="polite">Loading academic results...</p>
 
   <section class="grades-card">
     <h2>My Subject Grades</h2>
-    <p>Your grades for each subject.</p>
+    <p>Your grades for each subject. Select a subject to view its assessments.</p>
     <div class="table-container">
       <table class="grades-table">
-        <thead>
-          <tr>
-            <th scope="col">Subject</th>
-            <th scope="col">Prelim</th>
-            <th scope="col">Midterm</th>
-            <th scope="col">Final</th>
-            <th scope="col">Overall</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="selected">
-            <td>Object-Oriented Programming</td>
-            <td>1.75</td>
-            <td>1.23</td>
-            <td>-</td>
-            <td>-</td>
-          </tr>
-
-          <tr>
-            <td>Data Structure and Algorithms</td>
-            <td>1.75</td>
-            <td>1.23</td>
-            <td>-</td>
-            <td>-</td>
-          </tr>
-
-          <tr>
-            <td>Discrete Mathematics</td>
-            <td>1.75</td>
-            <td>1.23</td>
-            <td>-</td>
-            <td>-</td>
-          </tr>
-        </tbody>
+        <thead><tr>
+          <th scope="col">Subject</th><th scope="col">Prelim</th><th scope="col">Midterm</th>
+          <th scope="col">Final</th><th scope="col">Overall</th>
+        </tr></thead>
+        <tbody data-subject-grades><tr><td colspan="5">Loading grades...</td></tr></tbody>
       </table>
     </div>
-
-    <small class="grade-note">--Grade not yet posted</small>
+    <small class="grade-note">- Grade not yet posted</small>
   </section>
 
   <section class="assessment">
     <div class="assess">
-      <h2>Objective Programming</h2>
+      <h2 id="assessment-subject-title">Subject Assessments</h2>
       <div class="assessment-semester">
-      <label for="sem">Sem</label>
-      <select id="sem" name="sem">
-        <option value="1">1st Sem</option>
-        <option value="2">2nd Sem</option>
-      </select>
-    </div>
-    </div>
-    
-    <div class="assessment-button">
-      <button>All Results</button>
-      <button>Activities</button>
-      <button>Quizzies</button>
-      <button>Exam</button>
-    </div>
-      <div class="assessment-contianer">
-        <table class="assessment-table">
-          <thead>
-            <tr>
-              <th scope="col">Assessment</th>
-              <th scope="col">Type</th>
-              <th scope="col">Score</th>
-              <th scope="col">Date posted</th>
-            </tr>
-          </thead>
-          <tbody>
-              <tr class="selected">
-              <td>Object-Oriented Programming</td>
-              <td>exam</td>
-              <td>12</td>
-              <td>-</td>
-            </tr>
-
-            <tr>
-              <td>Data Structure and Algorithms</td>
-              <td>activity</td>
-              <td>20</td>
-              <td>11-6-2026</td>
-            </tr>
-
-            <tr>
-              <td>Discrete Mathematics</td>
-              <td>quiz</td>
-              <td>30</td>
-              <td>-</td>
-            </tr>
-          </tbody>
-        </table>
+        <label for="grading-period">Period</label>
+        <select id="grading-period" name="grading_period" disabled><option value="all">All Periods</option></select>
       </div>
-
+    </div>
+    <div class="assessment-button">
+      <button type="button" data-assessment-type="all" class="selected" aria-pressed="true">All Results</button>
+      <button type="button" data-assessment-type="activity" aria-pressed="false">Activities</button>
+      <button type="button" data-assessment-type="quiz" aria-pressed="false">Quizzes</button>
+      <button type="button" data-assessment-type="exam" aria-pressed="false">Exam</button>
+      <button type="button" data-assessment-type="project" aria-pressed="false">Projects</button>
+    </div>
+    <div class="assessment-contianer">
+      <table class="assessment-table">
+        <thead><tr>
+          <th scope="col">Assessment</th><th scope="col">Type</th>
+          <th scope="col">Score</th><th scope="col">Date posted</th>
+        </tr></thead>
+        <tbody data-assessment-results><tr><td colspan="4">Loading assessments...</td></tr></tbody>
+      </table>
+    </div>
   </section>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 </div>

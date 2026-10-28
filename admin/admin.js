@@ -9,7 +9,7 @@ const ADMIN_PAGES = {
     },
     "results.php": {
         navigation: ".results-button",
-        initializers: [],
+        initializers: [initGradeUpload],
     },
     "requests.html": {
         navigation: ".may-request-button",
@@ -219,7 +219,8 @@ function initAdminDashboard() {
     if (!document.getElementById("main-content-contianer")) return;
 
     dashboardInitialized = true;
-    const page = new URLSearchParams(window.location.search).get("view") === "profile" ? "profile.php" : "overview.php";
+    const view = new URLSearchParams(window.location.search).get("view");
+    const page = view === "profile" ? "profile.php" : view === "results" ? "results.php" : "overview.php";
     return loadPage(page);
 }
 
@@ -227,4 +228,75 @@ if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initAdminDashboard, { once: true });
 } else {
     initAdminDashboard();
+}
+
+// Results is loaded as a fragment; attach its workbook picker after insertion.
+function initGradeUpload(container) {
+    const form = container.querySelector("#grade-upload-form");
+    const button = container.querySelector("[data-grade-upload-picker]");
+    if (!form || !button) return;
+    const input = form.querySelector("[name='grades_excel']");
+    const label = button.querySelector("[data-grade-upload-label]");
+    const message = container.querySelector("#grade-upload-message");
+    let uploading = false;
+
+    button.addEventListener("click", () => {
+        if (!uploading) input.click();
+    });
+    input.addEventListener("change", () => {
+        if (!uploading && input.files.length) form.requestSubmit();
+    });
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+        if (uploading) return;
+        const file = input.files[0];
+        if (!file) return;
+        if (!file.name.toLowerCase().endsWith(".xlsx") || file.size === 0 || file.size > 10 * 1024 * 1024) {
+            message.textContent = "Choose a nonempty .xlsx workbook at most 10 MB in size.";
+            message.dataset.state = "error";
+            input.value = "";
+            return;
+        }
+        const body = new FormData(form);
+        uploading = true;
+        button.disabled = true;
+        input.disabled = true;
+        button.setAttribute("aria-busy", "true");
+        label.textContent = "Uploading...";
+        message.textContent = "Uploading and validating the workbook...";
+        message.dataset.state = "pending";
+        try {
+            const response = await fetch(form.action, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: { Accept: "application/json" },
+                body,
+            });
+            if (response.status === 401 || response.redirected) {
+                window.location.assign(response.redirected ? response.url : "../login.php");
+                return;
+            }
+            const data = await response.json().catch(() => null);
+            if (!data) {
+                throw new Error("Unable to confirm the upload result. Check the server log and try again.");
+            }
+            if (!response.ok || !data.ok) {
+                throw new Error(data.message || "Unable to import the workbook.");
+            }
+            message.textContent = data.message;
+            message.dataset.state = "success";
+        } catch (error) {
+            message.textContent = error instanceof TypeError
+                ? "Unable to confirm the upload result. Check your connection and try again."
+                : (error.message || "Unable to confirm the upload result. Please try again.");
+            message.dataset.state = "error";
+        } finally {
+            input.value = "";
+            uploading = false;
+            button.disabled = false;
+            input.disabled = false;
+            button.removeAttribute("aria-busy");
+            label.textContent = "Upload Grades";
+        }
+    });
 }
