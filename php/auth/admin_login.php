@@ -19,8 +19,16 @@ if (
     exit;
 }
 
-$adminUsername = trim($_POST['student_number'] ?? '');
+$adminUsername = $_POST['student_number'] ?? '';
 $adminPassword = $_POST['password'] ?? '';
+if (!is_string($adminUsername) || !is_string($adminPassword)
+    || !mb_check_encoding($adminUsername, 'UTF-8') || mb_strlen($adminUsername, 'UTF-8') > 50
+    || trim($adminUsername) === '' || $adminPassword === '') {
+    $_SESSION['login_error'] = 'Enter a valid admin username and password.';
+    header('Location: ../../login.php');
+    exit;
+}
+$adminUsername = trim($adminUsername);
 
 require __DIR__ . '/../../db.php';
 
@@ -39,6 +47,8 @@ if (
     password_verify($adminPassword, $admin['password_hash'])
 ) {
     session_regenerate_id(true);
+    // Replace all previous account data, including the other account role.
+    $_SESSION = [];
 
     $_SESSION['admin_id'] = (int) $admin['id'];
     $_SESSION['admin_name'] = $admin['admin_name'];

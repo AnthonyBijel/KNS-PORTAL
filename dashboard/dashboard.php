@@ -13,7 +13,7 @@ $stmt = $pdo->prepare(
 );
 
 $stmt->execute([
-    $_SESSION['student_id'],
+    currentStudentId(),
     'Active'
 ]);
 
@@ -169,7 +169,7 @@ $initials = strtoupper(
 
 
 
-    <script src="dashboard.js?v=academic-results-20261029"></script>
+    <script src="dashboard.js?v=academic-course-20261029"></script>
 </body>
 
 </html>

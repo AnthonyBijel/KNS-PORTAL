@@ -17,7 +17,8 @@ function photoReply(int $status, string $message, ?string $photoPath = null): ne
     exit;
 }
 
-if (empty($_SESSION['student_id'])) {
+$studentId = currentStudentId();
+if ($studentId === null) {
     photoReply(401, 'Your session expired. Please sign in again.');
 }
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
@@ -30,7 +31,6 @@ if (!is_string($token) || !hash_equals($_SESSION['csrf'], $token)) {
 }
 
 require __DIR__ . '/../../db.php';
-$studentId = (int) $_SESSION['student_id']; // Never take a target ID from the request.
 $newFile = null;
 $image = null;
 $stream = null;

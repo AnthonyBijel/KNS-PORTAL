@@ -28,7 +28,7 @@ $stmt = $pdo->prepare(
 );
 
 $stmt->execute([
-    $_SESSION['student_id'],
+    currentStudentId(),
     'Active'
 ]);
 
