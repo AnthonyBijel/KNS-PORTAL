@@ -14,15 +14,32 @@ session_set_cookie_params([
 
 session_start();
 
+// A browser session represents one valid account and one role at a time.
+$hasStudentIdentity = isset($_SESSION['student_id']);
+$hasAdminIdentity = isset($_SESSION['admin_id']);
+if (($hasStudentIdentity && (!is_int($_SESSION['student_id']) || $_SESSION['student_id'] < 1))
+    || ($hasAdminIdentity && (!is_int($_SESSION['admin_id']) || $_SESSION['admin_id'] < 1))
+    || ($hasStudentIdentity && $hasAdminIdentity)) {
+    $_SESSION = [];
+    session_regenerate_id(true);
+}
+
 header('Cache-Control: no-store');
 
 if (empty($_SESSION['csrf'])) {
     $_SESSION['csrf'] = bin2hex(random_bytes(32));
 }
 
-function requireStudent()
+function currentStudentId(): ?int
 {
-    if (empty($_SESSION['student_id'])) {
+    $studentId = $_SESSION['student_id'] ?? null;
+    return is_int($studentId) && $studentId > 0 && !isset($_SESSION['admin_id'])
+        ? $studentId : null;
+}
+
+function requireStudent(): void
+{
+    if (currentStudentId() === null) {
         header('Location: ../login.php');
         exit;
     }

@@ -212,6 +212,7 @@ function initAcademicResults(container) {
     const view = container.querySelector("[data-academic-results]");
     if (!view) return null;
     const yearSelect = view.querySelector("#academic-year");
+    const courseSelect = view.querySelector("#academic-course");
     const semesterSelect = view.querySelector("#semester");
     const periodSelect = view.querySelector("#grading-period");
     const summary = view.querySelector("#selection-summary");
@@ -424,6 +425,9 @@ function initAcademicResults(container) {
             if (disposed || !view.isConnected) return;
             if (!response.ok || !data.ok) throw new Error(data.message || "Unable to load your academic results.");
             if (!Array.isArray(data.subject_grades) || !Array.isArray(data.assessments)) throw new Error("Unable to read academic results.");
+            const course = String(data.course ?? "").trim();
+            options(courseSelect, course ? [{ value: course, label: course }] : [],
+                courseSelect.value, "No course available");
             const previousYear = yearSelect.value;
             const previousSemester = semesterSelect.value;
             grades = data.subject_grades.map(prepare);

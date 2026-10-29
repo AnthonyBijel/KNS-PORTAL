@@ -4,15 +4,99 @@ if (empty($_SESSION['admin_id'])) {
     header('Location: ../login.php');
     exit;
 }
+$search = $_GET['q'] ?? '';
+if (!is_string($search) || !mb_check_encoding($search, 'UTF-8') || mb_strlen($search, 'UTF-8') > 300) {
+    http_response_code(422);
+    exit('Enter a student name, student number, or section of at most 300 characters.');
+}
+$search = preg_replace('/\s+/u', ' ', trim($search));
+
+$pageValue = $_GET['page'] ?? '1';
+$perPageValue = $_GET['per_page'] ?? '10';
+if (!is_string($pageValue) || filter_var($pageValue, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false
+    || !is_string($perPageValue) || !in_array($perPageValue, ['10', '25', '50', '100'], true)) {
+    http_response_code(422);
+    exit('Choose a valid page and 10, 25, 50, or 100 students per page.');
+}
+$page = (int) $pageValue;
+$perPage = (int) $perPageValue;
+
+$filters = [];
+foreach (['academic_year' => 20, 'semester' => 30, 'course' => 150, 'year_level' => 3, 'section' => 50] as $name => $maxLength) {
+    $value = $_GET[$name] ?? '';
+    if (!is_string($value) || !mb_check_encoding($value, 'UTF-8') || mb_strlen($value, 'UTF-8') > $maxLength) {
+        http_response_code(422);
+        exit('Choose valid student filters.');
+    }
+    $filters[$name] = trim($value);
+}
+if ($filters['year_level'] !== '' && filter_var($filters['year_level'], FILTER_VALIDATE_INT,
+    ['options' => ['min_range' => 1, 'max_range' => 255]]) === false) {
+    http_response_code(422);
+    exit('Choose a valid year level.');
+}
+
 require_once __DIR__ . '/../db.php';
 
-$studentStatement = $pdo->query(
-    'SELECT student_number, first_name, middle_name, last_name, course, year_level, section, status
-     FROM students
-     ORDER BY id DESC'
+// Dropdown values come from the stored records, including uploaded course/section names.
+$filterOptions = [
+    'academic_year' => $pdo->query("SELECT DISTINCT academic_year FROM students WHERE TRIM(academic_year) <> '' ORDER BY academic_year DESC")->fetchAll(PDO::FETCH_COLUMN),
+    'semester' => $pdo->query("SELECT DISTINCT semester FROM students WHERE TRIM(semester) <> '' ORDER BY semester")->fetchAll(PDO::FETCH_COLUMN),
+    'course' => $pdo->query("SELECT DISTINCT course FROM students WHERE TRIM(course) <> '' ORDER BY course")->fetchAll(PDO::FETCH_COLUMN),
+    'year_level' => $pdo->query('SELECT DISTINCT year_level FROM students ORDER BY year_level')->fetchAll(PDO::FETCH_COLUMN),
+    'section' => $pdo->query("SELECT DISTINCT section FROM students WHERE TRIM(section) <> '' ORDER BY section")->fetchAll(PDO::FETCH_COLUMN),
+];
+foreach ($filters as $name => $value) {
+    if ($value !== '' && !in_array($value, array_map('strval', $filterOptions[$name]), true)) {
+        http_response_code(422);
+        exit('Choose student filters from the available options.');
+    }
+}
+
+$studentConditions = [];
+$studentParameters = [];
+if ($search !== '') {
+    // Group search alternatives so every selected filter still applies.
+    $pattern = '%' . strtr($search, ['!' => '!!', '%' => '!%', '_' => '!_']) . '%';
+    $studentConditions[] = <<<'SQL'
+        (s.student_number LIKE ? ESCAPE '!'
+           OR s.section LIKE ? ESCAPE '!'
+           OR CONCAT_WS(' ', s.first_name, NULLIF(s.middle_name, ''), s.last_name) LIKE ? ESCAPE '!'
+           OR CONCAT_WS(' ', s.first_name, s.last_name) LIKE ? ESCAPE '!'
+           OR CONCAT_WS(' ', s.last_name, s.first_name) LIKE ? ESCAPE '!'
+           OR CONCAT_WS(', ', s.last_name, s.first_name) LIKE ? ESCAPE '!')
+        SQL;
+    $studentParameters = array_fill(0, 6, $pattern);
+}
+foreach (['academic_year', 'semester', 'course', 'year_level', 'section'] as $name) {
+    if ($filters[$name] !== '') {
+        $studentConditions[] = 's.' . $name . ' = ?';
+        $studentParameters[] = $filters[$name];
+    }
+}
+
+$studentWhere = $studentConditions ? ' WHERE ' . implode(' AND ', $studentConditions) : '';
+
+$countStatement = $pdo->prepare('SELECT COUNT(*) FROM students s' . $studentWhere);
+$countStatement->execute($studentParameters);
+$totalStudents = (int) $countStatement->fetchColumn();
+$totalPages = max(1, (int) ceil($totalStudents / $perPage));
+$page = min($page, $totalPages);
+$offset = ($page - 1) * $perPage;
+
+$studentStatement = $pdo->prepare(
+    'SELECT s.student_number, s.first_name, s.middle_name, s.last_name, s.course, s.year_level, s.section, s.status
+     FROM students s' . $studentWhere . ' ORDER BY s.id DESC LIMIT ? OFFSET ?'
 );
+foreach ($studentParameters as $parameterIndex => $parameter) {
+    $studentStatement->bindValue($parameterIndex + 1, $parameter, PDO::PARAM_STR);
+}
+$studentStatement->bindValue(count($studentParameters) + 1, $perPage, PDO::PARAM_INT);
+$studentStatement->bindValue(count($studentParameters) + 2, $offset, PDO::PARAM_INT);
+$studentStatement->execute();
 $students = $studentStatement->fetchAll(PDO::FETCH_ASSOC);
-$totalStudents = (int) $pdo->query('SELECT COUNT(*) FROM students')->fetchColumn();
+$firstPage = max(1, min($page - 2, $totalPages - 4));
+$lastPage = min($totalPages, $firstPage + 4);
 ?>
 
 <header class="student-list-header">
@@ -28,10 +112,6 @@ $totalStudents = (int) $pdo->query('SELECT COUNT(*) FROM students')->fetchColumn
     </div>
 </header>
 
-<div class="student-list-upload">
-
-</div>
-
 <section class="student-list-upload">
 
     <!-- Upload Student List -->
@@ -42,33 +122,25 @@ $totalStudents = (int) $pdo->query('SELECT COUNT(*) FROM students')->fetchColumn
 
         <div class="upload-info">
             <h3>Upload Student List (Excel)</h3>
-            <p>Upload an .xlsx or .xls workbook directly (maximum 10 MB). Students upload their own profile photos in Student Information.</p>
+            <p>Upload student records from an .xlsx or .xls workbook (maximum 10 MB).</p>
 
-            <a href="../downloads/KNS_Student_Upload_Template.xlsx" class="template-link" download>
-                <span>↓</span> Download Excel Template
+            <a href="../downloads/KNS_Student_Upload_Template.xlsx?v=student-terms-20261029" class="template-link" download>
+                <span aria-hidden="true">&#8595;</span> Download Excel Template
             </a>
+            <form id="student-upload-form" action="../php/admin/upload_students.php"
+                method="post" enctype="multipart/form-data" hidden>
+                <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf'], ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="MAX_FILE_SIZE" value="10485760">
+                <input type="file" name="student_excel" accept=".xlsx,.xls"
+                    aria-label="Choose a student list workbook" required>
+            </form>
         </div>
 
-        <form
-            action="../php/admin/upload_students.php"
-            method="POST"
-            enctype="multipart/form-data"
-            class="student-upload-form">
-            <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf'], ENT_QUOTES, 'UTF-8') ?>">
-            <input type="hidden" name="MAX_FILE_SIZE" value="10485760">
-            <input
-                type="file"
-                name="student_excel"
-                accept=".xlsx,.xls"
-                required>
-
-            <button
-                type="submit"
-                class="upload-btn green-btn">
-                <span>↑</span>
-                Upload Students
-            </button>
-        </form>
+        <button type="button" class="upload-btn green-btn" form="student-upload-form"
+            data-student-upload-picker title="Upload a student list workbook (.xlsx or .xls, maximum 10 MB)">
+            <span aria-hidden="true">&#8613;</span>
+            Upload Students
+        </button>
     </div>
 
 
@@ -114,12 +186,16 @@ $totalStudents = (int) $pdo->query('SELECT COUNT(*) FROM students')->fetchColumn
 
 <details class="student-import-instructions">
     <summary>Student import instructions</summary>
+    <p>Students upload their own profile photos in Student Information.</p>
     <p>Use the Student Upload sheet (or the first sheet) with headers in row 1 and one student per row.
         Required columns: student_number, first_name, last_name, course, year_level, section.
         Supply password for new accounts; leave it blank to keep an existing password.</p>
     <p>Other template columns are optional. Missing optional columns keep existing data; blank cells in
         supplied optional columns clear that field. Blank status defaults to Active for a new account
         and keeps the current status for an existing account.</p>
+    <p>Optional academic_year (for example 2026-2027) and semester (1st Semester, 2nd Semester, or Summer)
+        are saved on the student account and used by the list filters. Re-upload the same student_number
+        to update these values. Older workbooks can omit these columns to preserve existing values.</p>
     <p>Headers allow case, space, hyphen, and underscore variations, including Student Number and student_number.
         Extra columns are ignored; duplicate recognized headers must be corrected.
         Use 3 or 3rd Year for year_level. Birth dates accept Excel dates, YYYY-MM-DD,
@@ -130,65 +206,37 @@ $totalStudents = (int) $pdo->query('SELECT COUNT(*) FROM students')->fetchColumn
 
 <section class="student-list-filters">
 
-    <div class="filter-group">
-        <label for="academic-year">Academic Year</label>
-        <select id="academic-year">
-            <option>2026 - 2027</option>
-            <option>2025 - 2026</option>
-            <option>2024 - 2025</option>
-        </select>
-    </div>
-
-    <div class="filter-group">
-        <label for="semester">Semester</label>
-        <select id="semester">
-            <option>1st Semester</option>
-            <option>2nd Semester</option>
-        </select>
-    </div>
-
-    <div class="filter-group">
-        <label for="course">Course</label>
-        <select id="course">
-            <option>All Courses</option>
-            <option>BS Business Administration</option>
-            <option>BS Computer Science</option>
-            <option>BS Accountancy</option>
-            <option>BS Elementary Education</option>
-        </select>
-    </div>
-
-    <div class="filter-group">
-        <label for="year-level">Year Level</label>
-        <select id="year-level">
-            <option>All Year Levels</option>
-            <option>1st Year</option>
-            <option>2nd Year</option>
-            <option>3rd Year</option>
-            <option>4th Year</option>
-        </select>
-    </div>
-
-    <div class="filter-group">
-        <label for="section">Set</label>
-        <select id="section">
-            <option>All Sets</option>
-            <option>Set A</option>
-            <option>Set B</option>
-            <option>Set C</option>
-            <option>Set D</option>
-            <option>Set E</option>
-            <option>Set F</option>
-            <option>Set G</option>
-            <option>Set H</option>
-            <option>Set I</option>
-            <option>Set J</option>
-            <option>Set K</option>
-            <option>Set L</option>
-            <option>Set M</option>
-            <option>Set N</option>
-        </select>
-    </div>
+    <?php foreach ([
+        'academic_year' => ['academic-year', 'Academic Year', 'All Academic Years'],
+        'semester' => ['semester', 'Semester', 'All Semesters'],
+        'course' => ['course', 'Course', 'All Courses'],
+        'year_level' => ['year-level', 'Year Level', 'All Year Levels'],
+        'section' => ['section', 'Set', 'All Sets'],
+    ] as $filterName => [$filterId, $filterLabel, $allLabel]): ?>
+        <div class="filter-group">
+            <label for="<?= $filterId ?>"><?= $filterLabel ?></label>
+            <select id="<?= $filterId ?>" name="<?= $filterName ?>" data-student-filter>
+                <option value=""><?= $allLabel ?></option>
+                <?php foreach ($filterOptions[$filterName] as $value): ?>
+                    <?php
+                    $optionLabel = (string) $value;
+                    if ($filterName === 'year_level') {
+                        $level = (int) $value;
+                        $suffix = match (true) {
+                            $level % 100 >= 11 && $level % 100 <= 13 => 'th',
+                            $level % 10 === 1 => 'st',
+                            $level % 10 === 2 => 'nd',
+                            $level % 10 === 3 => 'rd',
+                            default => 'th',
+                        };
+                        $optionLabel = $level . $suffix . ' Year';
+                    }
+                    ?>
+                    <option value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') ?>"<?= (string) $value === $filters[$filterName] ? ' selected' : '' ?>><?= htmlspecialchars($optionLabel, ENT_QUOTES, 'UTF-8') ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+    <?php endforeach; ?>
 
     <button type="button" class="filter-reset">
         ⭯ <span>Reset</span>
@@ -212,11 +260,16 @@ $totalStudents = (int) $pdo->query('SELECT COUNT(*) FROM students')->fetchColumn
         </div>
         <div class="searchbox">
             <img src="..//asset/logo/image.png" alt="">
-            <input class="searchbar" type="text" placeholder="Search by name, student, or section...">
+            <input class="searchbar" type="text" placeholder="Search by name, student, or section..."
+                id="student-search" name="q" maxlength="300" autocomplete="off"
+                aria-label="Search students by name, student number, or section"
+                aria-controls="student-results-body"
+                value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>">
         </div>
 
     </div>
 
+    <div class="student-table-scroll">
     <table class="results-table">
         <thead>
             <tr>
@@ -230,7 +283,7 @@ $totalStudents = (int) $pdo->query('SELECT COUNT(*) FROM students')->fetchColumn
                 <th>Status</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="student-results-body" aria-live="polite">
             <?php if (empty($students)): ?>
                 <tr>
                     <td colspan="8">No students found.</td>
@@ -244,7 +297,7 @@ $totalStudents = (int) $pdo->query('SELECT COUNT(*) FROM students')->fetchColumn
                     ?>
                     <tr>
                         <td><input type="checkbox"></td>
-                        <td><?= htmlspecialchars((string) ($index + 1), ENT_QUOTES, 'UTF-8') ?></td>
+                        <td><?= htmlspecialchars((string) ($offset + $index + 1), ENT_QUOTES, 'UTF-8') ?></td>
                         <td><?= htmlspecialchars((string) ($student['student_number'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                         <td><?= htmlspecialchars($studentName, ENT_QUOTES, 'UTF-8') ?></td>
                         <td><?= htmlspecialchars((string) ($student['course'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
@@ -261,41 +314,36 @@ $totalStudents = (int) $pdo->query('SELECT COUNT(*) FROM students')->fetchColumn
             <?php endif; ?>
         </tbody>
     </table>
+    </div>
 
     <!-- BOTTOM CONTROLS -->
     <div class="student-table-footer">
 
         <!-- Show entries -->
         <div class="entries-control">
-
             <span>Show</span>
-
-            <select>
-                <option>10</option>
-                <option>25</option>
-                <option>50</option>
-                <option>100</option>
+            <select id="student-entries" aria-label="Students per page">
+                <?php foreach ([10, 25, 50, 100] as $size): ?>
+                    <option value="<?= $size ?>"<?= $size === $perPage ? ' selected' : '' ?>><?= $size ?></option>
+                <?php endforeach; ?>
             </select>
-
             <span>entries</span>
-
         </div>
 
-
         <!-- Pagination -->
-        <div class="pagination">
+        <div class="pagination" role="navigation" aria-label="Student list pages"
+            data-current-page="<?= $page ?>" data-total-pages="<?= $totalPages ?>">
+            <button type="button" class="page-arrow" data-page="<?= max(1, $page - 1) ?>"
+                aria-label="Previous page"<?= $page <= 1 ? ' disabled' : '' ?>>&#8249;</button>
 
-            <button class="page-arrow">‹</button>
+            <?php for ($pageNumber = $firstPage; $pageNumber <= $lastPage; $pageNumber++): ?>
+                <button type="button" data-page="<?= $pageNumber ?>"
+                    <?= $pageNumber === $page ? 'class="current-page" aria-current="page"' : '' ?>><?= $pageNumber ?></button>
+            <?php endfor; ?>
 
-            <button class="current-page">1</button>
-
-            <button>2</button>
-            <button>3</button>
-            <button>4</button>
-            <button>5</button>
-
-            <button class="page-arrow">›</button>
-
+            <button type="button" class="page-arrow" data-page="<?= min($totalPages, $page + 1) ?>"
+                aria-label="Next page"<?= $page >= $totalPages ? ' disabled' : '' ?>>&#8250;</button>
         </div>
 
     </div>
+</div>

@@ -10,7 +10,8 @@ function academicResultsReply(int $status, array $data): never
     exit;
 }
 
-if (empty($_SESSION['student_id'])) {
+$studentId = currentStudentId();
+if ($studentId === null) {
     academicResultsReply(401, ['ok' => false, 'message' => 'Your session expired. Please sign in again.']);
 }
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
@@ -36,30 +37,32 @@ try {
     }
     // Read a consistent snapshot of both tables if an admin uploads concurrently.
     $pdo->beginTransaction();
-    $studentQuery = $pdo->prepare('SELECT student_number FROM students WHERE id = ? AND status = ? LIMIT 1');
-    $studentQuery->execute([(int) $_SESSION['student_id'], 'Active']);
-    $studentNumber = $studentQuery->fetchColumn();
-    if ($studentNumber === false) {
+    $studentQuery = $pdo->prepare('SELECT student_number, course FROM students WHERE id = ? AND status = ? LIMIT 1');
+    $studentQuery->execute([$studentId, 'Active']);
+    $student = $studentQuery->fetch(PDO::FETCH_ASSOC);
+    if ($student === false) {
         $pdo->rollBack();
+        unset($_SESSION['student_id'], $_SESSION['student_photo_feedback']);
         academicResultsReply(401, ['ok' => false, 'message' => 'Your student account is unavailable. Please sign in again.']);
     }
+    $studentNumber = $student['student_number'];
     // The target student is resolved only from the authenticated session, never GET/POST.
     $gradesQuery = $pdo->prepare(
         'SELECT academic_year, semester, subject_code, subject_name,
                 prelim_grade, midterm_grade, final_grade, overall_grade
-         FROM subject_grades WHERE student_number = ? ORDER BY updated_at DESC, id DESC'
+         FROM subject_grades WHERE student_number = ? AND BINARY student_number = BINARY ? ORDER BY updated_at DESC, id DESC'
     );
-    $gradesQuery->execute([$studentNumber]);
+    $gradesQuery->execute([$studentNumber, $studentNumber]);
     $grades = $gradesQuery->fetchAll(PDO::FETCH_ASSOC);
     $assessmentsQuery = $pdo->prepare(
         'SELECT academic_year, semester, grading_period, subject_code, subject_name,
                 assessment_type, assessment_name, score, max_score, date_posted, remarks
-         FROM grade_assessments WHERE student_number = ? ORDER BY date_posted DESC, id DESC'
+         FROM grade_assessments WHERE student_number = ? AND BINARY student_number = BINARY ? ORDER BY date_posted DESC, id DESC'
     );
-    $assessmentsQuery->execute([$studentNumber]);
+    $assessmentsQuery->execute([$studentNumber, $studentNumber]);
     $assessments = $assessmentsQuery->fetchAll(PDO::FETCH_ASSOC);
     $pdo->commit();
-    academicResultsReply(200, ['ok' => true, 'subject_grades' => $grades, 'assessments' => $assessments]);
+    academicResultsReply(200, ['ok' => true, 'course' => $student['course'], 'subject_grades' => $grades, 'assessments' => $assessments]);
 } catch (Throwable $error) {
     if ($pdo instanceof PDO && $pdo->inTransaction()) {
         $pdo->rollBack();

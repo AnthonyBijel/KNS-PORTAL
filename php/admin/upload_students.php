@@ -68,7 +68,7 @@ $limits = [
     'student_number' => 30, 'first_name' => 100, 'middle_name' => 100,
     'last_name' => 100, 'suffix' => 20, 'course' => 150, 'section' => 50,
     'email' => 254, 'contact_number' => 30, 'guardian_name' => 200,
-    'guardian_contact' => 30
+    'guardian_contact' => 30, 'academic_year' => 20, 'semester' => 30
 ];
 $fields = array_merge(array_keys($limits), ['password', 'year_level', 'status', 'address', 'birth_date']);
 $aliases = [
@@ -79,6 +79,7 @@ $aliases = [
     'middlename' => 'middle_name', 'namesuffix' => 'suffix',
     'program' => 'course', 'courseprogram' => 'course', 'year' => 'year_level',
     'set' => 'section', 'studentstatus' => 'status', 'emailaddress' => 'email',
+    'schoolyear' => 'academic_year', 'ay' => 'academic_year',
     'phone' => 'contact_number', 'phonenumber' => 'contact_number',
     'mobile' => 'contact_number', 'mobilenumber' => 'contact_number',
     'contactno' => 'contact_number', 'homeaddress' => 'address',
@@ -121,6 +122,26 @@ function parseStudentBirthDate($value, int $calendar): ?string
         }
     }
     throw new InvalidArgumentException('birth_date is invalid. Use an Excel date, YYYY-MM-DD, MM/DD/YYYY, or a date such as 15 June 2005.');
+}
+
+function normalizeStudentAcademicYear(string $value): string
+{
+    if (!preg_match('/^(\d{4})\s*[-\/\x{2013}\x{2014}]\s*(\d{4})$/u', $value, $years)
+        || (int) $years[1] < 1000 || (int) $years[2] !== (int) $years[1] + 1) {
+        throw new InvalidArgumentException('academic_year must contain consecutive years, for example 2026-2027.');
+    }
+    return $years[1] . '-' . $years[2];
+}
+
+function normalizeStudentSemester(string $value): string
+{
+    $key = mb_strtolower(preg_replace('/[\s_-]+/u', '', $value) ?? '', 'UTF-8');
+    return match ($key) {
+        '1', '1st', '1stsem', '1stsemester', 'firstsemester', 'semester1' => '1st Semester',
+        '2', '2nd', '2ndsem', '2ndsemester', 'secondsemester', 'semester2' => '2nd Semester',
+        'summer' => 'Summer',
+        default => throw new InvalidArgumentException('semester must be 1st Semester, 2nd Semester, or Summer.'),
+    };
 }
 
 try {
@@ -210,6 +231,12 @@ if ($lastRow >= 2) {
                 throw new InvalidArgumentException('year_level must be a whole number from 1 to 255 (for example 3 or 3rd Year).');
             }
             $values['year_level'] = (int) $year[1];
+            if (($values['academic_year'] ?? '') !== '') {
+                $values['academic_year'] = normalizeStudentAcademicYear($values['academic_year']);
+            }
+            if (($values['semester'] ?? '') !== '') {
+                $values['semester'] = normalizeStudentSemester($values['semester']);
+            }
             if (($values['email'] ?? '') !== '' && !filter_var($values['email'], FILTER_VALIDATE_EMAIL)) {
                 throw new InvalidArgumentException('email is invalid. Leave it blank if unavailable.');
             }

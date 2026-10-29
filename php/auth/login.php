@@ -21,14 +21,16 @@ if (
     exit;
 }
 
-$studentNumber = trim($_POST['student_number'] ?? '');
+$studentNumber = $_POST['student_number'] ?? '';
 $loginPassword = $_POST['password'] ?? '';
-
-if ($studentNumber === '' || $loginPassword === '') {
-    $_SESSION['login_error'] = 'Enter your student number and password.';
+if (!is_string($studentNumber) || !is_string($loginPassword)
+    || !mb_check_encoding($studentNumber, 'UTF-8') || mb_strlen($studentNumber, 'UTF-8') > 30
+    || trim($studentNumber) === '' || $loginPassword === '' || strlen($loginPassword) > 72) {
+    $_SESSION['login_error'] = 'Enter a valid student number and password.';
     header('Location: ../../login.php');
     exit;
 }
+$studentNumber = trim($studentNumber);
 
 require __DIR__ . '/../../db.php';
 
@@ -49,6 +51,8 @@ if (
     password_verify($loginPassword, $student['password_hash'])
 ) {
     session_regenerate_id(true);
+    // Replace all previous account data, including the other account role.
+    $_SESSION = [];
 
     $_SESSION['student_id'] = (int) $student['id'];
     $_SESSION['csrf'] = bin2hex(random_bytes(32));
