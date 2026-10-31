@@ -214,23 +214,102 @@
             </div>
         </div>
     </div>
-    <div class="pending-status-table">
-        <div class="table-header">
-            <div class="table-header-text">
-                <div class="header-table-icon">
-                   <img src="..//asset/logo/2c8f1bb4-0644-4e28-8243-d59799e254b5.png">
-                </div>
-                <div class="header-text">
-                    <h1>My Requests</h1>
-                    <p>Track the status of your submitted requests.</p>
-                </div>
-                <div class="table-header-searhbar">
-                   
-                        <input type="text"
-                                placeholder="Search request type or reference...">
-                  
-                </div>
-            </div>
+    <section class="my-requests-card">
+    <div class="my-requests-header">
+        <div class="my-requests-title">
+            <h2><span class="requests-title-icon"><img src="..//asset/logo/2c8f1bb4-0644-4e28-8243-d59799e254b5.png" alt=""></span> My Requests</h2>
+            <p>Track the status of your submitted requests.</p>
+        </div>
+
+        <div class="my-requests-controls">
+            <input
+                type="search"
+                class="requests-search"
+                placeholder="Search request type or reference..."
+                aria-label="Search requests"
+            >
+
+            <select class="requests-status-filter" aria-label="Filter by status">
+                <option>All Status</option>
+                <option>Pending</option>
+                <option>Approved</option>
+                <option>Processing</option>
+                <option>Rejected</option>
+            </select>
         </div>
     </div>
+
+    <div class="requests-table-wrap">
+        <table class="my-requests-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Reference No.</th>
+                    <th>Request Type</th>
+                    <th>Date Requested</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>REQ-2026-0001</td>
+                    <td>Module Request</td>
+                    <td>Sep 15, 2026</td>
+                    <td><span class="request-status pending">● Pending</span></td>
+                    <td><button type="button" class="request-action view">View</button></td>
+                </tr>
+
+                <tr>
+                    <td>2</td>
+                    <td>REQ-2026-0002</td>
+                    <td>Grade Record Request</td>
+                    <td>Sep 10, 2026</td>
+                    <td><span class="request-status approved">● Approved</span></td>
+                    <td><button type="button" class="request-action download">↓ Download</button></td>
+                </tr>
+
+                <tr>
+                    <td>3</td>
+                    <td>REQ-2026-0003</td>
+                    <td>Certificate of Enrollment</td>
+                    <td>Sep 05, 2026</td>
+                    <td><span class="request-status processing">● Processing</span></td>
+                    <td><button type="button" class="request-action view">View</button></td>
+                </tr>
+
+                <tr>
+                    <td>4</td>
+                    <td>REQ-2026-0004</td>
+                    <td>Good Moral Certificate</td>
+                    <td>Aug 28, 2026</td>
+                    <td><span class="request-status rejected">● Rejected</span></td>
+                    <td><button type="button" class="request-action view">View</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="my-requests-footer">
+        <label class="requests-entries">
+            Show
+            <select aria-label="Number of entries">
+                <option>10</option>
+                <option>25</option>
+                <option>50</option>
+            </select>
+            entries
+        </label>
+
+        <nav class="requests-pagination" aria-label="Request pages">
+            <button type="button" aria-label="Previous page">‹</button>
+            <button type="button" class="current-page">1</button>
+            <button type="button">2</button>
+            <button type="button">3</button>
+            <button type="button" aria-label="Next page">›</button>
+        </nav>
+    </div>
+</section>
 </div>

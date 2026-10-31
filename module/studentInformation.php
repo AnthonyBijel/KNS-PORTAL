@@ -77,8 +77,10 @@ $profilePhoto = !empty($student['profile_photo'])
 
 <div class="student-info-container">
 
-    <h1>STUDENT INFORMATION</h1>
-    <p>View your personal and academic details.</p>
+    <div class="student-info-header">
+        <h1>STUDENT INFORMATION</h1>
+        <p>View your personal and academic details.</p>
+    </div>
 
     <div class="profile">
 
@@ -110,13 +112,9 @@ $profilePhoto = !empty($student['profile_photo'])
             <h1><?= e($fullName) ?></h1>
             <p><?= e($student['course']) ?></p>
             <p>KOLEHIYO NG SUBIC</p>
-        </div>
-
-        <div class="student-status">
-            <img src="../asset/logo/graduate-hat.png" alt="">
-            <div class="current-status">
-                <h1>STUDENT STATUS</h1>
-                <p><?= e($student['status']) ?></p>
+            <div class="profile-status" aria-label="Student status">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span><?= e($student['status']) ?></span>
             </div>
         </div>
 
