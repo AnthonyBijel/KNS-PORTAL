@@ -123,6 +123,8 @@ try {
     exit('Unable to load the admin profile. Please try again.');
 }
 
+$photoFeedback = $_SESSION['admin_photo_feedback'] ?? null;
+unset($_SESSION['admin_photo_feedback']);
 $escape = static fn($value): string => htmlspecialchars((string) ($value ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 $photoPath = str_replace('\\', '/', (string) ($profile['profile_photo'] ?? ''));
 $profilePhoto = '../asset/logo/user (1).png';
@@ -141,9 +143,29 @@ if (
     </div>
 
     <div class="profile">
-        <div class="person-profile">
-            <img src="<?= $escape($profilePhoto) ?>" alt="Admin profile photo">
-        </div>
+        <form id="admin-photo-form" class="admin-photo-form"
+            action="../php/admin/upload_profile_photo.php" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="csrf" value="<?= $escape($_SESSION['csrf']) ?>">
+            <input type="hidden" name="MAX_FILE_SIZE" value="2097152">
+            <input id="admin-profile-photo" type="file" name="profile_photo"
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                aria-label="Choose a new profile photo" hidden required>
+            <button type="button" class="person-profile admin-photo-button" data-choose-photo
+                aria-label="Change profile photo. Your selected photo is saved automatically."
+                aria-describedby="admin-photo-help" title="Change profile photo (JPG, PNG, or WEBP; maximum 2 MB)">
+                <img src="<?= $escape($profilePhoto) ?>" alt="Admin profile photo" data-admin-photo>
+                <span class="admin-photo-overlay" aria-hidden="true"><span data-photo-label>Change photo</span></span>
+                <span class="admin-photo-badge" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                        <path d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-1.5-2Z"></path>
+                        <circle cx="12" cy="13" r="3"></circle>
+                    </svg>
+                </span>
+            </button>
+            <span id="admin-photo-help" class="admin-photo-help">Click your profile photo to choose a replacement.
+                It saves automatically. JPG/JPEG, PNG, or WEBP; maximum 2 MB, 4096 pixels per side, and 12 megapixels.</span>
+        </form>
         <div class="student-name">
             <h1 data-admin-name><?= $escape($profile['admin_name']) ?></h1>
             <p data-admin-role><?= $escape($profile['role']) ?></p>
@@ -155,6 +177,8 @@ if (
         </div>
     </div>
 
+    <p id="admin-photo-message" class="admin-photo-message" role="status" aria-live="polite"
+        data-state="<?= !empty($photoFeedback['ok']) ? 'success' : 'error' ?>"><?= $escape($photoFeedback['message'] ?? '') ?></p>
     <section class="student-information">
         <div class="academic-info">
             <div class="grad-hat">

@@ -13,11 +13,11 @@ const ADMIN_PAGES = {
     },
     "requests.html": {
         navigation: ".may-request-button",
-        initializers: [],
+        initializers: [initRequestDetails],
     },
     "profile.php": {
         navigation: ".student-information-button",
-        initializers: [initAdminProfile],
+        initializers: [initAdminProfile, initAdminPhoto],
     },
 };
 
@@ -80,6 +80,64 @@ function updateNavigation(activeSelector) {
     });
 }
 
+// Requests: bind popup controls after the page fragment has been inserted.
+function initRequestDetails(container) {
+    const modal = container.querySelector("#requestDetailsModal");
+    if (!modal) return;
+
+    const closeButton = modal.querySelector(".rd-close");
+    let trigger = null;
+
+    function closeModal() {
+        if (!modal.classList.contains("is-open")) return;
+
+        modal.classList.remove("is-open");
+        modal.setAttribute("aria-hidden", "true");
+        if (trigger && trigger.isConnected) trigger.focus();
+    }
+
+    container.querySelectorAll(".request-eye-btn").forEach(button => {
+        button.setAttribute("aria-haspopup", "dialog");
+        button.setAttribute("aria-controls", modal.id);
+        button.addEventListener("click", () => {
+            trigger = button;
+            modal.classList.add("is-open");
+            modal.setAttribute("aria-hidden", "false");
+            if (closeButton) closeButton.focus();
+        });
+    });
+
+    if (closeButton) closeButton.addEventListener("click", closeModal);
+    modal.addEventListener("click", event => {
+        if (event.target === modal) closeModal();
+    });
+
+    modal.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            event.preventDefault();
+            closeModal();
+            return;
+        }
+
+        if (event.key !== "Tab") return;
+
+        const controls = Array.from(modal.querySelectorAll(
+            'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex="0"]'
+        )).filter(element => element.getClientRects().length > 0);
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (!first) return;
+
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    });
+}
+
 // Overview: announcement categories and expandable descriptions.
 function initAnnouncements(container) {
 
@@ -130,6 +188,78 @@ function initMediaPreview(container) {
         media.src = mediaPreviewURL;
         preview.appendChild(media);
     };
+}
+
+// The profile fragment is inserted with innerHTML, so bind its controls after loading it.
+function initAdminPhoto(container) {
+    const form = container.querySelector("#admin-photo-form");
+    if (!form) return;
+    const input = form.querySelector("[name='profile_photo']");
+    const button = form.querySelector("[data-choose-photo]");
+    const label = button.querySelector("[data-photo-label]");
+    const message = container.querySelector("#admin-photo-message");
+    const image = button.querySelector("[data-admin-photo]");
+    const buttonLabel = button.getAttribute("aria-label");
+    let uploading = false;
+
+    button.addEventListener("click", () => {
+        if (!uploading) input.click();
+    });
+    input.addEventListener("change", () => {
+        if (!uploading && input.files.length) form.requestSubmit();
+    });
+
+    form.addEventListener("submit", async event => {
+        event.preventDefault();
+        if (uploading) return;
+        const file = input.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) {
+            message.textContent = "Choose a photo at most 2 MB in size.";
+            message.dataset.state = "error";
+            input.value = "";
+            return;
+        }
+        const body = new FormData(form);
+        uploading = true;
+        button.disabled = true;
+        input.disabled = true;
+        form.setAttribute("aria-busy", "true");
+        button.setAttribute("aria-label", "Uploading your profile photo");
+        label.textContent = "Uploading...";
+        message.textContent = "Saving your profile photo...";
+        message.dataset.state = "pending";
+        try {
+            const response = await fetch(form.action, {
+                method: "POST",
+                credentials: "same-origin",
+                headers: { Accept: "application/json" },
+                body,
+            });
+            if (response.status === 401) {
+                window.location.assign("../login.php");
+                return;
+            }
+            const data = await response.json();
+            if (!response.ok || !data.ok) {
+                throw new Error(data.message || "Unable to save your photo.");
+            }
+            image.src = "../" + data.photo_path;
+            message.textContent = data.message;
+            message.dataset.state = "success";
+        } catch (error) {
+            message.textContent = error.message || "Unable to upload your photo. Please try again.";
+            message.dataset.state = "error";
+        } finally {
+            input.value = ""; // Selecting the same file again must still trigger a change.
+            uploading = false;
+            button.disabled = false;
+            input.disabled = false;
+            form.removeAttribute("aria-busy");
+            button.setAttribute("aria-label", buttonLabel);
+            label.textContent = "Change photo";
+        }
+    });
 }
 
 // Profile: save the signed-in admin's details and refresh the dashboard labels.

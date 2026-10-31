@@ -156,7 +156,12 @@
                         <td>Sep 15, 2026</td>
                         <td><span class="request-status-badge badge-pending">Pending</span></td>
                         <td>
-                            <button class="request-view-btn" type="button" aria-label="View request 1">⌕</button>
+                            <button type="button" class="request-eye-btn" aria-label="View request details">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
                         </td>
                     </tr>
 
@@ -169,7 +174,12 @@
                         <td>Sep 14, 2026</td>
                         <td><span class="request-status-badge badge-pending">Pending</span></td>
                         <td>
-                            <button class="request-view-btn" type="button" aria-label="View request 2">⌕</button>
+                            <button type="button" class="request-eye-btn" aria-label="View request details">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
                         </td>
                     </tr>
 
@@ -182,7 +192,12 @@
                         <td>Sep 13, 2026</td>
                         <td><span class="request-status-badge badge-processing">Processing</span></td>
                         <td>
-                            <button class="request-view-btn" type="button" aria-label="View request 3">⌕</button>
+                            <button type="button" class="request-eye-btn" aria-label="View request details">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
                         </td>
                     </tr>
 
@@ -195,7 +210,12 @@
                         <td>Sep 12, 2026</td>
                         <td><span class="request-status-badge badge-pending">Pending</span></td>
                         <td>
-                            <button class="request-view-btn" type="button" aria-label="View request 4">⌕</button>
+                            <button type="button" class="request-eye-btn" aria-label="View request details">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
                         </td>
                     </tr>
 
@@ -208,7 +228,12 @@
                         <td>Sep 11, 2026</td>
                         <td><span class="request-status-badge badge-approved">Approved</span></td>
                         <td>
-                            <button class="request-view-btn" type="button" aria-label="View request 5">⌕</button>
+                            <button type="button" class="request-eye-btn" aria-label="View request details">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
                         </td>
                     </tr>
 
@@ -221,7 +246,12 @@
                         <td>Sep 10, 2026</td>
                         <td><span class="request-status-badge badge-pending">Pending</span></td>
                         <td>
-                            <button class="request-view-btn" type="button" aria-label="View request 6">⌕</button>
+                            <button type="button" class="request-eye-btn" aria-label="View request details">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
                         </td>
                     </tr>
 
@@ -234,7 +264,12 @@
                         <td>Sep 09, 2026</td>
                         <td><span class="request-status-badge badge-rejected">Rejected</span></td>
                         <td>
-                            <button class="request-view-btn" type="button" aria-label="View request 7">⌕</button>
+                            <button type="button" class="request-eye-btn" aria-label="View request details">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
                         </td>
                     </tr>
 
@@ -247,7 +282,12 @@
                         <td>Sep 08, 2026</td>
                         <td><span class="request-status-badge badge-processing">Processing</span></td>
                         <td>
-                            <button class="request-view-btn" type="button" aria-label="View request 8">⌕</button>
+                            <button type="button" class="request-eye-btn" aria-label="View request details">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
                         </td>
                     </tr>
                 </tbody>
@@ -281,4 +321,110 @@
 
     </div>
 
+
+    <div class="rd-overlay" id="requestDetailsModal" aria-hidden="true">
+    <section class="rd-card" role="dialog" aria-modal="true"
+             aria-labelledby="rdTitle">
+
+        <header class="rd-header">
+            <h2 id="rdTitle">Request Details</h2>
+            <button type="button" class="rd-close" aria-label="Close">&times;</button>
+        </header>
+
+        <div class="rd-grid">
+            <!-- Kaliwang column -->
+            <div class="rd-column">
+                <section class="rd-panel">
+                    <h3>
+                        <span class="rd-heading-icon">♟</span>
+                        Student Information
+                    </h3>
+
+                    <div class="rd-info-row"><span>Name:</span><strong>John Michael R. Abaca</strong></div>
+                    <div class="rd-info-row"><span>Student Number:</span><strong>2026-0001</strong></div>
+                    <div class="rd-info-row"><span>Course:</span><strong>BSCS</strong></div>
+                    <div class="rd-info-row"><span>Year Level:</span><strong>1st Year</strong></div>
+                    <div class="rd-info-row"><span>Section:</span><strong>BSCS-1A</strong></div>
+                    <div class="rd-info-row"><span>Email:</span><strong>john.abaca@email.com</strong></div>
+                </section>
+
+                <section class="rd-panel rd-request-panel">
+                    <h3>
+                        <span class="rd-heading-icon">▦</span>
+                        Request Information
+                    </h3>
+
+                    <div class="rd-info-row"><span>▣ &nbsp; Reference No.:</span><strong>REQ-2026-0001</strong></div>
+                    <div class="rd-info-row"><span>▣ &nbsp; Request Type:</span><strong>Module Request</strong></div>
+                    <div class="rd-info-row"><span>▣ &nbsp; Subject:</span><strong>Data Structure and Algorithms</strong></div>
+                    <div class="rd-info-row"><span>▣ &nbsp; Academic Year:</span><strong>2026 - 2027</strong></div>
+                    <div class="rd-info-row"><span>▣ &nbsp; Semester:</span><strong>1st Semester</strong></div>
+                    <div class="rd-info-row"><span>◷ &nbsp; Date Requested:</span><strong>Sep 15, 2026 10:32 AM</strong></div>
+                    <div class="rd-info-row">
+                        <span>● &nbsp; Status:</span>
+                        <strong><span class="rd-status">Pending</span></strong>
+                    </div>
+
+                    <div class="rd-purpose">
+                        <strong>ⓘ &nbsp; Purpose / Details:</strong>
+                        <p>Requesting a copy of the module for Data Structure and Algorithms.</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Kanang column -->
+            <div class="rd-column">
+                <section class="rd-panel rd-attachment-panel">
+                    <h3>
+                        <span class="rd-heading-icon">♧</span>
+                        Student Attachments
+                    </h3>
+
+                    <div class="rd-attachment">
+                        <div class="rd-file-preview">▤</div>
+                        <div class="rd-file-info">
+                            <strong>valid_id.jpg</strong>
+                            <span>Sep 15, 2026 · 1.2 MB</span>
+                        </div>
+                        <button type="button" class="rd-view-button">View</button>
+                    </div>
+                </section>
+
+                <section class="rd-panel rd-response-panel">
+                    <h3>
+                        <span class="rd-heading-icon">♧</span>
+                        Admin Response / Attach File
+                    </h3>
+
+                    <p class="rd-help-text">
+                        Upload the requested file (for documents like COE, Good Moral, etc.).
+                        For Module and Records, the system will send the document from the
+                        database after approval.
+                    </p>
+
+                    <label class="rd-dropzone" for="rdResponseFile">
+                        <input type="file" id="rdResponseFile"
+                               accept=".pdf,.jpg,.jpeg,.png" multiple>
+                        <span class="rd-upload-icon">⇧</span>
+                        <strong>Click to upload file(s) or drag and drop</strong>
+                        <small>PDF, JPG, PNG (Max 5MB each)</small>
+                    </label>
+
+                    <label class="rd-remarks-label" for="rdRemarks">
+                        Remarks <span>(Optional)</span>
+                    </label>
+                    <textarea id="rdRemarks" maxlength="500"
+                              placeholder="Add remarks for the student..."></textarea>
+                    <div class="rd-char-count">0/500</div>
+
+                    <div class="rd-actions">
+                        <button type="button" class="rd-button rd-reject">× &nbsp; Reject</button>
+                        <button type="button" class="rd-button rd-processing">◷ &nbsp; Mark as Processing</button>
+                        <button type="button" class="rd-button rd-approve">✓ &nbsp; Approve &amp; Send</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </section>
+</div>
 </section>

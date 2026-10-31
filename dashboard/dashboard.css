@@ -403,7 +403,7 @@ html{
     flex-direction: column;
     justify-content: center;
     padding: 15px 15px;
-    margin: 70px 10px 0px 10px;
+    margin: auto 10px 0px 10px;
     border-style: solid;
     border-width: 1px;
     border-color: #ffffff30;
@@ -1547,8 +1547,25 @@ html{
     width: 100%;
     height: auto;
     margin: 0;
-    padding: 30px 10px;
+    padding: 0;
     } 
+.student-info-header {
+    width: 100%;
+    height: 100px;
+    background: linear-gradient(135deg, #0d4b2e, #27835a);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 10px;
+    margin: 0;
+}
+
+.student-info-header h1,
+.student-info-header p {
+    margin-bottom: 0;
+    color: #fff;
+}
     .student-info-container h1{
         font-size: 30px;
         margin: 0;
@@ -1562,14 +1579,17 @@ html{
     }           
     .profile{
         width: 100%;
-        height: 200px;
+        height: auto;
+        min-height: 200px;
         background-color: #ffffff;
         display: flex;
         flex-direction: row;
         align-items: center;
         padding: 10px 25px;
         border-radius: 10px;
-        margin-top: 30px;
+        margin-top: 10px;
+        gap: 16px;
+        flex-wrap: wrap;
         }
         .person-profile{
             display: flex;
@@ -1592,7 +1612,10 @@ html{
             display: flex;
             flex-direction: column;
             
-            width: 700px;
+            flex: 1 1 240px;
+            width: auto;
+            min-width: 0;
+            overflow-wrap: anywhere;
             margin-left: 10px;
             }
             .student-name h1{
@@ -1602,41 +1625,37 @@ html{
                 font-size: 15px;
                 margin-bottom: 5px;
             }
-        .student-status{
-            display: flex;
-            flex-direction: row;
-            background-color: #e6e6e669;
-            width: 230px;
-            height: 90px;
-            margin-left: 50px;
-            padding: 10px 15px;
-            align-items: center;
-            border-radius: 10px;
-             }
-             .student-status img{
-                width: 45px;
-                height: 45px;
-                background-color: #2ed34158;
-                border-radius: 50%;
-                padding: 5px;
-             }
-            .current-status{
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                }
-                .current-status h1{
-                    font-size: 12px;
-                    font-weight: 500;
-                }
-                .current-status p{
-                    font-size: 12px;
-                    background-color: #00ff0099;
-                    padding: 5px 10px;
-                    font-weight: 600;
-                    border-radius: 20px;
-                }
+/* Match the administrator profile badge below the student details. */
+.student-info-container .profile-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    margin-left: 10px;
+    padding: 8px 14px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 999px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #15803d;
+}
+
+.student-info-container .status-dot {
+    flex-shrink: 0;
+    width: 9px;
+    height: 9px;
+    background: #22c55e;
+    border-radius: 50%;
+    animation: student-profile-pulse 1.5s infinite;
+}
+
+@keyframes student-profile-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+    70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
     .student-information{
         width: 100%;
         height: auto;
@@ -1815,3 +1834,247 @@ html{
 .assessment-result-details { display: block; margin-top: 4px; color: #64748b; font-size: 12px; }
 .main-results .grades-table .academic-empty-row { cursor: default; }
 .assessment-button button:disabled { cursor: default; opacity: .6; }
+
+
+.my-requests-card {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px;
+    margin-top: 16px;
+    background: #fff;
+    border: 1px solid #e4e9e9;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(20, 50, 45, 0.07);
+    font-family: inherit;
+    color: #263238;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.my-requests-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.my-requests-title h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.requests-title-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    color: #263b3a;
+    font-size: 20px;
+}
+
+.requests-title-icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.my-requests-title p {
+    margin: 4px 0 0;
+    color: #7a8588;
+    font-size: 12px;
+}
+
+.my-requests-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.requests-search,
+.requests-status-filter {
+    height: 38px;
+    box-sizing: border-box;
+    padding: 0 12px;
+    color: #344247;
+    background: #fff;
+    border: 1px solid #dfe5e6;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.requests-search {
+    width: 280px;
+    max-width: 100%;
+}
+
+.requests-status-filter {
+    width: 140px;
+}
+
+.requests-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.my-requests-table {
+    width: 100%;
+    min-width: 650px;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.my-requests-table thead {
+    background: #eaf3f1;
+}
+
+.my-requests-table th {
+    padding: 12px 14px;
+    color: #354448;
+    font-weight: 700;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.my-requests-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #e9eeee;
+    color: #39464a;
+    white-space: nowrap;
+}
+
+.my-requests-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.request-status {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.request-status.pending {
+    color: #8a6500;
+    background: #fff0bd;
+}
+
+.request-status.approved {
+    color: #087244;
+    background: #d7f4e4;
+}
+
+.request-status.processing {
+    color: #1455a4;
+    background: #dceaff;
+}
+
+.request-status.rejected {
+    color: #b4232d;
+    background: #ffe0e1;
+}
+
+.request-action {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+}
+
+.request-action.view {
+    color: #2465a8;
+}
+
+.request-action.download {
+    color: #1766aa;
+}
+
+.my-requests-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+    color: #59666a;
+    font-size: 14px;
+    flex-wrap: wrap;
+}
+
+.requests-entries {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.requests-entries select {
+    height: 34px;
+    padding: 0 10px;
+    background: #fff;
+    border: 1px solid #dfe5e6;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.requests-pagination {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.requests-pagination button {
+    width: 34px;
+    height: 34px;
+    color: #526064;
+    background: #fff;
+    border: 1px solid #e0e6e7;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 16px;
+}
+
+.requests-pagination button.current-page {
+    color: #fff;
+    background: #008765;
+    border-color: #008765;
+}
+
+@media (max-width: 700px) {
+    .my-requests-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .my-requests-controls {
+        width: 100%;
+    }
+
+    .requests-search {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+    }
+
+    .my-requests-footer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
