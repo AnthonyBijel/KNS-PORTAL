@@ -1,0 +1,140 @@
+/* Request Messenger is a separate panel; the existing Request Details card keeps its width and styles. */
+.rd-shell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+    min-width: 0;
+}
+.rd-shell > .rd-card { flex-shrink: 0; }
+.rm-panel[hidden], .rm-student-overlay[hidden] { display: none !important; }
+.rm-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+    width: 360px;
+    max-width: 100%;
+    height: min(660px, 92vh);
+    overflow: hidden;
+    color: #263c32;
+    background: #fff;
+    border: 1px solid #dce7df;
+    border-radius: 13px;
+    box-shadow: 0 18px 55px rgba(0,0,0,.22);
+    font: 13px/1.45 Arial, Helvetica, sans-serif;
+    box-sizing: border-box;
+}
+.rm-panel *, .rm-student-overlay { box-sizing: border-box; }
+.rm-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px;
+    color: #fff;
+    background: #0d6545;
+}
+.rm-header h2 { margin: 0 0 7px; color: inherit; font-size: 17px; }
+.rm-student { display: block; overflow-wrap: anywhere; font-size: 13px; }
+.rm-reference { margin: 3px 0 0; font-size: 11px; overflow-wrap: anywhere; color: #e2f2e8; }
+.rm-close { flex-shrink: 0; padding: 0 3px; color: #fff; background: transparent; border: 0; font-size: 27px; line-height: 1; cursor: pointer; }
+.rm-history { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px; background: #f1f7f3; }
+.rm-messages { display: flex; flex-direction: column; gap: 12px; }
+.rm-message { align-self: flex-start; max-width: 90%; padding: 10px 12px; background: #fff; border: 1px solid #dde8df; border-radius: 12px 12px 12px 3px; }
+.rm-message.rm-mine { align-self: flex-end; background: #dcf2e4; border-color: #b9dfc7; border-radius: 12px 12px 3px 12px; }
+.rm-sender { display: block; color: #17623f; font-size: 11px; overflow-wrap: anywhere; }
+.rm-body { margin: 5px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.rm-time { display: block; margin-top: 6px; color: #62766a; font-size: 10px; }
+.rm-empty { margin: 25px 0; text-align: center; color: #64786b; }
+.rm-older { display: block; margin: 0 auto 12px; padding: 5px 10px; color: #17623f; border: 1px solid #c7ddcf; border-radius: 5px; background: #fff; cursor: pointer; }
+.rm-older[hidden] { display: none; }
+.rm-file { margin-top: 8px; overflow: hidden; border: 1px solid #cbded1; border-radius: 7px; background: #fff; }
+.rm-photo-link { display: block; }
+.rm-photo { display: block; width: 100%; max-height: 220px; object-fit: contain; background: #e9f1eb; }
+.rm-file-link { display: flex; flex-direction: column; gap: 3px; padding: 8px; color: #155f40; text-decoration: none; }
+.rm-file-link:hover { text-decoration: underline; }
+.rm-file-name { overflow-wrap: anywhere; font-weight: 600; }
+.rm-file-link small { color: #6b7c70; font-size: 10px; }
+.rm-notice { margin: 0; padding: 0 12px; color: #7b4321; font-size: 12px; overflow-wrap: anywhere; }
+.rm-notice:not(:empty) { padding-top: 8px; padding-bottom: 8px; }
+.rm-compose { padding: 12px; border-top: 1px solid #dfe9e1; background: #fff; }
+.rm-input-label { display: block; color: #326047; font-size: 11px; font-weight: 600; }
+.rm-input { display: block; width: 100%; min-height: 58px; max-height: 160px; resize: vertical; margin-top: 4px; padding: 9px; border: 1px solid #c8d9cd; border-radius: 7px; color: #263c32; background: #fff; font: 13px/1.4 Arial, Helvetica, sans-serif; }
+.rm-compose-actions { display: flex; align-items: center; gap: 7px; margin-top: 8px; }
+.rm-compose-actions small { flex: 1; color: #738578; font-size: 10px; }
+.rm-icon-button { display: inline-grid; place-items: center; width: 29px; height: 30px; padding: 5px; border: 1px solid #d7e4da; border-radius: 6px; background: #f2f8f4; color: #17623f; cursor: pointer; }
+.rm-icon-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.rm-send { padding: 8px 14px; border: 0; border-radius: 6px; background: #087b52; color: #fff; font: 700 12px Arial, Helvetica, sans-serif; cursor: pointer; }
+.rm-send:hover { background: #076340; }
+.rm-selected { display: grid; gap: 5px; }
+.rm-selected:not(:empty) { margin-bottom: 8px; }
+.rm-selected-file { display: flex; align-items: center; gap: 6px; padding: 5px; border: 1px solid #dae6dd; border-radius: 5px; font-size: 11px; }
+.rm-selected-file img { width: 34px; height: 34px; object-fit: cover; border-radius: 3px; }
+.rm-selected-file span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.rm-selected-file button { border: 0; background: transparent; color: #9a3030; font-size: 20px; cursor: pointer; }
+.rm-panel button:disabled { opacity: .6; cursor: default; }
+.rm-panel :focus-visible { outline: 2px solid #3da66b; outline-offset: 2px; }
+.rm-student-overlay { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(8,22,20,.58); }
+.rm-row-button { gap: 6px; }
+.rm-row-button svg { width: 16px; height: 16px; fill: currentColor; }
+.request-feedback { margin: 8px 0; color: #52665a; font: 12px/1.5 Arial, Helvetica, sans-serif; }
+.rd-status[data-status="approved"] { background: #d7f4e4; color: #087244; }
+.rd-status[data-status="processing"] { background: #dceaff; color: #1455a4; }
+.rd-status[data-status="rejected"] { background: #ffe0e1; color: #b4232d; }
+.rd-attachment a.rd-view-button { text-decoration: none; font-size: 13px; }
+[data-request-attachments] > .rd-attachment + .rd-attachment { margin-top: 7px; }
+#studentRequestForm .file-request-selection { cursor: pointer; }
+#studentRequestForm .file-request-selection.is-selected { outline: 2px solid #087b52; background: #eaf6ee; }
+#studentRequestForm .details-type input { width: 390px; max-width: 100%; height: 30px; padding: 5px; border: 1px solid #a9a9a9; border-radius: 5px; font: 600 12px Arial, Helvetica, sans-serif; }
+#studentRequestForm [data-submission-feedback] { margin: 12px 0; color: #17623f; font-size: 13px; }
+@media (max-width: 1431px) {
+    .rd-overlay.has-messenger { align-items: flex-start; overflow-y: auto; }
+    .has-messenger .rd-shell { flex-direction: column; align-items: center; }
+    .has-messenger .rm-panel { width: min(600px, 100%); }
+}
+@media (max-width: 700px) {
+    .rm-student-overlay { padding: 10px; }
+    .rm-panel { height: min(660px, 95vh); }
+    #studentRequestForm .details-section-box { flex-direction: column; gap: 10px; }
+    #studentRequestForm .details-type input, #studentRequestForm .details-type select { width: 100%; }
+}
+
+/* Status-action feedback floats outside the card so its layout and width stay intact. */
+.rm-action-notice {
+    position: fixed;
+    z-index: 1;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    width: min(560px, calc(100% - 36px));
+    padding: 12px 16px;
+    border: 1px solid #b9d8c5;
+    border-radius: 8px;
+    background: #f1faf4;
+    color: #17623f;
+    box-shadow: 0 5px 22px rgba(0,0,0,.16);
+    font: 13px/1.5 Arial, Helvetica, sans-serif;
+    overflow-wrap: anywhere;
+}
+.rm-action-notice[hidden], .rm-response-clear[hidden] { display: none !important; }
+.rm-action-notice[data-kind="error"] { background: #fff3ed; border-color: #edc7b6; color: #8a3421; }
+.rd-actions .rd-button:disabled { opacity: .55; cursor: default; }
+.rd-dropzone { position: relative; }
+.rd-dropzone.is-dragging { border-color: #087b52; background: #edf8f1; }
+.rd-dropzone.is-disabled { cursor: default; }
+.rm-response-clear {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: #e8f1eb;
+    color: #8a3421;
+    font-size: 20px;
+    line-height: 24px;
+    cursor: pointer;
+}

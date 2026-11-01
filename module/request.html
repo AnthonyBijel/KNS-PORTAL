@@ -3,12 +3,13 @@
         <h1>REQUEST</h1>
         <p>Submit and track your school-related request</p>
     </div>
-    <div class="request-main-container">
+    <form class="request-main-container" id="studentRequestForm">
         <div class="request-content-header">
             <h1>Submit a Request</h1>
             <p>Choose a request and fill out the details below</p>
         </div>
         <div class="request-type-box">
+            <input type="hidden" name="request_type" value="">
            
                 <p>Request Type</p>
             
@@ -42,7 +43,7 @@
                     </div>
                     
                     <div class="request-file-type">
-                        <h1>Certification of Enrollment</h1>
+                        <h1>Certificate of Enrollment</h1>
                         <p>Request for Certificate of Enrollment (COE).</p>
                     </div>
                 </div>
@@ -53,7 +54,7 @@
                     </div>
                     
                     <div class="request-file-type">
-                        <h1>Certificate of Godd Moral Character</h1>
+                        <h1>Good Moral Certificate</h1>
                         <p>Request of Good Moral Certificate</p>
                     </div>
                 </div>
@@ -112,31 +113,21 @@
                
 
                 <div class="details-type">
-                    <label for="">Academic Year</label>
-                    <select>
-                        <option value="">2025-2026</option>
-                        <option value="">2026-2027</option>
-                        <option value="">2027-2028</option>
-                        <option value="">2028-2029</option>
+                    <label for="requestAcademicYear">Academic Year</label>
+                    <select name="academic_year" id="requestAcademicYear" required><option value="">Choose academic year</option></select>
+                </div>
+
+                <div class="details-type">
+                    <label for="requestSemester">Semester</label>
+                    <select name="semester" id="requestSemester" required>
+                        <option value="">Choose semester</option>
+                        <option>1st Semester</option><option>2nd Semester</option><option>Summer</option>
                     </select>
                 </div>
 
                 <div class="details-type">
-                    <label for="">Semester</label>
-                    <select>
-                        <option value="">first Semester</option>
-                        <option value="">Second Semester</option>
-                    </select>
-                </div>
-
-                <div class="details-type">
-                    <label for="">Subject (if application)</label>
-                    <select>
-                        <option value="">subject</option>
-                        <option value="">subject</option>
-                        <option value="">subject</option>
-                        <option value="">subject</option>
-                    </select>
+                    <label for="requestSubject">Subject (if applicable)</label>
+                    <input type="text" name="subject" id="requestSubject" maxlength="255" placeholder="Enter subject (optional)">
                 </div>
                 
                     
@@ -144,7 +135,7 @@
             </div>
             <p>Purpose / Additional Details</p>
             <div class="details-input">
-                <textarea placeholder="Type your request details here...."></textarea>
+                <textarea name="purpose" maxlength="5000" required aria-label="Purpose or additional details" placeholder="Type your request details here...."></textarea>
             </div>
             <div class="attachment-support-container">
                 <div class="attachment-header">
@@ -153,7 +144,7 @@
                     </div>
                     <div class="attachment-header-text">
                         <h1>Attach Supporting Files (Optional)</h1>
-                        <p>Upload files if needed (PNG, JPG, PDF | Max 5MD each)</p>
+                        <p>Upload up to 3 supporting files (PNG, JPG, PDF | Max 5MB each)</p>
                     </div>
                 </div>
 
@@ -162,6 +153,7 @@
                         <input
                             type="file"
                             id="fileInput"
+                            name="attachments[]"
                             accept=".png,.jpg,.jpeg,.pdf"
                             multiple
                             hidden
@@ -208,12 +200,13 @@
                 </div>
                 
             </div>
+            <p data-submission-feedback role="status" aria-live="polite"></p>
             <div class="request-button">
-                <button class="cancelButton">Cancel</button>
-                <button class="submitButton">Submit</button>
+                <button type="reset" class="cancelButton">Cancel</button>
+                <button type="submit" class="submitButton" disabled>Submit</button>
             </div>
         </div>
-    </div>
+    </form>
     <section class="my-requests-card">
     <div class="my-requests-header">
         <div class="my-requests-title">
@@ -252,43 +245,7 @@
                 </tr>
             </thead>
 
-            <tbody>
-                <tr>
-                    <td>1</td>
-                    <td>REQ-2026-0001</td>
-                    <td>Module Request</td>
-                    <td>Sep 15, 2026</td>
-                    <td><span class="request-status pending">● Pending</span></td>
-                    <td><button type="button" class="request-action view">View</button></td>
-                </tr>
-
-                <tr>
-                    <td>2</td>
-                    <td>REQ-2026-0002</td>
-                    <td>Grade Record Request</td>
-                    <td>Sep 10, 2026</td>
-                    <td><span class="request-status approved">● Approved</span></td>
-                    <td><button type="button" class="request-action download">↓ Download</button></td>
-                </tr>
-
-                <tr>
-                    <td>3</td>
-                    <td>REQ-2026-0003</td>
-                    <td>Certificate of Enrollment</td>
-                    <td>Sep 05, 2026</td>
-                    <td><span class="request-status processing">● Processing</span></td>
-                    <td><button type="button" class="request-action view">View</button></td>
-                </tr>
-
-                <tr>
-                    <td>4</td>
-                    <td>REQ-2026-0004</td>
-                    <td>Good Moral Certificate</td>
-                    <td>Aug 28, 2026</td>
-                    <td><span class="request-status rejected">● Rejected</span></td>
-                    <td><button type="button" class="request-action view">View</button></td>
-                </tr>
-            </tbody>
+            <tbody><tr><td colspan="6">Loading requests…</td></tr></tbody>
         </table>
     </div>
 
@@ -303,13 +260,7 @@
             entries
         </label>
 
-        <nav class="requests-pagination" aria-label="Request pages">
-            <button type="button" aria-label="Previous page">‹</button>
-            <button type="button" class="current-page">1</button>
-            <button type="button">2</button>
-            <button type="button">3</button>
-            <button type="button" aria-label="Next page">›</button>
-        </nav>
+        <nav class="requests-pagination" aria-label="Request pages"></nav>
     </div>
 </section>
 </div>

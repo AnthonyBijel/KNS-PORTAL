@@ -2,8 +2,9 @@
 let latestPageRequest = 0;
 let announcementResizeObserver = null;
 let academicResultsCleanup = null;
+let requestMessengerCleanup = null;
 
-async function loadPage(page) {
+async function loadPage(page, context = {}) {
     const container = document.getElementById("main-content-contianer");
     if (!container) return;
 
@@ -30,21 +31,47 @@ async function loadPage(page) {
             academicResultsCleanup();
             academicResultsCleanup = null;
         }
+        requestMessengerCleanup?.();
+        requestMessengerCleanup = null;
         container.innerHTML = html;
         initAnnouncement(container);
         academicResultsCleanup = initAcademicResults(container);
         initStudentPhoto(container);
+        requestMessengerCleanup = window.KNSRequests.init(container, "student");
+        if (context.fromNotification) {
+            const target = page.includes("overview.php") ? ".overview-button" : ".may-request-button";
+            document.querySelectorAll(".overview-button,.results-button,.may-request-button,.student-information-button")
+                .forEach(button => button.classList.toggle("selected", button.matches(target)));
+        }
+        if (context.announcementId) {
+            const post = container.querySelector('[data-announcement-id="' + Number(context.announcementId) + '"]');
+            if (!post) throw new Error("This announcement is no longer available.");
+            const description = post.querySelector(".description-text");
+            const expand = post.querySelector(".see-more-btn");
+            if (description && expand && !description.classList.contains("expanded")) expand.click();
+            post.classList.add("kn-announcement-target");
+            post.scrollIntoView({block: "start", behavior: "auto"});
+            setTimeout(() => post.classList.remove("kn-announcement-target"), 6500);
+        }
+        if (context.requestId) {
+            const opened = await requestMessengerCleanup?.openConversation(Number(context.requestId));
+            if (!opened && requestId === latestPageRequest) throw new Error("Unable to open the request conversation.");
+        }
+        return true;
     } catch (error) {
-        if (requestId !== latestPageRequest) return;
+        if (requestId !== latestPageRequest) return false;
         console.error("Error loading dashboard page:", error);
         if (academicResultsCleanup) {
             academicResultsCleanup();
             academicResultsCleanup = null;
         }
+        requestMessengerCleanup?.();
+        requestMessengerCleanup = null;
         const message = document.createElement("p");
         message.setAttribute("role", "alert");
         message.textContent = "Unable to load this page. Please try the menu button again.";
         container.replaceChildren(message);
+        return false;
     } finally {
         if (requestId === latestPageRequest) {
             container.setAttribute("aria-busy", "false");
@@ -133,6 +160,16 @@ if (initialStudentPage.includes("studentInformation")) {
     document.querySelector(".student-information-button")?.classList.add("selected");
 }
 loadPage(initialStudentPage);
+window.KNSNotifications.init({
+    navigate: async notification => {
+        const page = notification.type === "announcement" ? "../module/overview.php" : "../module/request.html";
+        const context = notification.type === "announcement"
+            ? {announcementId: notification.announcement_id, fromNotification: true}
+            : {requestId: notification.request_id, fromNotification: true};
+        const opened = await loadPage(page, context);
+        if (!opened) throw new Error("Unable to open this notification. Please try again.");
+    }
+});
 
 
 // The profile fragment is inserted with innerHTML, so bind its controls after loading it.
