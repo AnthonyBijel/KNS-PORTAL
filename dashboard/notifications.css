@@ -1,0 +1,108 @@
+/* Shared notification dropdown, matching the approved KNS Portal preview for both roles. */
+.student-notification-bell, .portal-notification-bell {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+}
+.student-notification-bell:hover, .portal-notification-bell:hover { background: #edf6f0; }
+.student-notification-bell .bell-logo, .portal-notification-bell .bell-logo { display: block; }
+.kn-bell-count {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    display: grid;
+    place-items: center;
+    border: 2px solid #fff;
+    border-radius: 20px;
+    background: #e33939;
+    color: #fff;
+    font: 700 10px/1 Arial, Helvetica, sans-serif;
+}
+.kns-notifications {
+    position: fixed;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    width: 420px;
+    height: 520px;
+    max-width: calc(100vw - 24px);
+    color: #263b32;
+    background: #fff;
+    border: 1px solid #c5e4ce;
+    border-radius: 14px;
+    box-shadow: 0 16px 44px rgba(18,49,32,.2);
+    font: 13px/1.45 Arial, Helvetica, sans-serif;
+    text-align: left;
+}
+.kns-notifications *, .kns-notifications { box-sizing: border-box; }
+.kns-notifications[hidden], .kns-notifications [hidden], .kn-bell-count[hidden] { display: none !important; }
+.kns-notifications::before {
+    content: "";
+    position: absolute;
+    top: -7px;
+    left: var(--kn-pointer, 85%);
+    width: 12px;
+    height: 12px;
+    margin-left: -6px;
+    background: #0d6545;
+    border-top: 1px solid #c5e4ce;
+    border-left: 1px solid #c5e4ce;
+    transform: rotate(45deg);
+}
+.kn-titlebar { position: relative; display: flex; align-items: center; gap: 10px; flex-shrink: 0; padding: 17px 16px; border-radius: 13px 13px 0 0; background: #0d6545; color: #fff; }
+.kn-title-icon { display: flex; width: 27px; height: 27px; }
+.kn-title-icon svg { width: 100%; height: 100%; }
+.kn-titlebar h2 { margin: 0; color: inherit; font-size: 20px; font-weight: 700; }
+.kn-new { padding: 3px 9px; border-radius: 20px; background: #278a47; color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.kn-close { margin-left: auto; padding: 0 2px; border: 0; background: transparent; color: #fff; font-size: 28px; line-height: 1; cursor: pointer; }
+.kn-toolbar { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; gap: 9px; padding: 13px 14px 6px; }
+.kn-tabs { display: flex; gap: 6px; }
+.kn-tab { padding: 7px 11px; border: 1px solid #e0e6e2; border-radius: 16px; background: #fafcfb; color: #526058; font: 700 12px Arial, Helvetica, sans-serif; white-space: nowrap; cursor: pointer; }
+.kn-tab.is-active { border-color: #def1e4; background: #def1e4; color: #096341; }
+.kn-read-all { padding: 4px 0; border: 0; background: transparent; color: #0d724b; font: 700 11px Arial, Helvetica, sans-serif; cursor: pointer; }
+.kn-read-all:disabled { opacity: .45; cursor: default; }
+.kn-scroll { flex: 1 1 auto; min-height: 0; max-height: 480px; overflow-y: auto; overscroll-behavior: contain; padding: 0 12px 5px; }
+.kns-notifications.is-expanded .kn-scroll { max-height: none; }
+.kn-date-group { margin: 13px 3px 9px; color: #6a7670; font-size: 12px; font-weight: 700; }
+.kn-item { display: flex; align-items: flex-start; gap: 11px; width: 100%; margin: 0 0 6px; padding: 12px 10px; border: 1px solid transparent; border-radius: 9px; background: #fff; color: #263b32; text-align: left; font: inherit; cursor: pointer; }
+.kn-item.is-unread { background: #edf8f1; }
+.kn-item:hover { border-color: #badfc6; background: #e7f4ec; }
+.kn-item:disabled { cursor: wait; }
+.kn-item-icon { display: grid; place-items: center; flex: 0 0 35px; width: 35px; height: 35px; border-radius: 50%; background: #d7efdc; color: #128037; }
+.kn-item-icon svg { width: 21px; height: 21px; }
+.kn-message { background: #dcedf9; color: #176b9f; }
+.kn-processing { background: #fff0ce; color: #ab790a; }
+.kn-rejected { background: #fbe1e0; color: #b63e37; }
+.kn-copy { display: flex; flex: 1; flex-direction: column; min-width: 0; gap: 3px; }
+.kn-item-title { color: #172d22; font-size: 13px; line-height: 1.4; }
+.kn-description { color: #42524a; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; white-space: normal; }
+.kn-context { color: #557460; font-size: 10px; overflow-wrap: anywhere; }
+.kn-time { color: #8a9690; font-size: 11px; }
+.kn-dot { flex: 0 0 8px; width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: #078151; }
+.kn-empty { padding: 28px 10px; margin: 0; color: #748279; text-align: center; }
+.kn-feedback { margin: 0; padding: 0 15px; color: #8a4327; font-size: 12px; overflow-wrap: anywhere; }
+.kn-feedback:not(:empty) { padding-top: 9px; padding-bottom: 9px; }
+.kn-footer { flex-shrink: 0; padding: 3px 15px 0; border-radius: 0 0 14px 14px; background: #fff; }
+.kn-history { display: block; width: 100%; padding: 12px 4px 13px; border: 0; border-top: 1px solid #e2eae5; background: transparent; color: #0b7048; font: 700 12px Arial, Helvetica, sans-serif; cursor: pointer; }
+.kn-history span { margin-left: 5px; font-size: 20px; line-height: 10px; vertical-align: -1px; }
+.kn-history:disabled { color: #819187; cursor: default; }
+.student-notification-bell:focus-visible, .portal-notification-bell:focus-visible, .kns-notifications :focus-visible { outline: 2px solid #32a46a; outline-offset: 2px; }
+.kn-announcement-target { outline: 3px solid #2d9b60; outline-offset: 4px; scroll-margin-top: 95px; }
+@media (max-width: 420px) {
+    .kn-titlebar { gap: 8px; padding: 14px 12px; }
+    .kn-titlebar h2 { font-size: 17px; }
+    .kn-new { padding: 3px 6px; font-size: 10px; }
+    .kn-toolbar { padding-left: 11px; padding-right: 11px; }
+    .kn-tab { padding: 7px 9px; font-size: 11px; }
+    .kn-read-all { max-width: 100px; font-size: 10px; text-align: right; }
+}

@@ -34,7 +34,7 @@ $categories = ["All", "Academic", "Events", "Guidelines", "Others"];
         }
         $descriptionId = 'announcement-description-' . $index;
         ?>
-        <div class="post-content" data-category="<?= $postCategory ?>">
+        <div class="post-content" data-category="<?= $postCategory ?>" data-announcement-id="<?= (int) $post['id'] ?>">
             <div class="post-user-name">
                 <div class="post-logo">
                     <img class="post-profile" src="../asset/logo/273844945_520328949759168_1274024641438937791_n.jpg" alt="Kolehiyo ng Subic">

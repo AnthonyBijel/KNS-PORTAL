@@ -65,6 +65,8 @@ $initials = strtoupper(
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard.org</title>
     <link rel="stylesheet" href="dashboard.css?v=<?= filemtime(__DIR__ . '/dashboard.css') ?>">
+    <link rel="stylesheet" href="../request/messenger.css?v=<?= filemtime(__DIR__ . '/../request/messenger.css') ?>">
+    <link rel="stylesheet" href="notifications.css?v=<?= filemtime(__DIR__ . '/notifications.css') ?>">
 </head>
 
 <body>
@@ -83,7 +85,11 @@ $initials = strtoupper(
         </div>
         <div class="header-right-box">
             <div class="bell-contianer">
-                <img class="bell-logo" src="../asset/logo/bell-notification-social-media.png">
+                <button type="button" class="student-notification-bell" id="studentNotificationsBell"
+                        aria-label="Notifications" aria-haspopup="dialog" aria-controls="studentNotificationPanel" aria-expanded="false">
+                    <img class="bell-logo" src="../asset/logo/bell-notification-social-media.png" alt="" aria-hidden="true">
+                    <span class="kn-bell-count" id="studentNotificationCount" hidden>0</span>
+                </button>
             </div>
             <div class="middle-text">
                 <div class="initial-box">
@@ -169,7 +175,9 @@ $initials = strtoupper(
 
 
 
-    <script src="dashboard.js?v=academic-course-20261029"></script>
+    <script src="../request/messenger.js?v=<?= filemtime(__DIR__ . '/../request/messenger.js') ?>"></script>
+    <script src="notifications.js?v=<?= filemtime(__DIR__ . '/notifications.js') ?>"></script>
+    <script src="dashboard.js?v=<?= filemtime(__DIR__ . '/dashboard.js') ?>"></script>
 </body>
 
 </html>

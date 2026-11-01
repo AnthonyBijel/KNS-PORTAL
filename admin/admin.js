@@ -24,10 +24,11 @@ const ADMIN_PAGES = {
 let latestPageRequest = 0;
 let mediaPreviewURL = null;
 let dashboardInitialized = false;
+let requestMessengerCleanup = null;
 
 // Page loading and navigation.
 // Keep loadPage global because the sidebar HTML calls it through onclick.
-async function loadPage(page) {
+async function loadPage(page, context = {}) {
     const container = document.getElementById("main-content-contianer");
     const config = Object.hasOwn(ADMIN_PAGES, page) ? ADMIN_PAGES[page] : null;
 
@@ -55,15 +56,26 @@ async function loadPage(page) {
         if (requestId !== latestPageRequest) return;
 
         clearMediaPreviewURL();
+        requestMessengerCleanup?.();
+        requestMessengerCleanup = null;
         container.innerHTML = html;
 
         // Page elements only exist after their HTML has been inserted.
         config.initializers.forEach(initialize => initialize(container));
         updateNavigation(config.navigation);
+        if (context.requestId) {
+            const opened = await requestMessengerCleanup?.openRequest(Number(context.requestId), {
+                messenger: context.openMessenger === true
+            });
+            if (requestId !== latestPageRequest) return false;
+            if (!opened) throw new Error("Unable to open the request notification.");
+        }
+        return true;
     } catch (error) {
         if (requestId === latestPageRequest) {
             console.error("Error loading admin page:", error);
         }
+        return false;
     } finally {
         if (requestId === latestPageRequest) {
             container.setAttribute("aria-busy", "false");
@@ -82,60 +94,7 @@ function updateNavigation(activeSelector) {
 
 // Requests: bind popup controls after the page fragment has been inserted.
 function initRequestDetails(container) {
-    const modal = container.querySelector("#requestDetailsModal");
-    if (!modal) return;
-
-    const closeButton = modal.querySelector(".rd-close");
-    let trigger = null;
-
-    function closeModal() {
-        if (!modal.classList.contains("is-open")) return;
-
-        modal.classList.remove("is-open");
-        modal.setAttribute("aria-hidden", "true");
-        if (trigger && trigger.isConnected) trigger.focus();
-    }
-
-    container.querySelectorAll(".request-eye-btn").forEach(button => {
-        button.setAttribute("aria-haspopup", "dialog");
-        button.setAttribute("aria-controls", modal.id);
-        button.addEventListener("click", () => {
-            trigger = button;
-            modal.classList.add("is-open");
-            modal.setAttribute("aria-hidden", "false");
-            if (closeButton) closeButton.focus();
-        });
-    });
-
-    if (closeButton) closeButton.addEventListener("click", closeModal);
-    modal.addEventListener("click", event => {
-        if (event.target === modal) closeModal();
-    });
-
-    modal.addEventListener("keydown", event => {
-        if (event.key === "Escape") {
-            event.preventDefault();
-            closeModal();
-            return;
-        }
-
-        if (event.key !== "Tab") return;
-
-        const controls = Array.from(modal.querySelectorAll(
-            'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex="0"]'
-        )).filter(element => element.getClientRects().length > 0);
-        const first = controls[0];
-        const last = controls[controls.length - 1];
-        if (!first) return;
-
-        if (event.shiftKey && document.activeElement === first) {
-            event.preventDefault();
-            last.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-            event.preventDefault();
-            first.focus();
-        }
-    });
+    requestMessengerCleanup = window.KNSRequests.init(container, "admin");
 }
 
 // Overview: announcement categories and expandable descriptions.
@@ -349,6 +308,16 @@ function initAdminDashboard() {
     if (!document.getElementById("main-content-contianer")) return;
 
     dashboardInitialized = true;
+    window.KNSNotifications.init({
+        role: "admin",
+        navigate: async notification => {
+            const opened = await loadPage("requests.html", {
+                requestId: notification.request_id,
+                openMessenger: notification.type === "message"
+            });
+            if (!opened) throw new Error("Unable to open this request notification. Please try again.");
+        }
+    });
     const view = new URLSearchParams(window.location.search).get("view");
     const page = view === "profile" ? "profile.php" : view === "results" ? "results.php" : "overview.php";
     return loadPage(page);

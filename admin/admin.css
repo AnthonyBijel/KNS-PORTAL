@@ -2858,18 +2858,33 @@ html{
     display: flex;
     justify-content: flex-end;
     flex-wrap: wrap;
-    gap: 7px;
+    gap: 6px;
     margin-top: 9px;
+    padding: 0 11px;
 }
 
 .rd-button {
-    padding: 8px 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    gap: 6px;
+    min-height: 30px;
+    padding: 8px 10px;
     border: 0;
     border-radius: 6px;
     color: #fff;
+    font-family: inherit;
     font-size: 10px;
     font-weight: 700;
+    line-height: 14px;
+    white-space: nowrap;
     cursor: pointer;
+}
+
+.rd-button:focus-visible {
+    outline: 2px solid #263238;
+    outline-offset: 3px;
 }
 
 .rd-reject {
@@ -2883,6 +2898,21 @@ html{
 
 .rd-approve {
     background: #008b68;
+}
+
+.rd-messenger {
+    background: #0084ff;
+}
+
+.rd-messenger:hover {
+    background: #0073df;
+}
+
+.rd-messenger svg {
+    width: 13px;
+    height: 13px;
+    flex: 0 0 auto;
+    fill: currentColor;
 }
 
 @media (max-width: 700px) {

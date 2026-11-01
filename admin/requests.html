@@ -31,8 +31,7 @@
         <div class="request-filter-group">
             <label for="request-year">Academic Year</label>
             <select id="request-year">
-                <option>2026 - 2027</option>
-                <option>2025 - 2026</option>
+                <option value="">All Academic Years</option>
             </select>
         </div>
 
@@ -48,12 +47,7 @@
         <div class="request-filter-group">
             <label for="request-type">Request Type</label>
             <select id="request-type">
-                <option>All Types</option>
-                <option>Grade Record</option>
-                <option>Certificate of Enrollment</option>
-                <option>Good Moral Certificate</option>
-                <option>Honorable Dismissal</option>
-                <option>Student ID Replacement</option>
+                <option value="">All Types</option>
             </select>
         </div>
 
@@ -86,7 +80,7 @@
             <div class="summary-icon">▤</div>
             <div>
                 <span class="summary-label">Total Requests</span>
-                <strong>24</strong>
+                <strong>0</strong>
             </div>
         </div>
 
@@ -94,7 +88,7 @@
             <div class="summary-icon">▣</div>
             <div>
                 <span class="summary-label">Pending</span>
-                <strong>8</strong>
+                <strong>0</strong>
             </div>
         </div>
 
@@ -102,7 +96,7 @@
             <div class="summary-icon">▤</div>
             <div>
                 <span class="summary-label">Processing</span>
-                <strong>5</strong>
+                <strong>0</strong>
             </div>
         </div>
 
@@ -110,7 +104,7 @@
             <div class="summary-icon">✓</div>
             <div>
                 <span class="summary-label">Approved</span>
-                <strong>9</strong>
+                <strong>0</strong>
             </div>
         </div>
 
@@ -118,7 +112,7 @@
             <div class="summary-icon">✖</div>
             <div>
                 <span class="summary-label">Rejected</span>
-                <strong>2</strong>
+                <strong>0</strong>
             </div>
         </div>
 
@@ -146,151 +140,7 @@
                     </tr>
                 </thead>
 
-                <tbody>
-                    <tr>
-                        <td><input type="checkbox" aria-label="Select request 1"></td>
-                        <td>1</td>
-                        <td>REQ-2026-0001</td>
-                        <td>John Michael R. Abaca</td>
-                        <td>Module Request</td>
-                        <td>Sep 15, 2026</td>
-                        <td><span class="request-status-badge badge-pending">Pending</span></td>
-                        <td>
-                            <button type="button" class="request-eye-btn" aria-label="View request details">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                            </button>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td><input type="checkbox" aria-label="Select request 2"></td>
-                        <td>2</td>
-                        <td>REQ-2026-0002</td>
-                        <td>Maria Angela S. Aguilar</td>
-                        <td>Grade Record Request</td>
-                        <td>Sep 14, 2026</td>
-                        <td><span class="request-status-badge badge-pending">Pending</span></td>
-                        <td>
-                            <button type="button" class="request-eye-btn" aria-label="View request details">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                            </button>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td><input type="checkbox" aria-label="Select request 3"></td>
-                        <td>3</td>
-                        <td>REQ-2026-0003</td>
-                        <td>Kyle Daniel T. Bautista</td>
-                        <td>Certificate of Enrollment</td>
-                        <td>Sep 13, 2026</td>
-                        <td><span class="request-status-badge badge-processing">Processing</span></td>
-                        <td>
-                            <button type="button" class="request-eye-btn" aria-label="View request details">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                            </button>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td><input type="checkbox" aria-label="Select request 4"></td>
-                        <td>4</td>
-                        <td>REQ-2026-0004</td>
-                        <td>Andrea Mae P. Dela Cruz</td>
-                        <td>Good Moral Certificate</td>
-                        <td>Sep 12, 2026</td>
-                        <td><span class="request-status-badge badge-pending">Pending</span></td>
-                        <td>
-                            <button type="button" class="request-eye-btn" aria-label="View request details">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                            </button>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td><input type="checkbox" aria-label="Select request 5"></td>
-                        <td>5</td>
-                        <td>REQ-2026-0005</td>
-                        <td>Christian Jay M. Garcia</td>
-                        <td>Honorable Dismissal</td>
-                        <td>Sep 11, 2026</td>
-                        <td><span class="request-status-badge badge-approved">Approved</span></td>
-                        <td>
-                            <button type="button" class="request-eye-btn" aria-label="View request details">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                            </button>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td><input type="checkbox" aria-label="Select request 6"></td>
-                        <td>6</td>
-                        <td>REQ-2026-0006</td>
-                        <td>Kimberly Joy A. Lopez</td>
-                        <td>Student ID Replacement</td>
-                        <td>Sep 10, 2026</td>
-                        <td><span class="request-status-badge badge-pending">Pending</span></td>
-                        <td>
-                            <button type="button" class="request-eye-btn" aria-label="View request details">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                            </button>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td><input type="checkbox" aria-label="Select request 7"></td>
-                        <td>7</td>
-                        <td>REQ-2026-0007</td>
-                        <td>Paolo Miguel C. Mendoza</td>
-                        <td>Certificate of Candidacy</td>
-                        <td>Sep 09, 2026</td>
-                        <td><span class="request-status-badge badge-rejected">Rejected</span></td>
-                        <td>
-                            <button type="button" class="request-eye-btn" aria-label="View request details">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                            </button>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td><input type="checkbox" aria-label="Select request 8"></td>
-                        <td>8</td>
-                        <td>REQ-2026-0008</td>
-                        <td>Trisha Mae V. Reyes</td>
-                        <td>Other Request</td>
-                        <td>Sep 08, 2026</td>
-                        <td><span class="request-status-badge badge-processing">Processing</span></td>
-                        <td>
-                            <button type="button" class="request-eye-btn" aria-label="View request details">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
+                <tbody><tr><td colspan="8">Loading requests…</td></tr></tbody>
 
             </table>
         </div>
@@ -309,13 +159,7 @@
                 <span>entries</span>
             </div>
 
-            <div class="request-pagination">
-                <button type="button" aria-label="Previous page">‹</button>
-                <button type="button" class="page-active">1</button>
-                <button type="button">2</button>
-                <button type="button">3</button>
-                <button type="button" aria-label="Next page">›</button>
-            </div>
+            <div class="request-pagination"></div>
 
         </div>
 
@@ -340,12 +184,12 @@
                         Student Information
                     </h3>
 
-                    <div class="rd-info-row"><span>Name:</span><strong>John Michael R. Abaca</strong></div>
-                    <div class="rd-info-row"><span>Student Number:</span><strong>2026-0001</strong></div>
-                    <div class="rd-info-row"><span>Course:</span><strong>BSCS</strong></div>
-                    <div class="rd-info-row"><span>Year Level:</span><strong>1st Year</strong></div>
-                    <div class="rd-info-row"><span>Section:</span><strong>BSCS-1A</strong></div>
-                    <div class="rd-info-row"><span>Email:</span><strong>john.abaca@email.com</strong></div>
+                    <div class="rd-info-row"><span>Name:</span><strong data-request-field="student_name">—</strong></div>
+                    <div class="rd-info-row"><span>Student Number:</span><strong data-request-field="student_number">—</strong></div>
+                    <div class="rd-info-row"><span>Course:</span><strong data-request-field="course">—</strong></div>
+                    <div class="rd-info-row"><span>Year Level:</span><strong data-request-field="year_level">—</strong></div>
+                    <div class="rd-info-row"><span>Section:</span><strong data-request-field="section">—</strong></div>
+                    <div class="rd-info-row"><span>Email:</span><strong data-request-field="email">—</strong></div>
                 </section>
 
                 <section class="rd-panel rd-request-panel">
@@ -354,20 +198,20 @@
                         Request Information
                     </h3>
 
-                    <div class="rd-info-row"><span>▣ &nbsp; Reference No.:</span><strong>REQ-2026-0001</strong></div>
-                    <div class="rd-info-row"><span>▣ &nbsp; Request Type:</span><strong>Module Request</strong></div>
-                    <div class="rd-info-row"><span>▣ &nbsp; Subject:</span><strong>Data Structure and Algorithms</strong></div>
-                    <div class="rd-info-row"><span>▣ &nbsp; Academic Year:</span><strong>2026 - 2027</strong></div>
-                    <div class="rd-info-row"><span>▣ &nbsp; Semester:</span><strong>1st Semester</strong></div>
-                    <div class="rd-info-row"><span>◷ &nbsp; Date Requested:</span><strong>Sep 15, 2026 10:32 AM</strong></div>
+                    <div class="rd-info-row"><span>▣ &nbsp; Reference No.:</span><strong data-request-field="reference_no">—</strong></div>
+                    <div class="rd-info-row"><span>▣ &nbsp; Request Type:</span><strong data-request-field="request_type">—</strong></div>
+                    <div class="rd-info-row"><span>▣ &nbsp; Subject:</span><strong data-request-field="subject">—</strong></div>
+                    <div class="rd-info-row"><span>▣ &nbsp; Academic Year:</span><strong data-request-field="academic_year">—</strong></div>
+                    <div class="rd-info-row"><span>▣ &nbsp; Semester:</span><strong data-request-field="semester">—</strong></div>
+                    <div class="rd-info-row"><span>◷ &nbsp; Date Requested:</span><strong data-request-field="created_at">—</strong></div>
                     <div class="rd-info-row">
                         <span>● &nbsp; Status:</span>
-                        <strong><span class="rd-status">Pending</span></strong>
+                        <strong><span class="rd-status" data-request-field="status">—</span></strong>
                     </div>
 
                     <div class="rd-purpose">
                         <strong>ⓘ &nbsp; Purpose / Details:</strong>
-                        <p>Requesting a copy of the module for Data Structure and Algorithms.</p>
+                        <p data-request-field="purpose">—</p>
                     </div>
                 </section>
             </div>
@@ -380,13 +224,11 @@
                         Student Attachments
                     </h3>
 
-                    <div class="rd-attachment">
-                        <div class="rd-file-preview">▤</div>
-                        <div class="rd-file-info">
-                            <strong>valid_id.jpg</strong>
-                            <span>Sep 15, 2026 · 1.2 MB</span>
+                    <div data-request-attachments>
+                        <div class="rd-attachment">
+                            <div class="rd-file-preview">▤</div>
+                            <div class="rd-file-info"><strong>No supporting attachments</strong></div>
                         </div>
-                        <button type="button" class="rd-view-button">View</button>
                     </div>
                 </section>
 
@@ -397,9 +239,9 @@
                     </h3>
 
                     <p class="rd-help-text">
-                        Upload the requested file (for documents like COE, Good Moral, etc.).
-                        For Module and Records, the system will send the document from the
-                        database after approval.
+                        Attach the requested document, if available (COE, Good Moral, modules, or records).
+                        Approve &amp; Send saves your response and makes the attached files available
+                        to the student in this request's Messenger.
                     </p>
 
                     <label class="rd-dropzone" for="rdResponseFile">
@@ -407,7 +249,7 @@
                                accept=".pdf,.jpg,.jpeg,.png" multiple>
                         <span class="rd-upload-icon">⇧</span>
                         <strong>Click to upload file(s) or drag and drop</strong>
-                        <small>PDF, JPG, PNG (Max 5MB each)</small>
+                        <small>PDF, JPG, PNG (Up to 3 files, max 5MB each)</small>
                     </label>
 
                     <label class="rd-remarks-label" for="rdRemarks">
@@ -417,12 +259,19 @@
                               placeholder="Add remarks for the student..."></textarea>
                     <div class="rd-char-count">0/500</div>
 
-                    <div class="rd-actions">
-                        <button type="button" class="rd-button rd-reject">× &nbsp; Reject</button>
-                        <button type="button" class="rd-button rd-processing">◷ &nbsp; Mark as Processing</button>
-                        <button type="button" class="rd-button rd-approve">✓ &nbsp; Approve &amp; Send</button>
-                    </div>
                 </section>
+
+                <div class="rd-actions">
+                    <button type="button" class="rd-button rd-reject">× &nbsp; Reject</button>
+                    <button type="button" class="rd-button rd-processing">◷ &nbsp; Mark as Processing</button>
+                    <button type="button" class="rd-button rd-approve">✓ &nbsp; Approve &amp; Send</button>
+                    <button type="button" class="rd-button rd-messenger">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M12 3C6.5 3 2 6.6 2 11c0 2.4 1.3 4.6 3.5 6.1L4.5 21l4.7-2.3c.9.2 1.8.3 2.8.3 5.5 0 10-3.6 10-8S17.5 3 12 3Z"></path>
+                        </svg>
+                        Messenger
+                    </button>
+                </div>
             </div>
         </div>
     </section>

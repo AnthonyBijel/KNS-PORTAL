@@ -52,6 +52,8 @@ function e($value)
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard.org</title>
     <link rel="stylesheet" href="admin.css?v=<?= filemtime(__DIR__ . '/admin.css') ?>">
+    <link rel="stylesheet" href="../request/messenger.css?v=<?= filemtime(__DIR__ . '/../request/messenger.css') ?>">
+    <link rel="stylesheet" href="../dashboard/notifications.css?v=<?= filemtime(__DIR__ . '/../dashboard/notifications.css') ?>">
 </head>
 
 <body>
@@ -69,7 +71,11 @@ function e($value)
         </div>
         <div class="header-right-box">
             <div class="bell-contianer">
-                <img class="bell-logo" src="../asset/logo/bell-notification-social-media.png">
+                <button type="button" class="portal-notification-bell" id="adminNotificationsBell"
+                        aria-label="Notifications" aria-haspopup="dialog" aria-controls="adminNotificationPanel" aria-expanded="false">
+                    <img class="bell-logo" src="../asset/logo/bell-notification-social-media.png" alt="" aria-hidden="true">
+                    <span class="kn-bell-count" id="adminNotificationCount" hidden>0</span>
+                </button>
             </div>
             <div class="middle-text">
                 <div class="initial-box">
@@ -155,6 +161,8 @@ function e($value)
 
 
 
+    <script src="../request/messenger.js?v=<?= filemtime(__DIR__ . '/../request/messenger.js') ?>"></script>
+    <script src="../dashboard/notifications.js?v=<?= filemtime(__DIR__ . '/../dashboard/notifications.js') ?>"></script>
     <script src="admin.js?v=<?= filemtime(__DIR__ . '/admin.js') ?>"></script>
 </body>
 
