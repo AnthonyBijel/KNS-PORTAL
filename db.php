@@ -15,6 +15,9 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 } catch (PDOException $e) {
+    if (defined('KNS_PASSWORD_RESET_REQUEST')) {
+        throw $e;
+    }
     die("Database connection failed: " . $e->getMessage());
 }
 ?>

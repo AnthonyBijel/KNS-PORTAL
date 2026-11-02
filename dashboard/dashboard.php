@@ -65,6 +65,7 @@ $initials = strtoupper(
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard.org</title>
     <link rel="stylesheet" href="dashboard.css?v=<?= filemtime(__DIR__ . '/dashboard.css') ?>">
+    <link rel="stylesheet" href="announcement-share.css?v=<?= filemtime(__DIR__ . '/announcement-share.css') ?>">
     <link rel="stylesheet" href="../request/messenger.css?v=<?= filemtime(__DIR__ . '/../request/messenger.css') ?>">
     <link rel="stylesheet" href="notifications.css?v=<?= filemtime(__DIR__ . '/notifications.css') ?>">
 </head>
@@ -177,6 +178,7 @@ $initials = strtoupper(
 
     <script src="../request/messenger.js?v=<?= filemtime(__DIR__ . '/../request/messenger.js') ?>"></script>
     <script src="notifications.js?v=<?= filemtime(__DIR__ . '/notifications.js') ?>"></script>
+    <script src="announcement-share.js?v=<?= filemtime(__DIR__ . '/announcement-share.js') ?>"></script>
     <script src="dashboard.js?v=<?= filemtime(__DIR__ . '/dashboard.js') ?>"></script>
 </body>
 
