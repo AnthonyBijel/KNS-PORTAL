@@ -447,7 +447,8 @@ html{
     display: flex;
     width: 630px;
     height: 50px;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 12px;
     margin-top: 10px    ;
     }
     .total-announcement,

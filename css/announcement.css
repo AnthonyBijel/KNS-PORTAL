@@ -1,0 +1,13 @@
+.announcement-page {
+    width: calc(100% - 32px);
+    max-width: 660px;
+    margin: 32px auto;
+}
+.announcement-page > a {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #087b5a;
+}
+.announcement-page .post-content {
+    margin-right: 0;
+}

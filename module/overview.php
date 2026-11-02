@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . "/../db.php";
+require_once __DIR__ . '/../php/announcement-common.php';
 
 $stmt = $pdo->query("SELECT * FROM announcements ORDER BY created_at DESC");
 $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -28,6 +29,7 @@ $categories = ["All", "Academic", "Events", "Guidelines", "Others"];
 <div class="announcement-content">
     <?php foreach ($announcements as $index => $post): ?>
         <?php
+        $postMediaUrl = knsAnnouncementMediaUrl($post['media_path'] ?? '');
         $postCategory = strtolower(trim($post['announcement_type'] ?? ''));
         if (!in_array($postCategory, ['academic', 'events', 'guidelines'], true)) {
             $postCategory = 'others';
@@ -46,25 +48,25 @@ $categories = ["All", "Academic", "Events", "Guidelines", "Others"];
             </div>
 
             <div class="description-box">
-                <p class="description-text" id="<?= $descriptionId ?>"><?= htmlspecialchars($post['description'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
+                <p class="description-text" id="<?= $descriptionId ?>"><?= knsAnnouncementEscape($post['description'] ?? '') ?></p>
                 <button type="button" class="see-more-btn" aria-expanded="false" aria-controls="<?= $descriptionId ?>">See more</button>
             </div>
 
-            <?php if (!empty($post['media_path'])): ?>
+            <?php if ($postMediaUrl !== ''): ?>
                 <?php if ($post['media_type'] === 'image'): ?>
                     <div class="post-image">
-                        <img src="../<?= htmlspecialchars($post['media_path'], ENT_QUOTES, 'UTF-8') ?>" alt="Announcement image">
+                        <img src="<?= knsAnnouncementEscape($postMediaUrl) ?>" alt="Announcement image">
                     </div>
                 <?php elseif ($post['media_type'] === 'video'): ?>
                     <div class="post-image">
                         <video controls preload="metadata">
-                            <source src="../<?= htmlspecialchars($post['media_path'], ENT_QUOTES, 'UTF-8') ?>">
+                            <source src="<?= knsAnnouncementEscape($postMediaUrl) ?>">
                         </video>
                     </div>
                 <?php endif; ?>
             <?php endif; ?>
 
-            <div class="share-button">
+            <div class="share-button" <?= knsAnnouncementShareAttributes($post) ?> role="button" tabindex="0" aria-label="Share announcement" aria-haspopup="dialog">
                 <img src="../asset/logo/share-square.png" alt="">
                 <p>SHARE</p>
             </div>

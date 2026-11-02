@@ -13,6 +13,7 @@ unset($_SESSION['login_error']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/password-reset.css?v=<?= filemtime(__DIR__ . '/css/password-reset.css') ?>">
 </head>
 
 <body>
@@ -122,7 +123,7 @@ unset($_SESSION['login_error']);
                     <input type="checkbox" id="remember">
                     <label class="remem" for="remember">Remember me</label>
                 </div>
-                <div><a href="">Forget password?</a></div>
+                <div><a href="#password-recovery" id="forgot-password-link" aria-haspopup="dialog" aria-controls="password-reset-modal">Forgot password?</a></div>
             </div>
             <button type="submit">Sign in to student portal</button>
 
@@ -142,6 +143,66 @@ unset($_SESSION['login_error']);
 
 
 
+
+    <div class="kns-reset-overlay" id="password-reset-modal" hidden>
+        <section class="kns-reset-card" role="dialog" aria-modal="true" aria-labelledby="reset-heading" aria-describedby="reset-intro" tabindex="-1">
+            <button type="button" class="kns-reset-close" id="reset-close" aria-label="Close password recovery">&times;</button>
+            <p class="kns-reset-step" id="reset-step">Step 1 of 2</p>
+            <h2 id="reset-heading">Recover your password</h2>
+            <p class="kns-reset-intro" id="reset-intro">Recover your student account using your saved contact details.</p>
+            <p class="kns-reset-message" id="reset-message" role="status" aria-live="polite" hidden></p>
+
+            <form id="reset-lookup-form">
+                <label for="reset-student-number">Student number</label>
+                <input id="reset-student-number" name="student_number" type="text" maxlength="30" autocomplete="username" placeholder="Enter your student number" required>
+                <button type="submit">Find recovery options</button>
+            </form>
+
+            <form id="reset-send-form" hidden>
+                <p class="kns-reset-student" id="reset-student-label"></p>
+                <fieldset class="kns-reset-channels">
+                    <legend>Where should we send your code?</legend>
+                    <label class="kns-reset-channel">
+                        <input type="radio" name="channel" value="email" id="reset-channel-email" required>
+                        <span><strong>Email</strong><span id="reset-masked-email"></span></span>
+                    </label>
+                    <label class="kns-reset-channel">
+                        <input type="radio" name="channel" value="sms" id="reset-channel-sms">
+                        <span><strong>SMS</strong><span id="reset-masked-sms"></span></span>
+                    </label>
+                </fieldset>
+                <button type="submit">Send recovery code</button>
+                <button type="button" class="kns-reset-secondary" data-reset-back="lookup">Use a different student number</button>
+            </form>
+
+            <form id="reset-otp-form" hidden>
+                <p class="kns-reset-destination" id="reset-destination"></p>
+                <label for="reset-otp">Six-digit recovery code</label>
+                <input id="reset-otp" name="otp" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000" required>
+                <p class="kns-reset-hint" id="reset-expiry"></p>
+                <button type="submit">Verify code</button>
+                <div class="kns-reset-actions">
+                    <button type="button" class="kns-reset-secondary" id="reset-resend">Resend code</button>
+                    <button type="button" class="kns-reset-secondary" data-reset-back="send">Change delivery option</button>
+                </div>
+            </form>
+
+            <form id="reset-password-form" hidden>
+                <label for="reset-new-password">New Password</label>
+                <input id="reset-new-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="72" required>
+                <p class="kns-reset-hint">Use at least 12 characters. Maximum 72 bytes.</p>
+                <label for="reset-confirm-password">Confirm Password</label>
+                <input id="reset-confirm-password" name="password_confirmation" type="password" autocomplete="new-password" minlength="12" maxlength="72" required>
+                <p class="kns-reset-hint" id="reset-grant-expiry"></p>
+                <button type="submit">Update password</button>
+            </form>
+
+            <div id="reset-success" hidden>
+                <p>You can now sign in to the student portal with your new password.</p>
+                <button type="button" id="reset-done">Back to sign in</button>
+            </div>
+        </section>
+    </div>
 
     <script>
         const accountOptions = document.querySelectorAll(".user-student");
@@ -181,6 +242,7 @@ unset($_SESSION['login_error']);
 
         selectStudentLogin();
     </script>
+    <script src="js/password-reset.js?v=<?= filemtime(__DIR__ . '/js/password-reset.js') ?>"></script>
 </body>
 
 </html>

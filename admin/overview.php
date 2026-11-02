@@ -1,5 +1,6 @@
    <?php
     require "../db.php";
+    require_once __DIR__ . '/../php/announcement-common.php';
 
     $stmt = $pdo->query("
                 SELECT *
@@ -8,6 +9,8 @@
             ");
 
     $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $totalAnnouncements = count($announcements);
+    $totalStudents = (int) $pdo->query('SELECT COUNT(*) FROM students')->fetchColumn();
     ?>
 
 
@@ -26,7 +29,7 @@
        <div class="total-announcement">
            <img src="..//asset/logo/megaphone.gif">
            <div class="total-info-text">
-               <h1>12</h1>
+               <h1><?= number_format($totalAnnouncements) ?></h1>
                <p>Total Announcement</p>
            </div>
 
@@ -34,17 +37,11 @@
        <div class="total-students">
            <img src="..//asset/logo/discussion.gif">
            <div class="total-info-text">
-               <h1>1,200</h1>
+               <h1><?= number_format($totalStudents) ?></h1>
                <p>Total Students</p>
            </div>
        </div>
-       <div class="total-modules">
-           <img src="..//asset/logo/folder.gif">
-           <div class="total-info-text">
-               <h1>25</h1>
-               <p>Modules Uploads</p>
-           </div>
-       </div>
+
    </div>
 
    <!--ANNNOUNCEMENT SECTION-->
@@ -107,7 +104,8 @@
 
        <div class="announcement-feed">
            <?php foreach ($announcements as $post): ?>
-               <div class="post-content">
+               <?php $postMediaUrl = knsAnnouncementMediaUrl($post['media_path'] ?? ''); ?>
+               <div class="post-content" data-announcement-id="<?= (int) $post['id'] ?>">
                    <div class="post-user-name">
                        <div class="post-logo">
                            <img class="post-profile" src="../asset/logo/273844945_520328949759168_1274024641438937791_n.jpg" alt="Kolehiyo ng Subic">
@@ -118,25 +116,25 @@
                        </div>
                    </div>
                    <div class="description-box">
-                       <p class="description-text"><?= htmlspecialchars($post['description'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
+                       <p class="description-text"><?= knsAnnouncementEscape($post['description'] ?? '') ?></p>
                        <button type="button" class="see-more-btn">See more</button>
                    </div>
 
-                   <?php if (!empty($post['media_path'])): ?>
+                   <?php if ($postMediaUrl !== ''): ?>
                        <?php if ($post['media_type'] === 'image'): ?>
                            <div class="post-image">
-                               <img src="../<?= htmlspecialchars($post['media_path'], ENT_QUOTES, 'UTF-8') ?>" alt="Announcement image">
+                               <img src="<?= knsAnnouncementEscape($postMediaUrl) ?>" alt="Announcement image">
                            </div>
                        <?php elseif ($post['media_type'] === 'video'): ?>
                            <div class="post-image">
                                <video controls preload="metadata">
-                                   <source src="../<?= htmlspecialchars($post['media_path'], ENT_QUOTES, 'UTF-8') ?>">
+                                   <source src="<?= knsAnnouncementEscape($postMediaUrl) ?>">
                                </video>
                            </div>
                        <?php endif; ?>
                    <?php endif; ?>
 
-                   <div class="share-button">
+                   <div class="share-button" <?= knsAnnouncementShareAttributes($post) ?> role="button" tabindex="0" aria-label="Share announcement" aria-haspopup="dialog">
                        <img src="../asset/logo/share-square.png" alt="">
                        <p>SHARE</p>
                    </div>
