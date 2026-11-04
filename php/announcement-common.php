@@ -80,3 +80,33 @@ function knsAnnouncementShareAttributes(array $post): string
     }
     return implode(' ', $attributes);
 }
+
+// Expiration values are stored as UTC DATETIME, independent of each DB connection timezone.
+function knsAnnouncementExpiration($duration, $custom = '', ?DateTimeImmutable $now = null): ?DateTimeImmutable
+{
+    if (!is_string($duration) || !is_string($custom)) throw new InvalidArgumentException('Select a valid post duration.');
+    $zone = new DateTimeZone('Asia/Manila');
+    $now = ($now ?? new DateTimeImmutable('now'))->setTimezone($zone);
+    if ($duration === 'none') return null;
+    $days = ['1_day' => 1, '3_days' => 3, '7_days' => 7, '30_days' => 30];
+    if (isset($days[$duration])) {
+        return $now->modify('+' . $days[$duration] . ' days')->setTimezone(new DateTimeZone('UTC'));
+    }
+    if ($duration !== 'custom') throw new InvalidArgumentException('Select a valid post duration.');
+    if (!preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}$/D', $custom)) {
+        throw new InvalidArgumentException('Choose an expiration date and time in Philippine time.');
+    }
+    $expiry = DateTimeImmutable::createFromFormat('!Y-m-d\TH:i', $custom, $zone);
+    $errors = DateTimeImmutable::getLastErrors();
+    if (!$expiry || ($errors !== false && ($errors['warning_count'] || $errors['error_count']))
+        || $expiry->format('Y-m-d\TH:i') !== $custom || $expiry <= $now) {
+        throw new InvalidArgumentException('Expiration must be a valid future date and time in Philippine time.');
+    }
+    return $expiry->setTimezone(new DateTimeZone('UTC'));
+}
+
+function knsAnnouncementExpiryIso(?string $value): string
+{
+    return $value === null || $value === '' ? ''
+        : (new DateTimeImmutable($value, new DateTimeZone('UTC')))->format('Y-m-d\TH:i:s\Z');
+}

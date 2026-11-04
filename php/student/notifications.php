@@ -18,7 +18,7 @@ function notificationFeed(): string
         a.announcement_type COLLATE utf8mb4_unicode_ci AS category,
         a.description COLLATE utf8mb4_unicode_ci AS description,
         NULL AS event_status, NULL AS sender_name, a.created_at
-        FROM announcements a
+        FROM announcements a WHERE (a.expires_at IS NULL OR a.expires_at > UTC_TIMESTAMP())
         UNION ALL
         SELECT m.event_kind COLLATE utf8mb4_unicode_ci, m.id, r.id, NULL,
         r.reference_no, r.request_type, NULL, m.body, m.event_status,
