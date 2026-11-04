@@ -11,3 +11,15 @@
 .announcement-page .post-content {
     margin-right: 0;
 }
+.announcement-page .post-image { margin-top: 14px; border-radius: 10px; overflow: hidden; }
+.announcement-page .post-image > a { display: block; min-width: 0; }
+.announcement-page .post-image img, .announcement-page .post-image video { width: 100%; max-height: 280px; object-fit: contain; }
+.announcement-page .post-content:has(.announcement-media-gallery) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(132px, 38%); gap: 12px; }
+.announcement-page .post-content:has(.announcement-media-gallery) > .post-user-name,
+.announcement-page .post-content:has(.announcement-media-gallery) > .share-button { grid-column: 1 / -1; }
+.announcement-page .post-image.announcement-media-gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; align-items: stretch; margin-top: 0; overflow: hidden; background: transparent; }
+.announcement-page .announcement-media-gallery > a { overflow: hidden; border-radius: 8px; background: #f0f5f1; }
+.announcement-page .post-image.announcement-media-gallery img { height: 94px; max-height: 94px; object-fit: cover; }
+@media (max-width: 450px) {
+    .announcement-page .post-image.announcement-media-gallery img { height: 70px; max-height: 70px; }
+}

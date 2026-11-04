@@ -17,12 +17,12 @@ const ADMIN_PAGES = {
     },
     "profile.php": {
         navigation: ".student-information-button",
-        initializers: [initAdminProfile, initAdminPhoto],
+        initializers: [initAdminProfile, initAdminPhoto, initOfficeAccounts],
     },
 };
 
 let latestPageRequest = 0;
-let mediaPreviewURL = null;
+let mediaPreviewURLs = [];
 let dashboardInitialized = false;
 let requestMessengerCleanup = null;
 
@@ -32,7 +32,7 @@ async function loadPage(page, context = {}) {
     const container = document.getElementById("main-content-contianer");
     const config = Object.hasOwn(ADMIN_PAGES, page) ? ADMIN_PAGES[page] : null;
 
-    if (!container || !config) {
+    if (!container || !config || !document.querySelector(config.navigation)) {
         console.error("Cannot load admin page:", page);
         return;
     }
@@ -55,7 +55,7 @@ async function loadPage(page, context = {}) {
         // A slower, earlier request must not replace the most recent page.
         if (requestId !== latestPageRequest) return;
 
-        clearMediaPreviewURL();
+        clearMediaPreviewURLs();
         requestMessengerCleanup?.();
         requestMessengerCleanup = null;
         container.innerHTML = html;
@@ -203,7 +203,7 @@ function initAnnouncements(container) {
     });
     root.querySelectorAll('[data-close-post]').forEach(button => button.addEventListener('click', () => dialog.close()));
     dialog.addEventListener('close', () => {
-        clearMediaPreviewURL();
+        clearMediaPreviewURLs();
         root.querySelector('#mediaPreview').replaceChildren();
         root.querySelector('#mediaInput').value = '';
         root.querySelector('[data-media-message]').textContent = '';
@@ -348,11 +348,10 @@ function initAnnouncementDeletion(root, applyFilters) {
     });
 }
 
-// Overview: attachment preview and temporary URL cleanup.
-function clearMediaPreviewURL() {
-    if (!mediaPreviewURL) return;
-    URL.revokeObjectURL(mediaPreviewURL);
-    mediaPreviewURL = null;
+// Overview: multiple-image selection, removal, and temporary URL cleanup.
+function clearMediaPreviewURLs() {
+    mediaPreviewURLs.forEach(url => URL.revokeObjectURL(url));
+    mediaPreviewURLs = [];
 }
 
 function initMediaPreview(container) {
@@ -360,25 +359,67 @@ function initMediaPreview(container) {
     const preview = container.querySelector('.kns-overview #mediaPreview');
     if (!input || !preview) return;
     const message = container.querySelector('[data-media-message]');
-    input.onchange = () => {
-        preview.replaceChildren();
-        clearMediaPreviewURL();
-        message.textContent = '';
-        const file = input.files[0];
-        if (!file) return;
-        const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm'];
-        if (!allowed.includes(file.type) || !file.size || file.size > 20 * 1024 * 1024) {
-            message.textContent = 'Choose a nonempty JPG, PNG, GIF, WEBP, MP4, or WEBM file of at most 20 MB.';
-            input.value = '';
-            return;
-        }
-        const media = document.createElement(file.type.startsWith('image/') ? 'img' : 'video');
-        if (media.tagName === 'IMG') media.alt = 'Selected image preview';
-        else media.controls = true;
-        mediaPreviewURL = URL.createObjectURL(file);
-        media.src = mediaPreviewURL;
-        preview.appendChild(media);
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm'];
+    let selectedFiles = [];
+    const syncInput = () => {
+        const transfer = new DataTransfer();
+        selectedFiles.forEach(file => transfer.items.add(file));
+        input.files = transfer.files;
     };
+    const render = () => {
+        clearMediaPreviewURLs();
+        preview.replaceChildren();
+        selectedFiles.forEach((file, index) => {
+            const tile = document.createElement('figure');
+            tile.className = 'kns-media-preview-item';
+            const media = document.createElement(file.type.startsWith('image/') ? 'img' : 'video');
+            if (media.tagName === 'IMG') media.alt = 'Selected image ' + (index + 1) + ': ' + file.name;
+            else media.controls = true;
+            const url = URL.createObjectURL(file);
+            mediaPreviewURLs.push(url);
+            media.src = url;
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'kns-remove-media';
+            remove.textContent = '\u00d7';
+            remove.setAttribute('aria-label', 'Remove ' + file.name);
+            remove.title = 'Remove ' + file.name;
+            remove.addEventListener('click', () => {
+                selectedFiles.splice(index, 1);
+                syncInput();
+                message.textContent = '';
+                render();
+                const buttons = preview.querySelectorAll('.kns-remove-media');
+                (buttons[Math.min(index, buttons.length - 1)] || input).focus();
+            });
+            const caption = document.createElement('figcaption');
+            caption.textContent = file.name;
+            caption.title = file.name;
+            tile.append(media, remove, caption);
+            preview.appendChild(tile);
+        });
+    };
+    input.addEventListener('change', () => {
+        const files = [...selectedFiles];
+        [...input.files].forEach(file => {
+            if (!files.some(existing => existing.name === file.name && existing.size === file.size
+                && existing.lastModified === file.lastModified && existing.type === file.type)) files.push(file);
+        });
+        let error = '';
+        if (files.length > 10) error = 'Choose up to 10 images or one video.';
+        else if (files.some(file => !allowed.includes(file.type) || !file.size)) {
+            error = 'Choose nonempty JPG, PNG, GIF, WEBP images, or one MP4 or WEBM video.';
+        } else if (files.reduce((total, file) => total + file.size, 0) > 20 * 1024 * 1024) {
+            error = 'Attachments must total at most 20 MB.';
+        } else if (files.length > 1 && files.some(file => file.type.startsWith('video/'))) {
+            error = 'Choose multiple images or one video. Remove the current selection to switch.';
+        }
+        message.textContent = error;
+        if (!error) selectedFiles = files;
+        syncInput();
+        if (!error) render();
+    });
+    input.closest('dialog').addEventListener('close', () => { selectedFiles = []; });
 }
 
 // The profile fragment is inserted with innerHTML, so bind its controls after loading it.
@@ -449,6 +490,242 @@ function initAdminPhoto(container) {
             form.removeAttribute("aria-busy");
             button.setAttribute("aria-label", buttonLabel);
             label.textContent = "Change photo";
+        }
+    });
+}
+
+// Profile: office registration, real account list, and Admin-confirmed deactivation.
+function initOfficeAccounts(container) {
+    const launch = container.querySelector('[data-open-office-accounts]');
+    const list = container.querySelector('#kns-office-accounts');
+    const confirmation = container.querySelector('#kns-office-account-delete');
+    const registration = container.querySelector('[data-open-office-registration]');
+    const registrationModal = container.querySelector('#kns-office-registration');
+    const createForm = container.querySelector('#kns-office-registration-form');
+    const deleteForm = container.querySelector('#kns-office-deactivation-form');
+    if (!launch || !list || !confirmation || !registration || !createForm || !deleteForm) return;
+    const body = list.querySelector('tbody');
+    const listMessage = list.querySelector('[data-office-accounts-message]');
+    const createMessage = createForm.querySelector('[data-office-registration-message]');
+    const deleteMessage = deleteForm.querySelector('[data-office-deactivation-message]');
+    const endpoint = new URL(createForm.getAttribute('action'), document.baseURI).href;
+    let records = new Map();
+    let loadVersion = 0;
+    let creating = false;
+    let deactivating = false;
+
+    const positionLaunch = () => {
+        const anchor = registration.parentElement.getBoundingClientRect();
+        launch.style.right = (anchor.right - registration.getBoundingClientRect().left + 12) + 'px';
+    };
+    const observer = new ResizeObserver(() => {
+        if (!launch.isConnected) { observer.disconnect(); return; }
+        positionLaunch();
+    });
+    observer.observe(registration);
+    observer.observe(registration.parentElement);
+    positionLaunch();
+
+    const element = (tag, className, text) => {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+    };
+    const message = (node, text = '', error = false) => {
+        node.textContent = text;
+        node.hidden = !text;
+        node.dataset.state = error ? 'error' : 'success';
+        node.setAttribute('role', error ? 'alert' : 'status');
+    };
+    const request = async options => {
+        const response = await fetch(endpoint, {credentials: 'same-origin', cache: 'no-store',
+            headers: {Accept: 'application/json'}, ...options});
+        let data;
+        try { data = await response.json(); } catch { throw new Error('The server could not complete the account request. Please try again.'); }
+        if (response.status === 401) window.location.assign('../login.php');
+        if (!response.ok || !data.ok) {
+            const error = new Error(data.message || 'Unable to complete the account request.');
+            error.data = data;
+            throw error;
+        }
+        return data;
+    };
+    const stateRow = (text, retry = false) => {
+        const row = element('tr');
+        const cell = element('td', 'kns-office-accounts-state', text);
+        cell.colSpan = 5;
+        if (retry) {
+            const button = element('button', 'kns-office-accounts-retry', 'Try again');
+            button.type = 'button';
+            button.addEventListener('click', () => loadAccounts());
+            cell.append(document.createTextNode(' '), button);
+        }
+        row.append(cell);
+        body.replaceChildren(row);
+    };
+    const trashIcon = () => {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('aria-hidden', 'true');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5');
+        svg.append(path);
+        return svg;
+    };
+    const render = accounts => {
+        records = new Map(accounts.map(account => [account.id, account]));
+        if (!accounts.length) { stateRow('No office accounts yet.'); return; }
+        const rows = accounts.map(account => {
+            const row = element('tr');
+            row.dataset.officeAccountId = account.id;
+            const name = element('td', 'kns-office-accounts-name');
+            name.append(element('span', 'kns-office-accounts-name-text', account.full_name),
+                element('span', 'kns-office-accounts-detail', 'Phone: ' + (account.phone_number || '\u2014')));
+            const contact = element('td');
+            contact.append(element('span', 'kns-office-accounts-email', account.email || '\u2014'),
+                element('span', 'kns-office-accounts-detail', 'Username: ' + account.username));
+            const role = element('td', '', account.role);
+            const status = element('td');
+            status.append(element('span', 'kns-office-accounts-status' + (account.is_active ? '' : ' is-inactive'),
+                account.is_active ? 'Active' : 'Inactive'));
+            const action = element('td');
+            const button = element('button', 'kns-office-accounts-row-delete');
+            button.type = 'button';
+            button.dataset.officeAccountDelete = account.id;
+            button.setAttribute('aria-label', 'Deactivate ' + account.full_name);
+            button.setAttribute('aria-haspopup', 'dialog');
+            button.setAttribute('aria-controls', 'kns-office-account-delete');
+            button.disabled = !account.is_active;
+            button.append(trashIcon(), document.createTextNode('Delete'));
+            action.append(button);
+            row.append(name, contact, role, status, action);
+            return row;
+        });
+        body.replaceChildren(...rows);
+    };
+    async function loadAccounts(success = '') {
+        const version = ++loadVersion;
+        list.querySelector('table').setAttribute('aria-busy', 'true');
+        message(listMessage, success);
+        stateRow('Loading office accounts...');
+        try {
+            const data = await request({method: 'GET'});
+            if (version !== loadVersion || !container.isConnected) return;
+            render(data.accounts);
+        } catch (error) {
+            if (version !== loadVersion || !container.isConnected) return;
+            stateRow('Unable to load office accounts.', true);
+            message(listMessage, error.message, true);
+        } finally {
+            if (version === loadVersion) list.querySelector('table').removeAttribute('aria-busy');
+        }
+    }
+    const busy = (modal, form, value, closeSelector, submitLabel) => {
+        form.setAttribute('aria-busy', String(value));
+        [...form.elements].forEach(field => { field.disabled = value; });
+        modal.querySelectorAll(closeSelector).forEach(button => { button.disabled = value; });
+        form.querySelector('[type="submit"]').textContent = submitLabel;
+    };
+    const clearValidity = form => form.querySelectorAll('[aria-invalid]').forEach(field => field.removeAttribute('aria-invalid'));
+
+    launch.addEventListener('click', () => { list.showModal(); loadAccounts(); });
+    list.querySelector('[data-close-office-accounts]').addEventListener('click', () => list.close());
+    registration.addEventListener('click', () => {
+        message(createMessage);
+        clearValidity(createForm);
+        registrationModal.showModal();
+    });
+    list.querySelector('.kns-office-accounts-register').addEventListener('click', () => {
+        list.close();
+        registration.click();
+    });
+    registrationModal.querySelectorAll('[data-close-office-registration]').forEach(button => {
+        button.addEventListener('click', () => { if (!creating) registrationModal.close(); });
+    });
+    registrationModal.addEventListener('cancel', event => { if (creating) event.preventDefault(); });
+    registrationModal.addEventListener('close', () => {
+        createForm.elements.password.value = '';
+        createForm.elements.password_confirmation.value = '';
+        createForm.elements.password_confirmation.setCustomValidity('');
+    });
+    createForm.addEventListener('input', event => {
+        event.target.removeAttribute('aria-invalid');
+        createForm.elements.password_confirmation.setCustomValidity('');
+    });
+    createForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (creating) return;
+        createForm.elements.password_confirmation.setCustomValidity(
+            createForm.elements.password.value === createForm.elements.password_confirmation.value ? '' : 'The passwords must match.');
+        if (!createForm.reportValidity()) return;
+        const payload = new FormData(createForm);
+        creating = true;
+        clearValidity(createForm);
+        busy(registrationModal, createForm, true, '[data-close-office-registration]', 'Creating...');
+        message(createMessage);
+        let invalidField;
+        try {
+            const data = await request({method: 'POST', body: payload});
+            if (!container.isConnected) return;
+            createForm.reset();
+            registrationModal.close();
+            list.showModal();
+            await loadAccounts(data.message);
+        } catch (error) {
+            message(createMessage, error.message, true);
+            Object.keys(error.data?.errors || {}).forEach(name => {
+                const field = createForm.elements.namedItem(name);
+                if (field) { field.setAttribute('aria-invalid', 'true'); invalidField ||= field; }
+            });
+        } finally {
+            creating = false;
+            busy(registrationModal, createForm, false, '[data-close-office-registration]', 'Create Account');
+            createForm.elements.password.value = '';
+            createForm.elements.password_confirmation.value = '';
+            invalidField?.focus();
+        }
+    });
+
+    body.addEventListener('click', event => {
+        const button = event.target.closest('[data-office-account-delete]');
+        if (!button || button.disabled) return;
+        const account = records.get(Number(button.dataset.officeAccountDelete));
+        if (!account || !account.is_active) return;
+        confirmation.querySelector('[data-selected-office-account-name]').textContent = account.full_name;
+        confirmation.querySelector('[data-selected-office-account-role]').textContent = account.role;
+        deleteForm.elements.account_id.value = account.id;
+        deleteForm.elements.admin_password.value = '';
+        message(deleteMessage);
+        confirmation.showModal();
+    });
+    confirmation.querySelectorAll('[data-close-office-account-delete]').forEach(button => {
+        button.addEventListener('click', () => { if (!deactivating) confirmation.close(); });
+    });
+    confirmation.addEventListener('cancel', event => { if (deactivating) event.preventDefault(); });
+    confirmation.addEventListener('close', () => {
+        deleteForm.elements.admin_password.value = '';
+        deleteForm.elements.account_id.value = '';
+        message(deleteMessage);
+    });
+    deleteForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (deactivating || !deleteForm.reportValidity()) return;
+        const payload = new FormData(deleteForm);
+        deactivating = true;
+        busy(confirmation, deleteForm, true, '[data-close-office-account-delete]', 'Deactivating...');
+        message(deleteMessage);
+        try {
+            const data = await request({method: 'POST', body: payload});
+            if (!container.isConnected) return;
+            confirmation.close();
+            await loadAccounts(data.message);
+        } catch (error) {
+            message(deleteMessage, error.message, true);
+        } finally {
+            deactivating = false;
+            busy(confirmation, deleteForm, false, '[data-close-office-account-delete]', 'Delete Account');
+            deleteForm.elements.admin_password.value = '';
         }
     });
 }
@@ -551,7 +828,8 @@ function initAdminDashboard() {
         }
     });
     const view = new URLSearchParams(window.location.search).get("view");
-    const page = view === "profile" ? "profile.php" : view === "results" ? "results.php" : "overview.php";
+    const requested = view === "profile" ? "profile.php" : view === "results" ? "results.php" : "overview.php";
+    const page = document.querySelector(ADMIN_PAGES[requested].navigation) ? requested : "overview.php";
     return loadPage(page);
 }
 

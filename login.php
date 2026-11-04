@@ -221,6 +221,7 @@ unset($_SESSION['login_error']);
             loginForm.action = "php/auth/login.php";
             accountLabel.textContent = "student ID";
             accountInput.placeholder = "Student number";
+            accountInput.maxLength = 30;
             submitButton.textContent = "Sign in to student portal";
         }
 
@@ -234,6 +235,7 @@ unset($_SESSION['login_error']);
             loginForm.action = "php/auth/admin_login.php";
             accountLabel.textContent = "Username";
             accountInput.placeholder = "Admin username";
+            accountInput.maxLength = 50;
             submitButton.textContent = "Sign in to admin portal";
         }
 

@@ -1,6 +1,6 @@
 <?php
 ini_set('display_errors', '0');
-require __DIR__ . '/../auth/session.php';
+require_once __DIR__ . '/../auth/staff-access.php';
 
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -103,13 +103,9 @@ function gradeUploadPage(array $errors = [], ?array $counts = null, int $status 
     exit;
 }
 
-if (empty($_SESSION['admin_id'])) {
-    if (str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json')) {
-        gradeUploadPage(['Your session expired. Please sign in again.'], null, 401);
-    }
-    header('Location: ../../login.php');
-    exit;
-}
+$accessPdo = gradeUploadDatabase();
+knsRequireStaffAccess($accessPdo, 'results', '../../login.php');
+unset($accessPdo);
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 if ($method === 'GET') {
     gradeUploadPage();
@@ -344,6 +340,7 @@ try {
     $location = '';
     $stage = 'database';
     $pdo = gradeUploadDatabase();
+    knsRequireStaffAccess($pdo, 'results', '../../login.php');
     $pdo->beginTransaction();
     $studentQuery = $pdo->prepare('SELECT student_number FROM students WHERE student_number = ? LIMIT 1 LOCK IN SHARE MODE');
     $statements = [

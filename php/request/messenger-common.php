@@ -1,6 +1,7 @@
 <?php
 // Shared only by request records, request submission, and human-to-human Messenger.
 require_once __DIR__ . '/../auth/session.php';
+require_once __DIR__ . '/routing-common.php';
 
 function requestJson(int $status, array $data): never
 {
@@ -57,10 +58,9 @@ function requestRecord(PDO $pdo, int $id, array $actor, bool $lock = false): arr
         s.course, s.year_level, s.section, s.email
         FROM requests r JOIN students s ON s.id = r.student_id WHERE r.id = ?';
     $params = [$id];
-    if ($actor['role'] === 'student') {
-        $sql .= ' AND r.student_id = ?';
-        $params[] = $actor['id'];
-    }
+    [$visibility, $scopeParams] = requestVisibility($actor, 'r');
+    $sql .= ' AND ' . $visibility;
+    array_push($params, ...$scopeParams);
     $stmt = $pdo->prepare($sql . ($lock ? ' FOR UPDATE' : ''));
     $stmt->execute($params);
     $record = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -75,6 +75,9 @@ function requestTimestamp(string $value): string
 
 function requestPublic(array $row): array
 {
+    if (!isset($row['assigned_office'], $row['assignment_revision'])) {
+        requestFail(503, 'Request routing is not installed. Import 20261105_request_routing.sql into the portal database, then reload.');
+    }
     return [
         'id' => (int) $row['id'], 'student_id' => (int) $row['student_id'],
         'reference_no' => $row['reference_no'],
@@ -86,7 +89,9 @@ function requestPublic(array $row): array
         'email' => $row['email'], 'request_type' => $row['request_type'],
         'subject' => $row['subject'], 'academic_year' => $row['academic_year'],
         'semester' => $row['semester'], 'purpose' => $row['purpose'],
-        'status' => $row['status'], 'created_at' => requestTimestamp($row['created_at'])
+        'status' => $row['status'], 'assigned_office' => $row['assigned_office'],
+        'assignment_revision' => (int) $row['assignment_revision'],
+        'created_at' => requestTimestamp($row['created_at'])
     ];
 }
 
@@ -193,6 +198,10 @@ function requestException(Throwable $error, PDO $pdo, array $moved = []): never
     }
     if ($error instanceof InvalidArgumentException) requestFail(422, $error->getMessage());
     error_log('Request Messenger: ' . $error->getMessage());
+    if ($error instanceof PDOException && (str_contains($error->getMessage(), 'assigned_office')
+        || str_contains($error->getMessage(), 'assignment_revision') || str_contains($error->getMessage(), 'request_assignment_history'))) {
+        requestFail(503, 'Request routing is not installed. Import 20261105_request_routing.sql into the portal database, then reload.');
+    }
     if ($error instanceof PDOException && $error->getCode() === '42S22'
         && (str_contains($error->getMessage(), 'event_kind') || str_contains($error->getMessage(), 'event_status'))) {
         requestFail(503, 'Import 20261101_student_notifications.sql into the kns_portal database, then reload the portal.');
@@ -205,10 +214,14 @@ function requestException(Throwable $error, PDO $pdo, array $moved = []): never
 
 $studentId = currentStudentId();
 $adminId = $_SESSION['admin_id'] ?? null;
+$officeId = currentOfficeId();
 if ($studentId !== null) {
     $requestActor = ['role' => 'student', 'id' => $studentId];
 } elseif (is_int($adminId) && $adminId > 0 && $studentId === null) {
     $requestActor = ['role' => 'admin', 'id' => $adminId];
+} elseif ($officeId !== null) {
+    // Office replies share the existing staff message FK, without granting an Admin session.
+    $requestActor = ['role' => 'admin', 'id' => $officeId];
 } else {
     requestFail(401, 'Your session expired. Please sign in again.');
 }
@@ -226,9 +239,14 @@ try {
     $pdo->exec("SET time_zone = '+00:00'");
     $identity = $requestActor['role'] === 'student'
         ? $pdo->prepare("SELECT id FROM students WHERE id = ? AND status = 'Active'")
-        : $pdo->prepare('SELECT id FROM admin_account WHERE id = ?');
+        : $pdo->prepare('SELECT id, role FROM admin_account WHERE id = ? AND is_active = 1 AND role IN ('
+            . ($officeId !== null ? "'Registrar', 'OSA'" : "'Administrator'") . ')');
     $identity->execute([$requestActor['id']]);
-    if (!$identity->fetchColumn()) requestFail(401, 'Your account is unavailable. Please sign in again.');
+    $identityAccount = $identity->fetch(PDO::FETCH_ASSOC);
+    if (!$identityAccount) requestFail(401, 'Your account is unavailable. Please sign in again.');
+    if ($requestActor['role'] === 'admin') {
+        $requestActor['office'] = $identityAccount['role'] === 'Administrator' ? 'Admin' : $identityAccount['role'];
+    }
 } catch (Throwable $error) {
     requestException($error, $pdo);
 }

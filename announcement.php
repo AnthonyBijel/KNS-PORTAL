@@ -17,10 +17,12 @@ header('Cache-Control: no-store');
 
 $title = $post ? knsAnnouncementTitle($post) : 'Announcement not found';
 $description = $post ? (string) ($post['description'] ?? '') : 'This announcement is no longer available.';
-$mediaUrl = $post ? knsAnnouncementMediaUrl($post['media_path'] ?? '') : '';
+$attachments = $post ? knsAnnouncementAttachments($post) : [];
+$mediaUrl = $attachments[0]['url'] ?? '';
+$mediaType = $attachments[0]['type'] ?? '';
 $postUrl = knsAnnouncementOrigin() . '/kns_portal/announcement.php' . ($post ? '?id=' . (int) $post['id'] : '');
 $imageUrl = knsAnnouncementAbsoluteUrl(
-    $post && ($post['media_type'] ?? '') === 'image' && $mediaUrl !== ''
+    $post && $mediaType === 'image' && $mediaUrl !== ''
         ? $mediaUrl : '/kns_portal/asset/logo/273844945_520328949759168_1274024641438937791_n.jpg'
 );
 ?>
@@ -36,13 +38,14 @@ $imageUrl = knsAnnouncementAbsoluteUrl(
     <meta property="og:description" content="<?= knsAnnouncementEscape($description) ?>">
     <meta property="og:image" content="<?= knsAnnouncementEscape($imageUrl) ?>">
     <meta property="og:url" content="<?= knsAnnouncementEscape($postUrl) ?>">
-    <?php if ($post && ($post['media_type'] ?? '') === 'video' && $mediaUrl !== ''): ?>
+    <?php if ($post && $mediaType === 'video' && $mediaUrl !== ''): ?>
         <meta property="og:video" content="<?= knsAnnouncementEscape(knsAnnouncementAbsoluteUrl($mediaUrl)) ?>">
     <?php endif; ?>
     <link rel="canonical" href="<?= knsAnnouncementEscape($postUrl) ?>">
     <link rel="stylesheet" href="/kns_portal/dashboard/dashboard.css?v=<?= filemtime(__DIR__ . '/dashboard/dashboard.css') ?>">
     <link rel="stylesheet" href="/kns_portal/css/announcement.css?v=<?= filemtime(__DIR__ . '/css/announcement.css') ?>">
     <link rel="stylesheet" href="/kns_portal/dashboard/announcement-share.css?v=<?= filemtime(__DIR__ . '/dashboard/announcement-share.css') ?>">
+    <link rel="stylesheet" href="/kns_portal/dashboard/announcement-gallery.css?v=<?= filemtime(__DIR__ . '/dashboard/announcement-gallery.css') ?>">
 </head>
 <body>
     <main class="announcement-page">
@@ -61,19 +64,7 @@ $imageUrl = knsAnnouncementAbsoluteUrl(
                 <div class="description-box">
                     <p class="description-text expanded"><?= knsAnnouncementEscape($description) ?></p>
                 </div>
-                <?php if ($mediaUrl !== ''): ?>
-                    <?php if ($post['media_type'] === 'image'): ?>
-                        <div class="post-image">
-                            <img src="<?= knsAnnouncementEscape($mediaUrl) ?>" alt="Announcement image">
-                        </div>
-                    <?php elseif ($post['media_type'] === 'video'): ?>
-                        <div class="post-image">
-                            <video controls preload="metadata">
-                                <source src="<?= knsAnnouncementEscape($mediaUrl) ?>">
-                            </video>
-                        </div>
-                    <?php endif; ?>
-                <?php endif; ?>
+                <?= knsAnnouncementGallery($attachments, $title, 'post-image' . (count($attachments) > 1 ? ' announcement-media-gallery' : '')) ?>
                 <div class="share-button" <?= knsAnnouncementShareAttributes($post) ?> role="button" tabindex="0" aria-label="Share announcement" aria-haspopup="dialog">
                     <img src="/kns_portal/asset/logo/share-square.png" alt="">
                     <p>SHARE</p>
@@ -85,5 +76,6 @@ $imageUrl = knsAnnouncementAbsoluteUrl(
         <?php endif; ?>
     </main>
     <script src="/kns_portal/dashboard/announcement-share.js?v=<?= filemtime(__DIR__ . '/dashboard/announcement-share.js') ?>"></script>
+    <script src="/kns_portal/dashboard/announcement-gallery.js?v=<?= filemtime(__DIR__ . '/dashboard/announcement-gallery.js') ?>"></script>
 </body>
 </html>

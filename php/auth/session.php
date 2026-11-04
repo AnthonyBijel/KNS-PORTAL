@@ -14,12 +14,15 @@ session_set_cookie_params([
 
 session_start();
 
-// A browser session represents one valid account and one role at a time.
+// A browser session has exactly one student, Admin, or office identity.
 $hasStudentIdentity = isset($_SESSION['student_id']);
 $hasAdminIdentity = isset($_SESSION['admin_id']);
+$hasOfficeIdentity = isset($_SESSION['office_id']);
 if (($hasStudentIdentity && (!is_int($_SESSION['student_id']) || $_SESSION['student_id'] < 1))
     || ($hasAdminIdentity && (!is_int($_SESSION['admin_id']) || $_SESSION['admin_id'] < 1))
-    || ($hasStudentIdentity && $hasAdminIdentity)) {
+    || ($hasOfficeIdentity && (!is_int($_SESSION['office_id']) || $_SESSION['office_id'] < 1
+        || !in_array($_SESSION['office_role'] ?? null, ['Registrar', 'OSA'], true)))
+    || (int) $hasStudentIdentity + (int) $hasAdminIdentity + (int) $hasOfficeIdentity > 1) {
     $_SESSION = [];
     session_regenerate_id(true);
 }
@@ -33,7 +36,7 @@ if (empty($_SESSION['csrf'])) {
 function currentStudentId(): ?int
 {
     $studentId = $_SESSION['student_id'] ?? null;
-    return is_int($studentId) && $studentId > 0 && !isset($_SESSION['admin_id'])
+    return is_int($studentId) && $studentId > 0 && !isset($_SESSION['admin_id']) && !isset($_SESSION['office_id'])
         ? $studentId : null;
 }
 
@@ -43,4 +46,11 @@ function requireStudent(): void
         header('Location: ../login.php');
         exit;
     }
+}
+
+function currentOfficeId(): ?int
+{
+    $id = $_SESSION['office_id'] ?? null;
+    return is_int($id) && $id > 0 && !isset($_SESSION['admin_id']) && !isset($_SESSION['student_id'])
+        && in_array($_SESSION['office_role'] ?? null, ['Registrar', 'OSA'], true) ? $id : null;
 }

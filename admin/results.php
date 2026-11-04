@@ -1,9 +1,7 @@
 <?php
-require __DIR__ . '/../php/auth/session.php';
-if (empty($_SESSION['admin_id'])) {
-    header('Location: ../login.php');
-    exit;
-}
+require_once __DIR__ . '/../php/auth/staff-access.php';
+require_once __DIR__ . '/../db.php';
+knsRequireStaffAccess($pdo, 'results');
 $search = $_GET['q'] ?? '';
 if (!is_string($search) || !mb_check_encoding($search, 'UTF-8') || mb_strlen($search, 'UTF-8') > 300) {
     http_response_code(422);

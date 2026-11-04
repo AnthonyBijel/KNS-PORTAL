@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/../auth/session.php';
+require_once __DIR__ . '/../auth/staff-access.php';
 
 function adminPhotoReply(int $status, string $message, ?string $photoPath = null): never
 {
@@ -17,7 +17,7 @@ function adminPhotoReply(int $status, string $message, ?string $photoPath = null
     exit;
 }
 
-$adminId = $_SESSION['admin_id'] ?? null;
+$adminId = currentOfficeId() ?? ($_SESSION['admin_id'] ?? null);
 if (!is_int($adminId) || $adminId < 1 || isset($_SESSION['student_id'])) {
     adminPhotoReply(401, 'Your session expired. Please sign in again.');
 }
@@ -36,9 +36,8 @@ $image = null;
 $stream = null;
 
 try {
-    $adminQuery = $pdo->prepare('SELECT id FROM admin_account WHERE id = ? LIMIT 1');
-    $adminQuery->execute([$adminId]);
-    if (!$adminQuery->fetchColumn()) {
+    $account = knsCurrentStaffAccount($pdo);
+    if (!$account || $account['id'] !== $adminId) {
         adminPhotoReply(401, 'Your admin account is unavailable. Please sign in again.');
     }
     $file = $_FILES['profile_photo'] ?? null;
@@ -122,7 +121,7 @@ try {
         throw new RuntimeException('Unable to save the photo. Please try again later.');
     }
     $photoPath = 'uploads/admins/' . $filename;
-    $update = $pdo->prepare('UPDATE admin_account SET profile_photo = ? WHERE id = ?');
+    $update = $pdo->prepare('UPDATE admin_account SET profile_photo = ? WHERE id = ? AND is_active = 1');
     $update->execute([$photoPath, $adminId]);
     if ($update->rowCount() !== 1) {
         throw new RuntimeException('Your admin account changed. Reload Admin Profile and try again.');

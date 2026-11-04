@@ -1,0 +1,82 @@
+/* Static Office Account List only; existing profile and registration styles are untouched. */
+.kns-office-accounts-launch { position: absolute; top: 50%; right: 310px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 50px; padding: 10px 18px; transform: translateY(-50%); border: 2px solid #edf7f0; border-radius: 11px; background: transparent; color: #fff; box-shadow: 0 1px 3px #043a201a; font: 650 17px/1.3 Inter, ui-sans-serif, system-ui, sans-serif; white-space: nowrap; cursor: pointer; }
+.kns-office-accounts-launch svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.kns-office-accounts-launch:hover { background: #ffffff14; }
+.kns-office-accounts-launch:focus-visible { outline: 3px solid #c3f4ce; outline-offset: 3px; }
+.kns-office-accounts-modal { position: fixed; inset: 0; box-sizing: border-box; width: min(900px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); margin: auto; padding: 34px 30px 30px; overflow-y: auto; border: 1px solid #e4e9e6; border-radius: 20px; background: #fff; color: #17251d; box-shadow: 0 18px 42px #08180e38; font: 15px/1.45 Inter, ui-sans-serif, system-ui, sans-serif; }
+.kns-office-accounts-modal *, .kns-office-accounts-modal *::before, .kns-office-accounts-modal *::after { box-sizing: border-box; }
+.kns-office-accounts-modal::backdrop { background: #10191473; }
+.kns-office-accounts-modal .kns-office-accounts-close { position: absolute; top: 16px; right: 16px; display: grid; place-items: center; width: 32px; height: 32px; padding: 5px; border: 0; border-radius: 6px; background: transparent; color: #424b52; cursor: pointer; }
+.kns-office-accounts-modal .kns-office-accounts-close svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.kns-office-accounts-modal .kns-office-accounts-close:hover { background: #f0f5f1; }
+.kns-office-accounts-modal .kns-office-accounts-title { margin: 0; padding-right: 30px; color: #0e5032; font-size: 30px; font-weight: 750; line-height: 1.2; letter-spacing: -.4px; }
+.kns-office-accounts-modal .kns-office-accounts-intro { margin: 8px 0 0; color: #6b7280; font-size: 16px; line-height: 1.45; }
+.kns-office-accounts-modal .kns-office-accounts-table-wrap { margin-top: 20px; overflow-x: auto; border: 1px solid #dce4df; border-radius: 11px; }
+.kns-office-accounts-modal .kns-office-accounts-table { width: 100%; border-collapse: collapse; text-align: left; }
+.kns-office-accounts-modal .kns-office-accounts-table th { padding: 12px 16px; border-bottom: 1px solid #dce4df; background: #e8f0eb; color: #123524; font-size: 16px; font-weight: 650; white-space: nowrap; }
+.kns-office-accounts-modal .kns-office-accounts-table td { padding: 10px 16px; vertical-align: middle; color: #101713; font-size: 16px; }
+.kns-office-accounts-modal .kns-office-accounts-table tr + tr td { border-top: 1px solid #e6ece8; }
+.kns-office-accounts-modal .kns-office-accounts-name { font-weight: 650; white-space: nowrap; }
+.kns-office-accounts-modal .kns-office-accounts-status { display: inline-flex; align-items: center; gap: 9px; min-height: 33px; padding: 4px 13px; border: 1px solid #b8efd0; border-radius: 20px; background: #e7faee; color: #08732e; font-size: 14px; font-weight: 550; white-space: nowrap; }
+.kns-office-accounts-modal .kns-office-accounts-status::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: #08a034; }
+.kns-office-accounts-modal .kns-office-accounts-row-delete { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 34px; padding: 5px 12px; border: 1px solid #ff2828; border-radius: 20px; background: #fff; color: #f00; font: 500 14px/1.4 Inter, ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+.kns-office-accounts-modal .kns-office-accounts-row-delete svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.kns-office-accounts-modal .kns-office-accounts-row-delete:hover { background: #fff2f2; }
+.kns-office-accounts-modal.kns-office-accounts-confirmation { width: min(500px, calc(100vw - 32px)); padding: 36px 30px 30px; }
+.kns-office-accounts-confirmation::backdrop { background: #10191459; }
+.kns-office-accounts-confirmation .kns-office-accounts-title { font-size: 27px; }
+.kns-office-accounts-confirmation .kns-office-accounts-selected { display: grid; gap: 12px; margin: 24px 0; padding: 16px 18px; border: 1px solid #dfeae3; border-radius: 10px; background: #f5faf6; }
+.kns-office-accounts-confirmation .kns-office-accounts-selected > div { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 12px; }
+.kns-office-accounts-confirmation .kns-office-accounts-selected dt { color: #66766c; font-size: 13px; }
+.kns-office-accounts-confirmation .kns-office-accounts-selected dd { margin: 0; color: #193e29; font-weight: 650; overflow-wrap: anywhere; }
+.kns-office-accounts-confirmation .kns-office-accounts-password-label { display: block; margin: 0 0 7px; color: #17251d; font-size: 15px; font-weight: 600; }
+.kns-office-accounts-confirmation .kns-office-accounts-password { display: block; width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid #8da79a; border-radius: 7px; background: #fff; color: #17251d; font: inherit; }
+.kns-office-accounts-confirmation .kns-office-accounts-password-help { margin: 9px 0 0; color: #6b7280; font-size: 13px; line-height: 1.5; }
+.kns-office-accounts-confirmation .kns-office-accounts-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 28px; }
+.kns-office-accounts-confirmation .kns-office-accounts-actions button { min-height: 46px; padding: 10px 20px; border: 1px solid transparent; border-radius: 9px; font: 650 15px/1.4 Inter, ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+.kns-office-accounts-confirmation .kns-office-accounts-actions .kns-office-accounts-cancel { border-color: #bccfc2; background: #fff; color: #24553a; }
+.kns-office-accounts-confirmation .kns-office-accounts-cancel:hover { background: #f1f7f3; }
+.kns-office-accounts-confirmation .kns-office-accounts-delete-visual { background: #b42318; color: #fff; }
+.kns-office-accounts-modal button:focus-visible, .kns-office-accounts-modal input:focus-visible { outline: 3px solid #67b882; outline-offset: 2px; }
+@media (max-width: 600px) {
+    .kns-office-accounts-launch { gap: 6px; min-height: 42px; padding: 8px 12px; font-size: 13px; }
+    .kns-office-accounts-launch svg { width: 18px; height: 18px; }
+    .kns-office-accounts-modal { padding: 34px 20px 24px; }
+    .kns-office-accounts-modal .kns-office-accounts-title { font-size: 26px; }
+    .kns-office-accounts-modal .kns-office-accounts-table th, .kns-office-accounts-modal .kns-office-accounts-table td { padding: 12px; }
+    .kns-office-accounts-modal.kns-office-accounts-confirmation { padding: 36px 22px 24px; }
+    .kns-office-accounts-confirmation .kns-office-accounts-title { font-size: 24px; }
+}
+
+/* Account-list details from the supplied reference; confirmation keeps its styling. */
+.kns-office-accounts-modal.kns-office-accounts-list { padding: 26px 24px 22px; border-radius: 24px; }
+.kns-office-accounts-list .kns-office-accounts-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 44px; padding-right: 60px; }
+.kns-office-accounts-list .kns-office-accounts-title { padding-right: 0; color: #080c09; font-weight: 700; }
+.kns-office-accounts-list > .kns-office-accounts-close { top: 26px; right: 22px; }
+.kns-office-accounts-list .kns-office-accounts-register { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; gap: 9px; min-height: 42px; padding: 8px 16px; border: 0; border-radius: 8px; background: linear-gradient(180deg, #079a00, #008300); color: #fff; font: 650 17px/1.3 Inter, ui-sans-serif, system-ui, sans-serif; white-space: nowrap; cursor: pointer; }
+.kns-office-accounts-list .kns-office-accounts-register span { font-size: 26px; font-weight: 500; line-height: 1; }
+.kns-office-accounts-list .kns-office-accounts-table th:nth-child(1) { width: 21%; }
+.kns-office-accounts-list .kns-office-accounts-table th:nth-child(2) { width: 30%; }
+.kns-office-accounts-list .kns-office-accounts-table th:nth-child(3) { width: 17%; }
+.kns-office-accounts-list .kns-office-accounts-table th:nth-child(4),
+.kns-office-accounts-list .kns-office-accounts-table th:nth-child(5) { width: 16%; }
+.kns-office-accounts-list .kns-office-accounts-note { display: flex; align-items: center; gap: 10px; margin: 20px 0 0; color: #505861; font-size: 15px; line-height: 1.45; }
+.kns-office-accounts-list .kns-office-accounts-note svg { flex: 0 0 20px; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+@media (max-width: 600px) {
+    .kns-office-accounts-modal.kns-office-accounts-list { padding: 24px 18px 20px; }
+    .kns-office-accounts-list .kns-office-accounts-heading { flex-wrap: wrap; justify-content: flex-start; gap: 12px; padding-right: 35px; }
+    .kns-office-accounts-list .kns-office-accounts-title { font-size: 26px; }
+    .kns-office-accounts-list .kns-office-accounts-register { font-size: 14px; }
+    .kns-office-accounts-list .kns-office-accounts-table { min-width: 700px; }
+    .kns-office-accounts-list .kns-office-accounts-note { align-items: flex-start; font-size: 13px; }
+}
+
+.kns-office-accounts-modal .kns-office-accounts-detail { display: block; margin-top: 3px; color: #68766e; font-size: 12px; font-weight: 400; white-space: normal; }
+.kns-office-accounts-modal .kns-office-accounts-name-text, .kns-office-accounts-modal .kns-office-accounts-email { display: block; white-space: normal; overflow-wrap: anywhere; }
+.kns-office-accounts-modal .kns-office-accounts-status.is-inactive { background: #f0f2f1; border-color: #d5dbd7; color: #66716a; }
+.kns-office-accounts-modal .kns-office-accounts-status.is-inactive::before { background: #8c9790; }
+.kns-office-accounts-modal .kns-office-accounts-message { margin: 14px 0 0; color: #17623f; font-size: 14px; line-height: 1.45; }
+.kns-office-accounts-modal .kns-office-accounts-message[data-state="error"] { color: #b42318; }
+.kns-office-accounts-modal .kns-office-accounts-state { padding: 24px 16px; color: #66766c; text-align: center; }
+.kns-office-accounts-modal .kns-office-accounts-retry { padding: 5px 10px; border: 1px solid #b9d0c1; border-radius: 6px; background: #fff; color: #17623f; font: inherit; cursor: pointer; }
+.kns-office-accounts-modal button:disabled { opacity: .55; cursor: default; }

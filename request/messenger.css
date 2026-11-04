@@ -138,3 +138,17 @@
     line-height: 24px;
     cursor: pointer;
 }
+
+/* Only the existing request area receives routing controls. */
+.request-management .request-routing-warning { padding: 12px 14px; border: 1px solid #ead28b; border-radius: 8px; background: #fff9e8; color: #795614; font-size: 13px; line-height: 1.5; }
+.request-management .request-routing-warning[hidden], .request-management .request-routing-panel[hidden] { display: none; }
+.request-management .request-routing-office { display: block; margin-top: 4px; color: #587065; font-size: 11px; }
+.request-management .request-routing-current { margin: 0 0 12px; font-size: 13px; color: #365444; }
+.request-management .request-routing-form { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; }
+.request-management .request-routing-form label { flex: 0 0 100%; font-size: 13px; font-weight: 600; color: #365444; }
+.request-management .request-routing-select { flex: 1 1 150px; min-width: 0; padding: 9px 10px; border: 1px solid #c5d7cc; border-radius: 7px; background: #fff; color: #234533; font: inherit; }
+.request-management .request-routing-forward { padding: 10px 14px; border: 1px solid #17623f; border-radius: 7px; background: #17623f; color: #fff; font: 600 13px Arial, sans-serif; cursor: pointer; }
+.request-management .request-routing-forward:disabled { opacity: .55; cursor: default; }
+.request-management .request-routing-help { flex: 0 0 100%; color: #687b6e; font-size: 11px; line-height: 1.5; }
+.request-management .request-routing-history { margin: 14px 0 0; padding-left: 18px; color: #526b5b; font-size: 12px; line-height: 1.6; }
+.request-management .request-routing-select:focus-visible, .request-management .request-routing-forward:focus-visible { outline: 3px solid #67b882; outline-offset: 2px; }
