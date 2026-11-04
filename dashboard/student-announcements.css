@@ -1,0 +1,82 @@
+/* Student announcements only. Keep the dashboard shell and hero rules untouched. */
+.student-announcements { --sa-green: #064a24; --sa-border: #dfe5e2; width: 100%; min-width: 0; min-height: calc(100dvh - 220px); margin-top: 18px; padding: 0 3px 14px; color: #15271b; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif; container-type: inline-size; }
+.student-announcements *, .student-announcements *::before, .student-announcements *::after { box-sizing: border-box; }
+.student-announcements [hidden] { display: none !important; }
+.student-announcements .sa-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.student-announcements button, .student-announcements input, .student-announcements select { font: inherit; }
+.student-announcements button { cursor: pointer; }
+.student-announcements button:focus-visible, .student-announcements a:focus-visible, .student-announcements input:focus-visible, .student-announcements select:focus-visible { outline: 3px solid #329b62; outline-offset: 3px; }
+.student-announcements .sa-toolbar { display: grid; grid-template-columns: auto minmax(160px, 1fr) 160px; align-items: center; gap: 26px; }
+.student-announcements .sa-toolbar h2 { display: flex; align-items: center; gap: 13px; margin: 0; color: var(--sa-green); font-size: clamp(24px, 2.1vw, 30px); font-weight: 750; letter-spacing: -.5px; line-height: 1.2; }
+.student-announcements .sa-heading-icon { display: grid; place-items: center; flex: 0 0 48px; width: 48px; height: 48px; border-radius: 13px; background: #d6f3dd; }
+.student-announcements .sa-heading-icon svg { width: 29px; height: 29px; fill: none; stroke: var(--sa-green); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.student-announcements .sa-search { min-width: 0; margin: 0; }
+.student-announcements .sa-search label { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 42px; padding: 0 15px; border: 1px solid #bbc5ce; border-radius: 24px; background: #fff; box-shadow: 0 3px 7px #15331f0b; }
+.student-announcements .sa-search label:focus-within { outline: 2px solid #329b62; outline-offset: 2px; }
+.student-announcements .sa-search svg { flex: 0 0 19px; width: 19px; height: 19px; fill: none; stroke: #53625b; stroke-width: 1.8; }
+.student-announcements .sa-search input { width: 100%; min-width: 0; padding: 10px 0; border: 0; outline: none; background: transparent; color: #233d2d; font-size: 14px; }
+.student-announcements .sa-search input:focus-visible { outline: none; }
+.student-announcements .sa-sort { display: block; min-width: 0; padding-left: 25px; border-left: 1px solid #bec8c1; }
+.student-announcements .sa-sort select { width: 100%; min-height: 40px; padding: 8px 12px; border: 1px solid #b5bfc8; border-radius: 10px; background: #fff; color: #1a2b20; font-size: 13px; font-weight: 650; }
+.student-announcements .announcement-type-selection { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; width: 100%; height: auto; margin: 14px 0 18px; padding: 0; border-radius: 0; background: transparent; }
+.student-announcements .announcement-type, .student-announcements .announcement-type.selected { display: inline-flex; align-items: center; justify-content: center; width: auto; min-width: 94px; height: 36px; padding: 7px 20px; margin: 0; border: 1px solid #e0e5e7; border-radius: 22px; background: #fff; color: #192a20; box-shadow: 0 2px 5px #0b2d1610; transition: background-color .15s ease, color .15s ease; }
+.student-announcements .announcement-type span { font-size: 13px; font-weight: 650; }
+.student-announcements .announcement-type:hover { background: #eff9f1; }
+.student-announcements .announcement-type.selected { border-color: #076515; background: linear-gradient(#075c10, #08771b); color: #fff; }
+.student-announcements .announcement-content { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 18px; height: auto; margin: 0; }
+.student-announcements .post-content { display: flex; flex-direction: column; min-width: 0; width: 100%; height: auto; margin: 0; padding: 16px 18px 11px; border: 1px solid #e2e7e4; border-radius: 17px; background: #fff; box-shadow: 0 3px 8px #1834250c; }
+.student-announcements .post-user-name { display: flex; align-items: center; gap: 11px; margin: 0 0 9px; }
+.student-announcements .post-profile { flex: 0 0 42px; width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
+.student-announcements .sa-publisher { min-width: 0; }
+.student-announcements .sa-publisher > strong { display: block; color: #15271b; font-size: 15px; font-weight: 750; }
+.student-announcements .sa-post-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-top: 3px; color: #66716a; font-size: 12px; line-height: 1.4; }
+.student-announcements .sa-meta-divider { color: #c4ccc5; }
+.student-announcements .sa-type-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 10px; background: #e2f6e5; color: #155522; font-size: 12px; font-weight: 700; }
+.student-announcements .sa-type-badge svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.student-announcements .sa-card-body { display: grid; gap: 16px; align-items: start; min-width: 0; }
+.student-announcements .sa-card-body.sa-with-media { grid-template-columns: minmax(0, 1fr) minmax(110px, 27%); }
+.student-announcements .sa-card-copy { min-width: 0; }
+.student-announcements .sa-card-copy h3 { margin: 0 0 7px; color: var(--sa-green); font-size: 23px; font-weight: 750; line-height: 1.2; letter-spacing: -.4px; overflow-wrap: anywhere; }
+.student-announcements .sa-highlights { display: flex; align-items: flex-start; gap: 12px; padding: 9px 11px; margin: 0 0 7px; border-radius: 9px; background: #e3f8e7; }
+.student-announcements .sa-highlights-label { flex-shrink: 0; padding-right: 11px; border-right: 1px solid #a6d8b3; color: #135b25; font-size: 11px; font-weight: 750; line-height: 1.6; }
+.student-announcements .sa-highlights p { min-width: 0; margin: 0; color: #203a28; font-size: 14px; line-height: 1.4; white-space: pre-line; overflow-wrap: anywhere; }
+.student-announcements .description-box { position: relative; width: 100%; }
+.student-announcements .description-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; height: auto; margin: 0; overflow: hidden; color: #29382e; font-size: 14px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
+.student-announcements .description-text.expanded { display: block; overflow: visible; -webkit-line-clamp: unset; }
+.student-announcements .see-more-btn { position: static; display: inline-flex; align-items: center; gap: 4px; width: auto; margin-top: 4px; padding: 0; border: 0; background: transparent; color: #075426; font-size: 13px; font-weight: 700; text-decoration: underline; }
+.student-announcements .see-more-btn::after { content: '\203a'; font-size: 19px; line-height: 12px; text-decoration: none; }
+.student-announcements .see-more-btn[aria-expanded=true]::after { content: '\2303'; font-size: 14px; }
+.student-announcements .post-image { display: block; width: 100%; min-width: 0; margin: 0; overflow: hidden; border-radius: 11px; background: #f0f5f1; }
+.student-announcements .post-image a { display: block; }
+.student-announcements .post-image img, .student-announcements .post-image video { display: block; width: 100%; max-width: 100%; height: 140px; object-fit: contain; }
+.student-announcements .sa-card-footer { display: flex; justify-content: flex-end; margin-top: auto; padding-top: 10px; }
+.student-announcements .sa-card-footer::before { content: ''; }
+.student-announcements .share-button { display: inline-flex; align-items: center; justify-content: flex-end; gap: 7px; width: 100%; height: auto; min-height: 30px; margin: 0; padding: 7px 0 0; border: 0; border-top: 1px solid #e5ebe6; background: transparent; color: #25382c; font-size: 12px; font-weight: 650; }
+.student-announcements .share-button img { width: 14px; height: 14px; margin: 0; background: none; }
+.student-announcements .share-button:hover { color: #08771b; }
+.student-announcements .announcement-empty { grid-column: 1 / -1; margin: 0; padding: 35px 20px; border: 1px solid var(--sa-border); border-radius: 15px; background: #fff; color: #5f7065; font-size: 14px; text-align: center; }
+@container (max-width: 1000px) {
+    .student-announcements .sa-toolbar { grid-template-columns: minmax(0, 1fr) 145px; gap: 14px; }
+    .student-announcements .sa-toolbar h2 { grid-column: 1 / -1; }
+}
+@container (max-width: 850px) {
+    .student-announcements .announcement-content { grid-template-columns: minmax(0, 1fr); }
+}
+@container (max-width: 460px) {
+    .student-announcements .sa-toolbar { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .student-announcements .sa-toolbar h2 { font-size: 24px; gap: 9px; }
+    .student-announcements .sa-heading-icon { width: 38px; height: 38px; flex-basis: 38px; }
+    .student-announcements .sa-heading-icon svg { width: 25px; height: 25px; }
+    .student-announcements .sa-sort { padding: 0; border: 0; }
+    .student-announcements .announcement-type-selection { gap: 7px; }
+    .student-announcements .announcement-type, .student-announcements .announcement-type.selected { min-width: 0; height: 33px; padding: 6px 13px; }
+    .student-announcements .announcement-type span { font-size: 12px; }
+    .student-announcements .post-content { padding: 14px; }
+    .student-announcements .sa-card-body.sa-with-media { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .student-announcements .post-image { max-width: 100%; }
+    .student-announcements .post-image img, .student-announcements .post-image video { height: auto; max-height: 200px; }
+    .student-announcements .sa-card-copy h3 { font-size: 20px; }
+    .student-announcements .sa-post-meta { gap: 6px; font-size: 11px; }
+    .student-announcements .sa-highlights { flex-direction: column; gap: 4px; }
+    .student-announcements .sa-highlights-label { padding: 0; border: 0; }
+}

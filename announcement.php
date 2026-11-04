@@ -5,7 +5,7 @@ $id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_r
 $post = false;
 if ($id !== false && $id !== null) {
     require __DIR__ . '/db.php';
-    $stmt = $pdo->prepare('SELECT * FROM announcements WHERE id = ? LIMIT 1');
+    $stmt = $pdo->prepare('SELECT * FROM announcements WHERE id = ? AND (expires_at IS NULL OR expires_at > UTC_TIMESTAMP()) LIMIT 1');
     $stmt->execute([$id]);
     $post = $stmt->fetch(PDO::FETCH_ASSOC);
 }
@@ -13,6 +13,7 @@ if (!$post) {
     http_response_code(404);
 }
 header('Content-Type: text/html; charset=UTF-8');
+header('Cache-Control: no-store');
 
 $title = $post ? knsAnnouncementTitle($post) : 'Announcement not found';
 $description = $post ? (string) ($post['description'] ?? '') : 'This announcement is no longer available.';

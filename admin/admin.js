@@ -97,52 +97,284 @@ function initRequestDetails(container) {
     requestMessengerCleanup = window.KNSRequests.init(container, "admin");
 }
 
-// Overview: announcement categories and expandable descriptions.
+// Overview: real post search, category filtering, expansion, and the publisher dialog.
 function initAnnouncements(container) {
-
-    container.querySelectorAll(".see-more-btn").forEach(button => {
-        button.onclick = () => {
-            const text = button.parentElement.querySelector(".description-text");
-            if (!text) return;
-
-            const expanded = text.classList.toggle("expanded");
-            button.textContent = expanded ? "See less" : "See more";
-        };
+    const root = container.querySelector('.kns-overview');
+    if (!root) return;
+    const search = root.querySelector('[data-post-search]');
+    const filter = root.querySelector('[data-post-filter]');
+    const cards = [...root.querySelectorAll('[data-post-card]')];
+    const status = root.querySelector('[data-feed-status]');
+    const empty = root.querySelector('[data-post-empty]');
+    const normalize = value => value.normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
+    const records = cards.map(card => ({card, text: normalize(card.dataset.searchText), expires: Date.parse(card.dataset.expiresAt) || Infinity}));
+    const serverClock = Number(root.dataset.serverTime) || Date.now();
+    const startedAt = performance.now();
+    const serverNow = () => serverClock + performance.now() - startedAt;
+    let appliedSearch = ''; // Typing stays a draft until Enter is pressed.
+    const measureDescriptions = () => {
+        cards.forEach(card => {
+            if (card.hidden || !card.isConnected) return;
+            const text = card.querySelector('.kns-description');
+            const button = card.querySelector('.kns-see-more');
+            button.hidden = !text.classList.contains('is-expanded') && text.scrollHeight <= text.clientHeight + 1;
+        });
+    };
+    const applyFilters = () => {
+        const words = appliedSearch.split(' ').filter(Boolean);
+        let count = 0;
+        let activeCount = 0;
+        const now = serverNow();
+        records.forEach(({card, text, expires}) => {
+            const active = card.isConnected && expires > now;
+            if (active) activeCount++;
+            const visible = active && (!filter.value || card.dataset.postType === filter.value) && words.every(word => text.includes(word));
+            card.hidden = !visible;
+            if (visible) count++;
+            else card.querySelectorAll('video').forEach(video => video.pause());
+        });
+        empty.hidden = count > 0;
+        empty.querySelector('strong').textContent = activeCount ? 'No matching posts' : 'No announcements yet';
+        empty.querySelector('p').textContent = activeCount ? 'Try a different search or post type.' : 'Create a post to keep your school community informed.';
+        root.querySelector('[data-total-posts]').textContent = activeCount.toLocaleString('en-US');
+        status.textContent = `${count} ${count === 1 ? 'post' : 'posts'}${count !== activeCount ? ` of ${activeCount}` : ''}`;
+        requestAnimationFrame(measureDescriptions);
+    };
+    search.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' || event.isComposing) return;
+        event.preventDefault();
+        appliedSearch = normalize(search.value);
+        applyFilters();
+    });
+    filter.addEventListener('change', applyFilters);
+    root.querySelectorAll('.kns-see-more').forEach(button => {
+        button.addEventListener('click', () => {
+            const text = root.querySelector(`#${button.getAttribute('aria-controls')}`);
+            const expanded = text.classList.toggle('is-expanded');
+            button.textContent = expanded ? 'See less' : 'See more';
+            button.setAttribute('aria-expanded', String(expanded));
+        });
+    });
+    const observer = new ResizeObserver(() => {
+        if (!root.isConnected) observer.disconnect();
+        else measureDescriptions();
+    });
+    observer.observe(root);
+    applyFilters();
+    initAnnouncementDeletion(root, applyFilters);
+    // Check the nearest deadline, using server time so a device clock cannot extend a post.
+    const scheduleExpiration = () => {
+        const now = serverNow();
+        const next = records.reduce((nearest, record) => record.card.isConnected && record.expires > now ? Math.min(nearest, record.expires) : nearest, Infinity);
+        if (!Number.isFinite(next)) return;
+        setTimeout(() => {
+            if (!root.isConnected) return;
+            applyFilters();
+            scheduleExpiration();
+        }, Math.min(60000, Math.max(1, next - now + 50)));
+    };
+    scheduleExpiration();
+    const dialog = root.querySelector('.kns-post-modal');
+    const form = root.querySelector('[data-post-form]');
+    const fieldset = form.querySelector('fieldset');
+    const publish = form.querySelector('[type=submit]');
+    const message = form.querySelector('[data-post-message]');
+    const duration = form.elements.namedItem('duration');
+    const expiresInput = form.elements.namedItem('expires_at');
+    const customExpiration = form.querySelector('[data-custom-expiration]');
+    const updateDuration = () => {
+        const custom = duration.value === 'custom';
+        customExpiration.hidden = !custom;
+        expiresInput.disabled = !custom;
+        expiresInput.required = custom;
+        expiresInput.setCustomValidity('');
+        // datetime-local has no timezone; show and validate Philippine wall-clock time.
+        expiresInput.min = new Date(Date.now() + 8 * 60 * 60 * 1000 + 60000).toISOString().slice(0, 16);
+    };
+    duration.addEventListener('change', updateDuration);
+    updateDuration();
+    let publishing = false;
+    let published = false;
+    root.querySelector('[data-create-post]').addEventListener('click', () => {
+        if (published) return;
+        message.textContent = '';
+        updateDuration();
+        dialog.showModal();
+    });
+    root.querySelectorAll('[data-close-post]').forEach(button => button.addEventListener('click', () => dialog.close()));
+    dialog.addEventListener('close', () => {
+        clearMediaPreviewURL();
+        root.querySelector('#mediaPreview').replaceChildren();
+        root.querySelector('#mediaInput').value = '';
+        root.querySelector('[data-media-message]').textContent = '';
+    });
+    // Native <dialog> handles focus trapping, focus restoration, and Escape.
+    form.addEventListener('input', event => event.target.setCustomValidity?.(''));
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (publishing || published) return;
+        for (const name of ['title', 'highlights', 'description']) {
+            const input = form.elements.namedItem(name);
+            input.setCustomValidity(input.value.trim() ? '' : 'Please complete this field.');
+        }
+        if (!form.reportValidity()) return;
+        const body = new FormData(form);
+        const selectedSearch = search.value;
+        const selectedAppliedSearch = appliedSearch;
+        const selectedType = filter.value;
+        publishing = true;
+        fieldset.disabled = true;
+        publish.disabled = true;
+        publish.textContent = 'Publishing...';
+        form.setAttribute('aria-busy', 'true');
+        message.textContent = '';
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST', credentials: 'same-origin', headers: {Accept: 'application/json'}, body,
+            });
+            if (response.status === 401) {
+                window.location.assign('../login.php');
+                return;
+            }
+            const data = await response.json();
+            if (!response.ok || !data.ok) throw new Error(data.message || 'Unable to publish your post.');
+            published = true;
+            if (!root.isConnected) return;
+            dialog.close();
+            const refreshed = await loadPage('overview.php');
+            if (!refreshed) {
+                root.querySelector('[data-create-post]').disabled = true;
+                const feedback = root.querySelector('[data-publish-status]');
+                feedback.textContent = 'Your post was published. Reload the overview to see it.';
+                feedback.hidden = false;
+                return;
+            }
+            const updatedRoot = container.querySelector('.kns-overview');
+            if (!updatedRoot) return;
+            const updatedSearch = updatedRoot.querySelector('[data-post-search]');
+            updatedSearch.value = selectedAppliedSearch;
+            updatedRoot.querySelector('[data-post-filter]').value = selectedType;
+            updatedSearch.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true}));
+            updatedSearch.value = selectedSearch;
+            const feedback = updatedRoot.querySelector('[data-publish-status]');
+            feedback.textContent = 'Your post was published.';
+            feedback.hidden = false;
+        } catch (error) {
+            message.textContent = error.message || 'Unable to publish your post. Please try again.';
+            if (!dialog.open && !published && root.isConnected) dialog.showModal();
+        } finally {
+            publishing = false;
+            fieldset.disabled = false;
+            publish.disabled = published;
+            publish.textContent = published ? 'Published' : 'Publish Post';
+            form.removeAttribute('aria-busy');
+        }
     });
 }
 
-// Overview: image/video preview and temporary URL cleanup.
+// Overview: delete only after the administrator confirms the selected post.
+function initAnnouncementDeletion(root, applyFilters) {
+    const dialog = root.querySelector('.kns-delete-modal');
+    const form = dialog.querySelector('[data-delete-form]');
+    const title = dialog.querySelector('[data-delete-title]');
+    const message = dialog.querySelector('[data-delete-message]');
+    const confirm = form.querySelector('[type=submit]');
+    const cancelButtons = dialog.querySelectorAll('[data-cancel-delete]');
+    let targetCard = null;
+    let deleting = false;
+    root.querySelectorAll('[data-delete-post]').forEach(button => {
+        button.addEventListener('click', () => {
+            if (deleting) return;
+            targetCard = button.closest('[data-post-card]');
+            form.elements.announcement_id.value = targetCard.dataset.announcementId;
+            title.textContent = targetCard.querySelector('h3').textContent.trim();
+            message.textContent = '';
+            dialog.showModal();
+        });
+    });
+    cancelButtons.forEach(button => button.addEventListener('click', () => {
+        if (!deleting) dialog.close();
+    }));
+    dialog.addEventListener('cancel', event => {
+        if (deleting) event.preventDefault();
+    });
+    dialog.addEventListener('close', () => {
+        targetCard = null;
+        form.elements.announcement_id.value = '';
+        message.textContent = '';
+    });
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (deleting || !targetCard) return;
+        const card = targetCard;
+        const body = new FormData(form);
+        deleting = true;
+        confirm.disabled = true;
+        confirm.textContent = 'Deleting...';
+        cancelButtons.forEach(button => { button.disabled = true; });
+        form.setAttribute('aria-busy', 'true');
+        message.textContent = '';
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST', credentials: 'same-origin', headers: {Accept: 'application/json'}, body,
+            });
+            if (response.status === 401) {
+                window.location.assign('../login.php');
+                return;
+            }
+            const data = await response.json();
+            if ((!response.ok || !data.ok) && response.status !== 404) {
+                throw new Error(data.message || 'Unable to delete the post. Please try again.');
+            }
+            if (!root.isConnected) return;
+            card.querySelectorAll('video').forEach(video => video.pause());
+            card.remove();
+            applyFilters();
+            const feedback = root.querySelector('[data-publish-status]');
+            feedback.textContent = data.message;
+            feedback.hidden = false;
+            dialog.close();
+            const next = root.querySelector('[data-post-card]:not([hidden]) [data-delete-post]') || root.querySelector('[data-create-post]');
+            next.focus();
+        } catch (error) {
+            message.textContent = error.message || 'Unable to delete the post. Please try again.';
+        } finally {
+            deleting = false;
+            confirm.disabled = false;
+            confirm.textContent = 'Delete Post';
+            cancelButtons.forEach(button => { button.disabled = false; });
+            form.removeAttribute('aria-busy');
+        }
+    });
+}
+
+// Overview: attachment preview and temporary URL cleanup.
 function clearMediaPreviewURL() {
     if (!mediaPreviewURL) return;
-
     URL.revokeObjectURL(mediaPreviewURL);
     mediaPreviewURL = null;
 }
 
 function initMediaPreview(container) {
-    const input = container.querySelector("#mediaInput");
-    const preview = container.querySelector("#mediaPreview");
+    const input = container.querySelector('.kns-overview #mediaInput');
+    const preview = container.querySelector('.kns-overview #mediaPreview');
     if (!input || !preview) return;
-
+    const message = container.querySelector('[data-media-message]');
     input.onchange = () => {
         preview.replaceChildren();
         clearMediaPreviewURL();
-
+        message.textContent = '';
         const file = input.files[0];
         if (!file) return;
-
-        let media;
-        if (file.type.startsWith("image/")) {
-            media = document.createElement("img");
-            media.alt = "Selected image preview";
-        } else if (file.type.startsWith("video/")) {
-            media = document.createElement("video");
-            media.controls = true;
-        } else {
-            preview.textContent = "Please select an image or video.";
+        const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm'];
+        if (!allowed.includes(file.type) || !file.size || file.size > 20 * 1024 * 1024) {
+            message.textContent = 'Choose a nonempty JPG, PNG, GIF, WEBP, MP4, or WEBM file of at most 20 MB.';
+            input.value = '';
             return;
         }
-
+        const media = document.createElement(file.type.startsWith('image/') ? 'img' : 'video');
+        if (media.tagName === 'IMG') media.alt = 'Selected image preview';
+        else media.controls = true;
         mediaPreviewURL = URL.createObjectURL(file);
         media.src = mediaPreviewURL;
         preview.appendChild(media);

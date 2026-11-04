@@ -80,65 +80,99 @@ async function loadPage(page, context = {}) {
 }
 
 function initAnnouncement(container) {
-    const filterBar = container.querySelector(".announcement-type-selection");
-    if (!filterBar) return;
-
-    const options = filterBar.querySelectorAll(".announcement-type");
-    const posts = container.querySelectorAll(".announcement-content > .post-content");
-    const emptyMessage = container.querySelector(".announcement-empty");
-    const descriptions = [];
-
-    posts.forEach(post => {
-        const text = post.querySelector(".description-text");
-        const button = post.querySelector(".see-more-btn");
-        if (!text || !button) return;
-        descriptions.push({ post, text, button });
-
+    const root = container.querySelector('.student-announcements');
+    if (!root) return;
+    const filterBar = root.querySelector('.announcement-type-selection');
+    const options = filterBar.querySelectorAll('.announcement-type');
+    const posts = [...root.querySelectorAll('.announcement-content > .post-content')];
+    const emptyMessage = root.querySelector('.announcement-empty');
+    const status = root.querySelector('[data-announcement-status]');
+    const search = root.querySelector('[data-announcement-search]');
+    const sort = root.querySelector('[data-announcement-sort]');
+    const feed = root.querySelector('.announcement-content');
+    const normalize = value => value.normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ').trim();
+    const records = posts.map((post, index) => ({
+        post, index, text: normalize(post.dataset.searchText),
+        created: Number(post.dataset.postTimestamp) || 0,
+        expires: Date.parse(post.dataset.expiresAt) || Infinity,
+    }));
+    const serverClock = Number(feed.dataset.serverTime) || Date.now();
+    const startedAt = performance.now();
+    const serverNow = () => serverClock + performance.now() - startedAt;
+    let selectedCategory = 'all';
+    let appliedSearch = '';
+    const descriptions = posts.map(post => ({
+        post, text: post.querySelector('.description-text'), button: post.querySelector('.see-more-btn'),
+    }));
+    descriptions.forEach(({text, button}) => {
         button.onclick = () => {
-            const expanded = text.classList.toggle("expanded");
-            button.textContent = expanded ? "See less" : "See more";
-            button.setAttribute("aria-expanded", String(expanded));
+            const expanded = text.classList.toggle('expanded');
+            button.textContent = expanded ? 'See less' : 'See more';
+            button.setAttribute('aria-expanded', String(expanded));
             updateDescriptionButtons();
         };
     });
-
     function updateDescriptionButtons() {
-        descriptions.forEach(({ post, text, button }) => {
+        descriptions.forEach(({post, text, button}) => {
             if (post.hidden) return;
-            button.hidden = !text.classList.contains("expanded") &&
-                text.scrollHeight <= text.clientHeight + 1;
+            button.hidden = !text.classList.contains('expanded') && text.scrollHeight <= text.clientHeight + 1;
         });
     }
-
     function applyFilter(category) {
+        selectedCategory = category;
+        const now = serverNow();
+        const words = appliedSearch.split(' ').filter(Boolean);
         let visibleCount = 0;
-        posts.forEach(post => {
-            const matches = category === "all" || post.dataset.category === category;
+        records.forEach(({post, text, expires}) => {
+            const matches = expires > now && (category === 'all' || post.dataset.category === category)
+                && words.every(word => text.includes(word));
             post.hidden = !matches;
             if (matches) visibleCount++;
+            else post.querySelectorAll('video').forEach(video => video.pause());
         });
         options.forEach(option => {
             const selected = option.dataset.category === category;
-            option.classList.toggle("selected", selected);
-            option.setAttribute("aria-pressed", String(selected));
+            option.classList.toggle('selected', selected);
+            option.setAttribute('aria-pressed', String(selected));
         });
-        if (emptyMessage) {
-            emptyMessage.hidden = visibleCount > 0;
-            emptyMessage.textContent = category === "all"
-                ? "No announcements yet."
-                : "No announcements in this category yet.";
-        }
-        updateDescriptionButtons();
+        emptyMessage.hidden = visibleCount > 0;
+        emptyMessage.textContent = appliedSearch ? 'No matching announcements. Try a different search or category.'
+            : (category === 'all' ? 'No announcements yet.' : 'No announcements in this category yet.');
+        status.textContent = `${visibleCount} ${visibleCount === 1 ? 'announcement' : 'announcements'}`;
+        requestAnimationFrame(updateDescriptionButtons);
     }
-
-    options.forEach(option => {
-        option.onclick = () => applyFilter(option.dataset.category);
+    function sortPosts() {
+        const ordered = [...records].sort((a, b) =>
+            (sort.value === 'oldest' ? a.created - b.created : b.created - a.created) || a.index - b.index);
+        const fragment = document.createDocumentFragment();
+        ordered.forEach(({post}) => fragment.appendChild(post));
+        feed.insertBefore(fragment, emptyMessage);
+    }
+    options.forEach(option => { option.onclick = () => applyFilter(option.dataset.category); });
+    root.querySelector('.sa-search').addEventListener('submit', event => {
+        event.preventDefault();
+        appliedSearch = normalize(search.value);
+        applyFilter(selectedCategory);
     });
-    applyFilter("all");
-
-    if (typeof ResizeObserver !== "undefined") {
+    sort.addEventListener('change', () => {
+        sortPosts();
+        applyFilter(selectedCategory);
+    });
+    applyFilter('all');
+    function scheduleExpiration() {
+        const now = serverNow();
+        const next = records.reduce((nearest, record) => record.expires > now ? Math.min(nearest, record.expires) : nearest, Infinity);
+        if (!Number.isFinite(next)) return;
+        setTimeout(() => {
+            if (!feed.isConnected) return;
+            applyFilter(selectedCategory);
+            scheduleExpiration();
+        }, Math.min(60000, Math.max(1, next - now + 50)));
+    }
+    scheduleExpiration();
+    if (typeof ResizeObserver !== 'undefined') {
         announcementResizeObserver = new ResizeObserver(updateDescriptionButtons);
-        announcementResizeObserver.observe(container);
+        announcementResizeObserver.observe(root);
     }
 }
 
