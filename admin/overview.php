@@ -1,18 +1,8 @@
 <?php
-require __DIR__ . '/../php/auth/session.php';
-if (empty($_SESSION['admin_id'])) {
-    header('Location: ../login.php');
-    exit;
-}
+require_once __DIR__ . '/../php/auth/staff-access.php';
 require __DIR__ . '/../db.php';
 require_once __DIR__ . '/../php/announcement-common.php';
-$stmt = $pdo->prepare('SELECT admin_name, school_name FROM admin_account WHERE id = ? LIMIT 1');
-$stmt->execute([(int) $_SESSION['admin_id']]);
-$overviewAdmin = $stmt->fetch(PDO::FETCH_ASSOC);
-if (!$overviewAdmin) {
-    http_response_code(403);
-    exit;
-}
+$overviewAdmin = knsRequireStaffAccess($pdo, 'overview');
 $announcements = $pdo->query('SELECT * FROM announcements WHERE (expires_at IS NULL OR expires_at > UTC_TIMESTAMP()) ORDER BY created_at DESC, id DESC')->fetchAll(PDO::FETCH_ASSOC);
 $totalAnnouncements = count($announcements);
 $totalStudents = (int) $pdo->query('SELECT COUNT(*) FROM students')->fetchColumn();
@@ -62,8 +52,9 @@ $published = ($_GET['posted'] ?? '') === 'success';
             $type = $type === 'Events' ? 'Event' : $type;
             if (!in_array($type, ['Academic', 'Event', 'Guidelines', 'Other'], true)) $type = 'Other';
             $tone = strtolower($type);
-            $postMediaUrl = knsAnnouncementMediaUrl($post['media_path'] ?? '');
-            $hasMedia = $postMediaUrl !== '' && in_array($post['media_type'] ?? '', ['image', 'video'], true);
+            $attachments = knsAnnouncementAttachments($post);
+            $hasMedia = count($attachments) > 0;
+            $hasGallery = count($attachments) > 1;
             $postTime = new DateTimeImmutable($post['created_at'], new DateTimeZone('Asia/Manila'));
             ?>
             <article class="kns-post-card kns-tone-<?= $tone ?>" data-post-card data-announcement-id="<?= (int) $post['id'] ?>" data-expires-at="<?= knsAnnouncementEscape(knsAnnouncementExpiryIso($post['expires_at'] ?? null)) ?>" data-post-type="<?= $type ?>" data-search-text="<?= knsAnnouncementEscape($title . ' ' . $highlights . ' ' . $description) ?>">
@@ -74,17 +65,14 @@ $published = ($_GET['posted'] ?? '') === 'success';
                         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v5M14 11v5"/></svg>
                     </button>
                 </div>
-                <div class="kns-post-body <?= $hasMedia ? 'kns-with-media' : '' ?>">
+                <div class="kns-post-body <?= $hasGallery ? 'kns-with-gallery' : ($hasMedia ? 'kns-with-media' : '') ?>">
                     <div class="kns-post-copy">
                         <h3><?= knsAnnouncementEscape($title) ?></h3>
                         <?php if ($highlights !== ''): ?><div class="kns-highlights"><img src="../asset/logo/<?= $type === 'Event' ? 'calendar-clock.png' : ($type === 'Academic' ? 'graduate-hat.png' : 'megaphone.png') ?>" alt="" width="23" height="23"><p><span class="kns-sr-only">Highlights: </span><?= knsAnnouncementEscape($highlights) ?></p></div><?php endif; ?>
                         <p class="kns-description" id="post-description-<?= (int) $post['id'] ?>"><?= knsAnnouncementEscape($description) ?></p>
                         <button type="button" class="kns-see-more" aria-controls="post-description-<?= (int) $post['id'] ?>" aria-expanded="false" hidden>See more</button>
                     </div>
-                    <?php if ($hasMedia): ?><div class="kns-post-media">
-                        <?php if ($post['media_type'] === 'image'): ?><a href="<?= knsAnnouncementEscape($postMediaUrl) ?>" target="_blank" rel="noopener noreferrer" aria-label="View full attachment: <?= knsAnnouncementEscape($title) ?>"><img src="<?= knsAnnouncementEscape($postMediaUrl) ?>" alt="Attachment for <?= knsAnnouncementEscape($title) ?>" loading="lazy"></a>
-                        <?php else: ?><video controls preload="metadata" aria-label="<?= knsAnnouncementEscape($title) ?>"><source src="<?= knsAnnouncementEscape($postMediaUrl) ?>">Your browser cannot play this video. <a href="<?= knsAnnouncementEscape($postMediaUrl) ?>">Download video</a></video><?php endif; ?>
-                    </div><?php endif; ?>
+                    <?= knsAnnouncementGallery($attachments, $title, 'kns-post-media' . ($hasGallery ? ' kns-media-gallery' : '')) ?>
                 </div>
                 <div class="kns-post-actions">
                     <?php if (!empty($post['expires_at'])): ?><span class="kns-post-expiry">Visible until <time datetime="<?= knsAnnouncementEscape(knsAnnouncementExpiryIso($post['expires_at'])) ?>"><?= knsAnnouncementEscape((new DateTimeImmutable($post['expires_at'], new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('Asia/Manila'))->format('M j, Y, g:i A')) ?></time> (PH)</span><?php endif; ?><button type="button" class="share-button kns-share-button" <?= knsAnnouncementShareAttributes($post) ?> aria-label="Share <?= knsAnnouncementEscape($title) ?>" aria-haspopup="dialog"><img src="../asset/logo/share-square.png" alt="">Share</button></div>
@@ -111,7 +99,7 @@ $published = ($_GET['posted'] ?? '') === 'success';
                 <label for="kns-post-title">Title <span aria-hidden="true">*</span></label><input id="kns-post-title" name="title" maxlength="200" required placeholder="Give your announcement a clear title">
                 <label for="kns-post-highlights">Highlights <span aria-hidden="true">*</span></label><textarea id="kns-post-highlights" name="highlights" rows="2" maxlength="1000" required placeholder="The key details everyone should see"></textarea>
                 <label for="kns-post-description">Full description <span aria-hidden="true">*</span></label><textarea id="kns-post-description" name="description" rows="4" maxlength="20000" required placeholder="Write your full announcement here..."></textarea>
-                <label for="mediaInput">Image or video <span class="kns-optional">(optional)</span></label><div class="kns-attachment"><input type="file" id="mediaInput" name="media" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm" aria-describedby="kns-media-help"><small id="kns-media-help">JPG, PNG, GIF, WEBP, MP4, or WEBM. Maximum 20 MB, subject to the server upload limit.</small><p data-media-message role="status"></p><div id="mediaPreview"></div></div>
+                <label for="mediaInput">Images or video <span class="kns-optional">(optional)</span></label><div class="kns-attachment"><input type="file" id="mediaInput" name="media[]" multiple accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm" aria-describedby="kns-media-help"><small id="kns-media-help">Up to 10 images (JPG, PNG, GIF, WEBP) or one video (MP4, WEBM). Maximum 20 MB total, subject to the server upload limit. Choose more images to add to your selection.</small><p data-media-message role="status"></p><div id="mediaPreview"></div></div>
             </fieldset>
             <p class="kns-form-message" data-post-message role="alert"></p>
             <div class="kns-modal-actions"><button type="button" class="kns-secondary" data-close-post>Cancel</button><button type="submit" class="kns-primary">Publish Post</button></div>

@@ -8,16 +8,17 @@ if (!in_array($method, ['GET', 'POST'], true)) {
     requestFail(405, 'Use GET to read notifications or POST to mark them read.');
 }
 
-function adminNotificationFeed(): string
+function adminNotificationFeed(bool $scoped): string
 {
     // Only actual student requests and student-authored messages. No announcements
     // or administrator-authored messages/status responses enter this feed.
+    $officeWhere = $scoped ? ' AND r.assigned_office = ?' : '';
     return "SELECT 'request' COLLATE utf8mb4_unicode_ci AS source_type,
         r.id AS source_id, r.id AS request_id, r.student_id,
         r.reference_no, r.request_type,
         CONCAT_WS(' ', s.first_name, NULLIF(s.middle_name, ''), s.last_name, NULLIF(s.suffix, '')) AS student_name,
         s.student_number, r.purpose AS description, r.created_at
-        FROM requests r JOIN students s ON s.id = r.student_id
+        FROM requests r JOIN students s ON s.id = r.student_id WHERE 1 = 1" . $officeWhere . "
         UNION ALL
         SELECT 'message' COLLATE utf8mb4_unicode_ci, m.id, r.id, r.student_id,
         r.reference_no, r.request_type,
@@ -25,7 +26,7 @@ function adminNotificationFeed(): string
         s.student_number, m.body, m.created_at
         FROM request_messages m JOIN requests r ON r.id = m.request_id
         JOIN students s ON s.id = r.student_id
-        WHERE m.sender_role = 'student' AND m.sender_student_id = r.student_id";
+        WHERE m.sender_role = 'student' AND m.sender_student_id = r.student_id" . $officeWhere;
 }
 
 function adminNotificationPublic(array $row): array
@@ -59,7 +60,9 @@ function adminNotificationCursor(array $row): string
 
 $adminId = $requestActor['id'];
 try {
-    $feed = adminNotificationFeed();
+    $scoped = !requestCanForward($requestActor);
+    $feed = adminNotificationFeed($scoped);
+    $feedParams = $scoped ? [$requestActor['office'], $requestActor['office']] : [];
     if ($method === 'POST') {
         $action = requestText($_POST, 'action', 30, true);
         $pdo->beginTransaction();
@@ -69,12 +72,13 @@ try {
             $id = requestInteger($_POST['source_id'] ?? null);
             $stmt = $pdo->prepare('SELECT e.*, NULL AS read_at FROM (' . $feed .
                 ') e WHERE e.source_type = ? AND e.source_id = ? LIMIT 1');
-            $stmt->execute([$type, $id]);
+            $stmt->execute([...$feedParams, $type, $id]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$row) {
                 $pdo->rollBack();
                 requestFail(404, 'This notification is no longer available.');
             }
+            requestRecord($pdo, (int) $row['request_id'], $requestActor, true);
             $stmt = $pdo->prepare('INSERT INTO admin_notification_reads (admin_id, source_type, source_id)
                 VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE read_at = admin_notification_reads.read_at');
             $stmt->execute([$adminId, $type, $id]);
@@ -86,11 +90,11 @@ try {
             $stmt = $pdo->prepare('INSERT INTO admin_notification_reads (admin_id, source_type, source_id)
                 SELECT ?, e.source_type, e.source_id FROM (' . $feed . ') e WHERE 1 = 1
                 ON DUPLICATE KEY UPDATE read_at = admin_notification_reads.read_at');
-            $stmt->execute([$adminId]);
+            $stmt->execute([$adminId, ...$feedParams]);
         } elseif ($action === 'read_request') {
             $requestId = requestInteger($_POST['request_id'] ?? null);
             $lastMessageId = isset($_POST['last_message_id']) ? requestInteger($_POST['last_message_id']) : null;
-            requestRecord($pdo, $requestId, $requestActor);
+            requestRecord($pdo, $requestId, $requestActor, true);
             $stmt = $pdo->prepare("INSERT INTO admin_notification_reads (admin_id, source_type, source_id)
                 VALUES (?, 'request', ?) ON DUPLICATE KEY UPDATE read_at = admin_notification_reads.read_at");
             $stmt->execute([$adminId, $requestId]);
@@ -115,7 +119,7 @@ try {
     $filter = requestText($_GET, 'filter', 10);
     if (!in_array($filter, ['', 'all', 'unread'], true)) throw new InvalidArgumentException('Invalid notification filter.');
     $where = $filter === 'unread' ? ['n.source_id IS NULL'] : [];
-    $params = [$adminId];
+    $params = [...$feedParams, $adminId];
     $cursor = requestText($_GET, 'before', 512);
     if ($cursor !== '') {
         $decoded = base64_decode($cursor, true);
@@ -134,7 +138,7 @@ try {
     $join = ' FROM (' . $feed . ') e LEFT JOIN admin_notification_reads n
         ON n.admin_id = ? AND n.source_type = e.source_type AND n.source_id = e.source_id';
     $stmt = $pdo->prepare('SELECT COUNT(*) AS total, COALESCE(SUM(n.source_id IS NULL), 0) AS unread' . $join);
-    $stmt->execute([$adminId]);
+    $stmt->execute([...$feedParams, $adminId]);
     $counts = $stmt->fetch(PDO::FETCH_ASSOC);
     $stmt = $pdo->prepare('SELECT e.*, n.read_at' . $join .
         ($where ? ' WHERE ' . implode(' AND ', $where) : '') .
@@ -150,6 +154,7 @@ try {
         'next_cursor' => $next, 'csrf' => $requestCsrf]);
 } catch (Throwable $error) {
     if ($pdo->inTransaction()) $pdo->rollBack();
+    if ($error instanceof PDOException && str_contains($error->getMessage(), 'assigned_office')) requestException($error, $pdo);
     if ($error instanceof PDOException && in_array($error->getCode(), ['42S02', '42S22'], true)) {
         requestFail(503, 'Admin notifications are not installed yet. Import 20261101_admin_notifications.sql into the kns_portal database, then reload this page.');
     }

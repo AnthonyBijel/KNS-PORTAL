@@ -1,0 +1,44 @@
+/* Every selector belongs only to the office registration UI. */
+.kns-office-registration-anchor { position: relative; }
+.kns-office-registration-launch { position: absolute; top: 50%; right: 16px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 50px; padding: 10px 18px; transform: translateY(-50%); border: 1px solid #e4f4e6; border-radius: 11px; background: linear-gradient(180deg, #15962b, #08751d); box-shadow: 0 0 0 1px #ffffff35, 0 3px 7px #043a2026; color: #fff; font: 650 18px/1.3 Inter, ui-sans-serif, system-ui, sans-serif; white-space: nowrap; cursor: pointer; }
+.kns-office-registration-launch .kns-office-registration-plus { font-size: 28px; font-weight: 500; line-height: 1; }
+.kns-office-registration-launch:hover { background: linear-gradient(180deg, #118426, #066719); }
+.kns-office-registration-launch:focus-visible { outline: 3px solid #c3f4ce; outline-offset: 3px; }
+.kns-office-registration-modal { position: fixed; inset: 0; box-sizing: border-box; width: min(556px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); margin: auto; padding: 44px 32px 36px; overflow-y: auto; border: 1px solid #e4e9e6; border-radius: 20px; background: #fff; color: #111820; box-shadow: 0 18px 42px #08180e38; font: 16px/1.4 Inter, ui-sans-serif, system-ui, sans-serif; }
+.kns-office-registration-modal *, .kns-office-registration-modal *::before, .kns-office-registration-modal *::after { box-sizing: border-box; }
+.kns-office-registration-modal::backdrop { background: #10191473; }
+.kns-office-registration-modal .kns-office-registration-close { position: absolute; top: 16px; right: 16px; display: grid; place-items: center; width: 32px; height: 32px; padding: 5px; border: 0; border-radius: 6px; background: transparent; color: #424b52; cursor: pointer; }
+.kns-office-registration-modal .kns-office-registration-close svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.kns-office-registration-modal .kns-office-registration-close:hover { background: #f0f5f1; }
+.kns-office-registration-modal .kns-office-registration-title { margin: 0; color: #0e5032; font-size: 34px; font-weight: 750; line-height: 1.2; letter-spacing: -.5px; }
+.kns-office-registration-modal .kns-office-registration-intro { margin: 6px 0 0; color: #6b7280; font-size: 18px; font-weight: 500; line-height: 1.45; }
+.kns-office-registration-modal .kns-office-registration-fields { display: grid; gap: 20px; margin-top: 28px; }
+.kns-office-registration-modal .kns-office-registration-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.kns-office-registration-modal .kns-office-registration-field label { margin: 0; color: #111820; font-size: 16px; font-weight: 550; line-height: 1.4; }
+.kns-office-registration-modal .kns-office-registration-field input,
+.kns-office-registration-modal .kns-office-registration-field select { display: block; width: 100%; min-width: 0; min-height: 42px; margin: 0; padding: 8px 12px; border: 1px solid #8da79a; border-radius: 7px; background: #fff; color: #111820; font: inherit; }
+.kns-office-registration-modal .kns-office-registration-passwords { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.kns-office-registration-modal .kns-office-registration-actions { display: grid; grid-template-columns: 1.7fr 1fr; gap: 14px; margin-top: 40px; }
+.kns-office-registration-modal .kns-office-registration-actions button { min-height: 52px; padding: 10px 14px; border: 1px solid #08751d; border-radius: 10px; font: 700 18px/1.3 Inter, ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+.kns-office-registration-modal .kns-office-registration-create { background: linear-gradient(100deg, #075e39, #006521); color: #fff; }
+.kns-office-registration-modal .kns-office-registration-cancel { background: #fff; color: #006a1a; }
+.kns-office-registration-modal .kns-office-registration-cancel:hover { background: #f4faf5; }
+.kns-office-registration-modal button:focus-visible,
+.kns-office-registration-modal input:focus-visible,
+.kns-office-registration-modal select:focus-visible { outline: 3px solid #67b882; outline-offset: 2px; }
+@media (max-width: 600px) {
+    .kns-office-registration-launch { right: 12px; gap: 6px; min-height: 42px; padding: 8px 12px; font-size: 14px; }
+    .kns-office-registration-launch .kns-office-registration-plus { font-size: 23px; }
+    .kns-office-registration-modal { padding: 42px 24px 28px; }
+    .kns-office-registration-modal .kns-office-registration-title { font-size: 28px; }
+    .kns-office-registration-modal .kns-office-registration-intro { font-size: 16px; }
+    .kns-office-registration-modal .kns-office-registration-passwords { gap: 14px; }
+    .kns-office-registration-modal .kns-office-registration-field label { font-size: 14px; }
+    .kns-office-registration-modal .kns-office-registration-actions { gap: 10px; margin-top: 30px; }
+    .kns-office-registration-modal .kns-office-registration-actions button { font-size: 16px; }
+}
+
+.kns-office-registration-modal .kns-office-registration-message { margin: 14px 0 0; color: #17623f; font-size: 13px; line-height: 1.45; }
+.kns-office-registration-modal .kns-office-registration-message[data-state="error"] { color: #b42318; }
+.kns-office-registration-modal button:disabled { opacity: .65; cursor: wait; }
+.kns-office-registration-modal [aria-invalid="true"] { border-color: #b42318; }

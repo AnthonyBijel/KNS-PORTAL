@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/../auth/session.php';
+require_once __DIR__ . '/../auth/staff-access.php';
 
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -20,10 +20,8 @@ function failUpload(string $message, int $status = 422): void
     exit;
 }
 
-if (empty($_SESSION['admin_id'])) {
-    header('Location: ../../login.php');
-    exit;
-}
+require_once __DIR__ . '/../../db.php';
+knsRequireStaffAccess($pdo, 'results', '../../login.php');
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     header('Allow: POST');
     failUpload('Use the Upload Students form on the admin Students List.', 405);
@@ -59,7 +57,7 @@ if ($size === false || $size === 0 || $size > 10 * 1024 * 1024) {
     failUpload('The workbook must be nonempty and at most 10 MB.');
 }
 
-require __DIR__ . '/../../db.php';
+require_once __DIR__ . '/../../db.php';
 require __DIR__ . '/../../vendor/autoload.php';
 
 // Match the nullable columns and lengths in the local students table.

@@ -1,28 +1,8 @@
 <?php
-require __DIR__ . '/../php/auth/session.php';
-
-if (empty($_SESSION['admin_id'])) {
-    header('Location: ../login.php');
-    exit;
-}
-
+require_once __DIR__ . '/../php/auth/staff-access.php';
 require __DIR__ . '/../db.php';
-
-$stmt = $pdo->prepare(
-    'SELECT admin_name, role, school_name, school_email, school_contact, school_address, profile_photo
-     FROM admin_account
-     WHERE id = ?
-     LIMIT 1'
-);
-$stmt->execute([(int) $_SESSION['admin_id']]);
-
-$admin = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$admin) {
-    unset($_SESSION['admin_id'], $_SESSION['admin_name'], $_SESSION['admin_role']);
-    header('Location: ../login.php');
-    exit;
-}
+$admin = knsRequireStaffAccess($pdo, 'overview');
+$isOffice = $admin['role'] !== 'Administrator';
 
 function e($value)
 {
@@ -55,6 +35,7 @@ function e($value)
     <link rel="stylesheet" href="../dashboard/announcement-share.css?v=<?= filemtime(__DIR__ . '/../dashboard/announcement-share.css') ?>">
     <link rel="stylesheet" href="../request/messenger.css?v=<?= filemtime(__DIR__ . '/../request/messenger.css') ?>">
     <link rel="stylesheet" href="../dashboard/notifications.css?v=<?= filemtime(__DIR__ . '/../dashboard/notifications.css') ?>">
+    <link rel="stylesheet" href="../dashboard/announcement-gallery.css?v=<?= filemtime(__DIR__ . '/../dashboard/announcement-gallery.css') ?>">
 </head>
 
 <body>
@@ -64,7 +45,7 @@ function e($value)
         <div class="header-left-box">
             <div class="sidebar-logo-box"><img class="sidebar-logo" src="../asset/logo/sidebar-flip.png"></div>
             <div class="left-text-box">
-                <p class="top-left-header">Admin services</p>
+                <p class="top-left-header"><?= $isOffice ? e($admin['role']) . ' services' : 'Admin services' ?></p>
                 <p class="bottom-left-header">My portal</p>
             </div>
 
@@ -127,6 +108,7 @@ function e($value)
 
 
 
+            <?php if (knsStaffMay($admin, 'results')): ?>
             <div class="results-button"
                 onclick="loadPage('results.php')">
 
@@ -134,6 +116,7 @@ function e($value)
                 <p>Results</p>
             </div>
 
+            <?php endif; ?>
             <div class="may-request-button"
                 onclick="loadPage('requests.html')">
                 <img class="overview-logo" src="../asset/logo/suggestion (1).png">
@@ -142,7 +125,7 @@ function e($value)
             <div class="student-information-button"
                 onclick="loadPage('profile.php')">
                 <img class="overview-logo" src="../asset/logo/user.png">
-                <p>Admin Profile</p>
+                <p><?= $isOffice ? 'My Profile' : 'Admin Profile' ?></p>
             </div>
         </div>
 
@@ -157,7 +140,7 @@ function e($value)
         </div>
     </div>
     <!--main-content-->
-    <div class="main-content-contianer" id="main-content-contianer"></div>
+    <div class="main-content-contianer" id="main-content-contianer" data-staff-role="<?= e($admin['role']) ?>"></div>
 
 
 
@@ -166,6 +149,7 @@ function e($value)
     <script src="../dashboard/notifications.js?v=<?= filemtime(__DIR__ . '/../dashboard/notifications.js') ?>"></script>
     <script src="../dashboard/announcement-share.js?v=<?= filemtime(__DIR__ . '/../dashboard/announcement-share.js') ?>"></script>
     <script src="admin.js?v=<?= filemtime(__DIR__ . '/admin.js') ?>"></script>
+    <script src="../dashboard/announcement-gallery.js?v=<?= filemtime(__DIR__ . '/../dashboard/announcement-gallery.js') ?>"></script>
 </body>
 
 </html>

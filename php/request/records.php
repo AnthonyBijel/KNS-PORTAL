@@ -10,15 +10,13 @@ try {
         $stmt = $pdo->prepare('SELECT * FROM request_attachments WHERE request_id = ? AND message_id IS NULL ORDER BY id');
         $stmt->execute([$record['id']]);
         $record['attachments'] = array_map('requestPublicAttachment', $stmt->fetchAll(PDO::FETCH_ASSOC));
-        requestJson(200, ['request' => $record, 'csrf' => $requestCsrf, 'role' => $requestActor['role']]);
+        if ($requestActor['role'] === 'admin') $record['assignment_history'] = requestAssignmentHistory($pdo, $record['id']);
+        requestJson(200, ['request' => $record, 'csrf' => $requestCsrf, 'role' => $requestActor['role']]
+            + requestRoutingMetadata($pdo, $requestActor));
     }
 
-    $where = [];
-    $params = [];
-    if ($requestActor['role'] === 'student') {
-        $where[] = 'r.student_id = ?';
-        $params[] = $requestActor['id'];
-    }
+    [$visibility, $params] = requestVisibility($requestActor, 'r');
+    $where = [$visibility];
     $q = requestText($_GET, 'q', 200);
     if ($q !== '') {
         $where[] = "(r.reference_no LIKE ? OR r.request_type LIKE ? OR CONCAT_WS(' ', s.first_name, s.middle_name, s.last_name, s.suffix) LIKE ?)";
@@ -46,8 +44,8 @@ try {
         ' ORDER BY r.id DESC LIMIT ' . $perPage . ' OFFSET ' . $offset);
     $stmt->execute($params);
     $records = array_map('requestPublic', $stmt->fetchAll(PDO::FETCH_ASSOC));
-    $ownerClause = $requestActor['role'] === 'student' ? ' WHERE student_id = ?' : '';
-    $ownerParams = $requestActor['role'] === 'student' ? [$requestActor['id']] : [];
+    [$ownerScope, $ownerParams] = requestVisibility($requestActor);
+    $ownerClause = ' WHERE ' . $ownerScope;
     $stats = $pdo->prepare('SELECT status, COUNT(*) AS amount FROM requests' . $ownerClause . ' GROUP BY status');
     $stats->execute($ownerParams);
     $summary = ['Total' => 0, 'Pending' => 0, 'Processing' => 0, 'Approved' => 0, 'Rejected' => 0];
@@ -66,7 +64,8 @@ try {
     requestJson(200, ['requests' => $records, 'page' => $page, 'pages' => $pages,
         'total' => $total, 'per_page' => $perPage, 'summary' => $summary,
         'academic_years' => $years->fetchAll(PDO::FETCH_COLUMN), 'request_types' => requestTypes(),
-        'profile' => $profile, 'csrf' => $requestCsrf, 'role' => $requestActor['role']]);
+        'profile' => $profile, 'csrf' => $requestCsrf, 'role' => $requestActor['role']]
+        + requestRoutingMetadata($pdo, $requestActor));
 } catch (Throwable $error) {
     requestException($error, $pdo);
 }

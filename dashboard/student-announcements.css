@@ -80,3 +80,12 @@
     .student-announcements .sa-highlights { flex-direction: column; gap: 4px; }
     .student-announcements .sa-highlights-label { padding: 0; border: 0; }
 }
+
+.student-announcements .sa-card-body.sa-with-gallery { grid-template-columns: minmax(0, 1fr) minmax(140px, 36%); gap: 12px; }
+.student-announcements .post-image.sa-media-gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; justify-self: end; width: 100%; max-width: 250px; overflow: hidden; border-radius: 9px; background: transparent; }
+.student-announcements .sa-media-gallery > a { min-width: 0; overflow: hidden; border-radius: 7px; background: #f0f5f1; }
+.student-announcements .post-image.sa-media-gallery img { height: 80px; max-height: 80px; object-fit: cover; }
+@container (max-width: 460px) {
+    .student-announcements .sa-card-body.sa-with-gallery { grid-template-columns: minmax(0, 1fr) minmax(112px, 38%); gap: 10px; }
+    .student-announcements .post-image.sa-media-gallery img { height: 68px; max-height: 68px; }
+}

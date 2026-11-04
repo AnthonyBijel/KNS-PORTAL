@@ -21,6 +21,11 @@ try {
     if (!in_array($expected, ['Pending', 'Processing', 'Approved', 'Rejected'], true)) {
         throw new InvalidArgumentException('Invalid request status. Reopen Request Details.');
     }
+    $assignmentRevision = $_POST['assignment_revision'] ?? null;
+    if ($assignmentRevision !== null) {
+        $assignmentRevision = filter_var($assignmentRevision, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+        if ($assignmentRevision === false) throw new InvalidArgumentException('Reload the request before updating its status.');
+    }
     $remarks = requestText($_POST, 'remarks', 500);
     $nonce = requestToken($_POST, 'client_token');
     $files = requestUploadFiles('response_files');
@@ -38,7 +43,7 @@ try {
     }
 
     $pdo->beginTransaction();
-    // The same per-request lock is used by Messenger sends.
+    // Forwarding, status changes, and Messenger sends share this per-request lock.
     $record = requestRecord($pdo, $requestId, $requestActor, true);
     $body = 'Request status: ' . $target . "\nReference: " . $record['reference_no'];
     if ($remarks !== '') $body .= "\n\n" . $remarks;
@@ -61,7 +66,9 @@ try {
     }
 
     $conflict = null;
-    if ($record['status'] !== $expected) {
+    if ($assignmentRevision !== null && (int) $record['assignment_revision'] !== $assignmentRevision) {
+        $conflict = 'The assigned office changed. Reopen Request Details before updating the status.';
+    } elseif ($record['status'] !== $expected) {
         $conflict = 'The request status changed. Current status: ' . $record['status'] . '. Review it before trying again.';
     } elseif (in_array($record['status'], ['Approved', 'Rejected'], true)) {
         $conflict = 'This request is already ' . strtolower($record['status']) . ' and cannot be changed.';

@@ -34,7 +34,7 @@ $categories = ["All", "Academic", "Events", "Guidelines", "Others"];
     <div class="announcement-content" data-server-time="<?= (int) round(microtime(true) * 1000) ?>">
         <?php foreach ($announcements as $index => $post): ?>
             <?php
-            $postMediaUrl = knsAnnouncementMediaUrl($post['media_path'] ?? '');
+            $attachments = knsAnnouncementAttachments($post);
             $postCategory = strtolower(trim($post['announcement_type'] ?? ''));
             if ($postCategory === 'event') $postCategory = 'events';
             if (!in_array($postCategory, ['academic', 'events', 'guidelines'], true)) $postCategory = 'others';
@@ -44,7 +44,8 @@ $categories = ["All", "Academic", "Events", "Guidelines", "Others"];
             $postDescription = (string) ($post['description'] ?? '');
             $descriptionId = 'announcement-description-' . $index;
             $postTime = new DateTimeImmutable($post['created_at'], new DateTimeZone('Asia/Manila'));
-            $hasMedia = $postMediaUrl !== '' && in_array($post['media_type'] ?? '', ['image', 'video'], true);
+            $hasMedia = count($attachments) > 0;
+            $hasGallery = count($attachments) > 1;
             ?>
             <article class="post-content" data-expires-at="<?= knsAnnouncementEscape(knsAnnouncementExpiryIso($post['expires_at'] ?? null)) ?>" data-category="<?= $postCategory ?>" data-announcement-id="<?= (int) $post['id'] ?>" data-post-timestamp="<?= $postTime->getTimestamp() ?>" data-search-text="<?= knsAnnouncementEscape($postTitle . ' ' . $postHighlights . ' ' . $postDescription) ?>" aria-labelledby="student-post-title-<?= (int) $post['id'] ?>">
                 <div class="post-user-name">
@@ -56,16 +57,13 @@ $categories = ["All", "Academic", "Events", "Guidelines", "Others"];
                         <?php else: ?><path d="m4 10 13-5v14L4 14zM4 10H2v4h2m3 1 1 6h3l-2-5M20 9l2-1m-2 7 2 1"/><?php endif; ?>
                     </svg><?= $postType ?></span></div></div>
                 </div>
-                <div class="sa-card-body<?= $hasMedia ? ' sa-with-media' : '' ?>">
+                <div class="sa-card-body<?= $hasGallery ? ' sa-with-gallery' : ($hasMedia ? ' sa-with-media' : '') ?>">
                     <div class="sa-card-copy">
                         <h3 id="student-post-title-<?= (int) $post['id'] ?>"><?= knsAnnouncementEscape($postTitle) ?></h3>
                         <?php if ($postHighlights !== ''): ?><div class="sa-highlights"><span class="sa-highlights-label">HIGHLIGHTS</span><p><?= knsAnnouncementEscape($postHighlights) ?></p></div><?php endif; ?>
                         <div class="description-box"><p class="description-text" id="<?= $descriptionId ?>"><?= knsAnnouncementEscape($postDescription) ?></p><button type="button" class="see-more-btn" aria-expanded="false" aria-controls="<?= $descriptionId ?>">See more</button></div>
                     </div>
-                    <?php if ($hasMedia): ?><div class="post-image">
-                        <?php if ($post['media_type'] === 'image'): ?><a href="<?= knsAnnouncementEscape($postMediaUrl) ?>" target="_blank" rel="noopener noreferrer" aria-label="View attachment: <?= knsAnnouncementEscape($postTitle) ?>"><img src="<?= knsAnnouncementEscape($postMediaUrl) ?>" alt="Attachment for <?= knsAnnouncementEscape($postTitle) ?>" loading="lazy"></a>
-                        <?php else: ?><video controls preload="metadata" aria-label="<?= knsAnnouncementEscape($postTitle) ?>"><source src="<?= knsAnnouncementEscape($postMediaUrl) ?>">Your browser cannot play this video. <a href="<?= knsAnnouncementEscape($postMediaUrl) ?>">Download video</a></video><?php endif; ?>
-                    </div><?php endif; ?>
+                    <?= knsAnnouncementGallery($attachments, $postTitle, 'post-image' . ($hasGallery ? ' sa-media-gallery' : '')) ?>
                 </div>
                 <div class="sa-card-footer"><button type="button" class="share-button" <?= knsAnnouncementShareAttributes($post) ?> aria-label="Share <?= knsAnnouncementEscape($postTitle) ?>" aria-haspopup="dialog"><img src="../asset/logo/share-square.png" alt=""><span>Share</span></button></div>
             </article>

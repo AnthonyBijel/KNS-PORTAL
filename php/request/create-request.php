@@ -32,9 +32,9 @@ try {
         $reference = 'REQ-' . (new DateTimeImmutable('now', new DateTimeZone('Asia/Manila')))->format('Y') .
             '-' . strtoupper(bin2hex(random_bytes(6)));
         $stmt = $pdo->prepare('INSERT INTO requests
-            (reference_no, student_id, request_type, subject, academic_year, semester, purpose, submission_token)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-        $stmt->execute([$reference, $requestActor['id'], $type, $subject ?: null, $year, $semester, $purpose, $nonce]);
+            (reference_no, student_id, request_type, subject, academic_year, semester, purpose, submission_token, assigned_office)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $stmt->execute([$reference, $requestActor['id'], $type, $subject ?: null, $year, $semester, $purpose, $nonce, requestDefaultOffice($type)]);
         $id = (int) $pdo->lastInsertId();
         requestSaveAttachments($pdo, $id, null, $files, $moved);
     }

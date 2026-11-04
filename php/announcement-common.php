@@ -51,6 +51,103 @@ function knsAnnouncementMediaUrl($value): string
     return '/kns_portal/' . implode('/', $segments);
 }
 
+const KNS_ANNOUNCEMENT_MAX_IMAGES = 10;
+const KNS_ANNOUNCEMENT_MAX_MEDIA_BYTES = 20 * 1024 * 1024;
+
+function knsAnnouncementAttachments(array $post): array
+{
+    $manifest = $post['media_attachments'] ?? null;
+    $items = is_string($manifest) ? json_decode($manifest, true) : null;
+    $attachments = [];
+    if (is_array($items) && array_is_list($items)) {
+        foreach (array_slice($items, 0, KNS_ANNOUNCEMENT_MAX_IMAGES) as $item) {
+            if (!is_array($item) || !is_string($item['path'] ?? null)
+                || !in_array($item['type'] ?? null, ['image', 'video'], true)) continue;
+            $url = knsAnnouncementMediaUrl($item['path']);
+            if ($url !== '') $attachments[$url] = ['path' => $item['path'], 'type' => $item['type'], 'url' => $url];
+        }
+    }
+    if ($attachments) return array_values($attachments);
+    // Preserve existing single-image and video posts.
+    $path = $post['media_path'] ?? '';
+    $type = $post['media_type'] ?? '';
+    $url = is_string($path) ? knsAnnouncementMediaUrl($path) : '';
+    return $url !== '' && in_array($type, ['image', 'video'], true)
+        ? [['path' => $path, 'type' => $type, 'url' => $url]] : [];
+}
+
+// Render four thumbnails while retaining the complete list for the viewer.
+function knsAnnouncementGallery(array $attachments, string $title, string $class): string
+{
+    if (!$attachments) return '';
+    $isGallery = count($attachments) > 1;
+    $extra = count($attachments) - 4;
+    $html = '<div class="' . knsAnnouncementEscape($class . ($isGallery ? ' kns-announcement-gallery' : ''))
+        . '" role="group" aria-label="Post attachments"';
+    if ($isGallery) {
+        $html .= ' data-gallery-images="' . knsAnnouncementEscape(json_encode(array_column($attachments, 'url'), JSON_UNESCAPED_SLASHES))
+            . '" data-gallery-title="' . knsAnnouncementEscape($title) . '"';
+    }
+    $html .= '>';
+    foreach (array_slice($attachments, 0, 4) as $index => $attachment) {
+        $url = knsAnnouncementEscape($attachment['url']);
+        if ($attachment['type'] === 'video') {
+            $html .= '<video controls preload="metadata" aria-label="' . knsAnnouncementEscape($title)
+                . '"><source src="' . $url . '">Your browser cannot play this video. <a href="' . $url . '">Download video</a></video>';
+            continue;
+        }
+        $covered = $index === 3 && $extra > 0;
+        $openIndex = $covered ? 4 : $index;
+        $openUrl = knsAnnouncementEscape($attachments[$openIndex]['url']);
+        $label = $covered ? 'View ' . $extra . ' more images: ' . $title
+            : 'View image ' . ($index + 1) . ' of ' . count($attachments) . ': ' . $title;
+        $html .= '<a href="' . $openUrl . '" target="_blank" rel="noopener noreferrer"'
+            . ($isGallery ? ' data-gallery-index="' . $openIndex . '" aria-haspopup="dialog"' : '')
+            . ($covered ? ' class="kns-gallery-covered"' : '')
+            . ' aria-label="' . knsAnnouncementEscape($label) . '"><img src="' . $url
+            . '" alt="' . knsAnnouncementEscape('Image ' . ($index + 1) . ' for ' . $title) . '" loading="lazy">';
+        if ($covered) $html .= '<span class="kns-gallery-more" aria-hidden="true">+' . $extra . '</span>';
+        $html .= '</a>';
+    }
+    return $html . '</div>';
+}
+
+// Accept the multiple picker and older single-file forms.
+function knsAnnouncementUploads($upload): array
+{
+    if ($upload === null) return [];
+    if (!is_array($upload)) throw new InvalidArgumentException('Select valid attachments.');
+    foreach (['error', 'size', 'tmp_name'] as $field) {
+        if (!array_key_exists($field, $upload)) throw new InvalidArgumentException('Select valid attachments.');
+    }
+    if (!is_array($upload['error'])) {
+        $upload = ['error' => [$upload['error']], 'size' => [$upload['size']], 'tmp_name' => [$upload['tmp_name']]];
+    }
+    $count = count($upload['error']);
+    if ($count > KNS_ANNOUNCEMENT_MAX_IMAGES) throw new InvalidArgumentException('Choose up to 10 images or one video.');
+    foreach (['size', 'tmp_name'] as $field) {
+        if (!is_array($upload[$field]) || array_keys($upload[$field]) !== array_keys($upload['error'])) {
+            throw new InvalidArgumentException('Select valid attachments.');
+        }
+    }
+    $files = [];
+    $total = 0;
+    foreach ($upload['error'] as $index => $error) {
+        if ($error === UPLOAD_ERR_NO_FILE && $count === 1) return [];
+        if ($error !== UPLOAD_ERR_OK) throw new InvalidArgumentException('An attachment could not be uploaded. Check its size and try again.');
+        $size = $upload['size'][$index];
+        $temporary = $upload['tmp_name'][$index];
+        if (!is_int($size) || $size < 1 || $size > KNS_ANNOUNCEMENT_MAX_MEDIA_BYTES) {
+            throw new InvalidArgumentException('Choose nonempty attachments totaling at most 20 MB.');
+        }
+        if (!is_string($temporary) || $temporary === '') throw new InvalidArgumentException('Select valid attachments.');
+        $total += $size;
+        $files[] = ['tmp_name' => $temporary, 'size' => $size];
+    }
+    if ($total > KNS_ANNOUNCEMENT_MAX_MEDIA_BYTES) throw new InvalidArgumentException('Attachments must total at most 20 MB.');
+    return $files;
+}
+
 function knsAnnouncementOrigin(): string
 {
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
@@ -72,7 +169,7 @@ function knsAnnouncementShareAttributes(array $post): string
         'data-announcement-id' => (int) $post['id'],
         'data-title' => knsAnnouncementTitle($post),
         'data-description' => $post['description'] ?? '',
-        'data-media-url' => knsAnnouncementMediaUrl($post['media_path'] ?? ''),
+        'data-media-url' => knsAnnouncementAttachments($post)[0]['url'] ?? '',
     ];
     $attributes = [];
     foreach ($values as $name => $value) {

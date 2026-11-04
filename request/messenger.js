@@ -105,6 +105,7 @@
         let files = [], nonce = null, sending = false, refreshing = false;
         let statusBusy = false, statusNonce = null, statusSignature = "", statusNoticeTimer = null;
         let statusRevision = 0;
+        let canForward = false, officeAvailability = {}, routingBusy = false, routingNonce = null, routingSignature = "", queueRefreshTimer = null;
         let lastId = 0, firstId = 0, hasOlder = false, initialLoaded = false;
         const seen = new Set();
         function requireRole(data) {
@@ -113,6 +114,8 @@
                 error.status = 401;
                 throw error;
             }
+            if (admin && typeof data.can_forward === "boolean") canForward = data.can_forward;
+            if (data.office_availability) officeAvailability = data.office_availability;
         }
         let currentPage = 1, listPages = 1, total = 0, filtersReady = false;
         const modal = admin ? container.querySelector("#requestDetailsModal") : element("div", "rm-student-overlay");
@@ -166,6 +169,32 @@
             modal.append(statusNotice);
         }
 
+        const routingWarning = admin ? element("p", "request-routing-warning") : null;
+        const routingPanel = admin ? element("section", "rd-panel request-routing-panel") : null;
+        const routingCurrent = admin ? element("p", "request-routing-current") : null;
+        const routingHistory = admin ? element("ol", "request-routing-history") : null;
+        const forwardForm = admin ? element("form", "request-routing-form") : null;
+        const forwardTarget = admin ? element("select", "request-routing-select") : null;
+        const forwardButton = admin ? element("button", "request-routing-forward", "Forward Request") : null;
+        let routingRenderedKey = "";
+        if (admin) {
+            routingWarning.hidden = true;
+            routingWarning.setAttribute("role", "alert");
+            feedback.before(routingWarning);
+            routingPanel.hidden = true;
+            routingPanel.append(element("h3", "", "Office Assignment"), routingCurrent, routingHistory);
+            const label = element("label", "", "Forward to office");
+            forwardTarget.id = "requestRoutingOffice";
+            label.htmlFor = forwardTarget.id;
+            ["Admin", "Registrar", "OSA"].forEach(office => forwardTarget.add(new Option(office, office)));
+            forwardButton.type = "submit";
+            forwardForm.append(label, forwardTarget, forwardButton,
+                element("small", "request-routing-help", "Forwarding keeps the current status, messages, and files."));
+            modal.querySelector(".rd-response-panel").before(routingPanel);
+            listen(forwardTarget, "change", () => { routingNonce = null; updateActionControls(); });
+            listen(forwardForm, "submit", event => { event.preventDefault(); forwardRequest(); });
+        }
+
         function showStatusNotice(message = "", kind = "info") {
             if (!admin) return;
             clearTimeout(statusNoticeTimer);
@@ -183,12 +212,15 @@
             const current = selectedRequest?.status;
             const final = current === "Approved" || current === "Rejected";
             modal.querySelectorAll(".rd-reject,.rd-processing,.rd-approve").forEach(button => {
-                button.disabled = statusBusy || !current || final || (button.classList.contains("rd-processing") && current === "Processing");
+                button.disabled = statusBusy || routingBusy || !current || final || (button.classList.contains("rd-processing") && current === "Processing");
                 button.title = final ? "This request is already " + current.toLowerCase() + "." : "";
             });
-            responseInput.disabled = remarksInput.disabled = clearResponse.disabled = statusBusy || !current || final;
+            responseInput.disabled = remarksInput.disabled = clearResponse.disabled = statusBusy || routingBusy || !current || final;
+            forwardTarget.disabled = statusBusy || routingBusy;
+            forwardButton.disabled = !canForward || statusBusy || routingBusy || !selectedRequest || forwardTarget.value === selectedRequest.assigned_office;
+            forwardButton.textContent = routingBusy ? "Forwarding..." : "Forward Request";
             responseDropzone.classList.toggle("is-disabled", responseInput.disabled);
-            table.querySelectorAll(".request-eye-btn").forEach(button => { button.disabled = statusBusy; });
+            table.querySelectorAll(".request-eye-btn").forEach(button => { button.disabled = statusBusy || routingBusy; });
         }
         function syncRequestStatus(record) {
             const row = table.querySelector('tr[data-request-id="' + record.id + '"]');
@@ -203,6 +235,8 @@
                 const modalBadge = modal.querySelector(".rd-status");
                 modalBadge.textContent = record.status;
                 modalBadge.dataset.status = record.status.toLowerCase();
+                modal.querySelector('[data-request-field="assigned_office"]').textContent = selectedRequest.assigned_office;
+                renderRouting(selectedRequest);
                 updateActionControls();
             }
         }
@@ -229,7 +263,7 @@
             statusSignature = "";
         }
         async function saveRequestAction(action) {
-            if (!admin || !selectedRequest || statusBusy) return;
+            if (!admin || !selectedRequest || statusBusy || routingBusy) return;
             const record = selectedRequest;
             const version = detailVersion;
             const responseFiles = Array.from(responseInput.files);
@@ -249,6 +283,7 @@
             body.set("request_id", record.id);
             body.set("action", action);
             body.set("expected_status", record.status);
+            body.set("assignment_revision", record.assignment_revision);
             body.set("remarks", remarks);
             body.set("csrf", csrf);
             body.set("client_token", statusNonce);
@@ -276,6 +311,7 @@
                 if (chatRecord?.id === record.id) refreshChat();
             } catch (error) {
                 if (disposed || error.name === "AbortError") return;
+                if (loseRequestAccess(error)) { await loadList(currentPage); return; }
                 if (error.data?.role === "admin" && error.data.request) {
                     syncRequestStatus(error.data.request);
                     await loadList(currentPage);
@@ -285,6 +321,99 @@
                 statusBusy = false;
                 ++statusRevision;
                 if (!disposed) updateActionControls();
+            }
+        }
+
+        function renderRouting(record) {
+            if (!admin) return;
+            const historyRows = record.assignment_history || [];
+            routingPanel.hidden = !canForward && historyRows.length === 0;
+            routingCurrent.textContent = "Current office: " + record.assigned_office;
+            if (canForward) {
+                if (!forwardForm.isConnected) routingHistory.before(forwardForm);
+                const key = record.id + ":" + record.assignment_revision;
+                if (key !== routingRenderedKey) {
+                    forwardTarget.value = record.assigned_office;
+                    routingRenderedKey = key;
+                    routingNonce = null;
+                }
+                [...forwardTarget.options].forEach(option => {
+                    option.textContent = option.value + (officeAvailability[option.value] === 0 ? " (no active account)" : "");
+                });
+            } else forwardForm.remove();
+            routingHistory.replaceChildren();
+            routingHistory.hidden = historyRows.length === 0;
+            historyRows.forEach(entry => routingHistory.append(element("li", "",
+                entry.previous_office + " \u2192 " + entry.new_office + " \u00b7 " + entry.reassigned_by + " \u00b7 " + date(entry.created_at))));
+        }
+        function loseRequestAccess(error) {
+            if (!admin || ![401, 403, 404].includes(error.status)) return false;
+            closeDetails();
+            messages.replaceChildren();
+            modal.querySelectorAll("[data-request-field]").forEach(node => { node.textContent = "\u2014"; });
+            modal.querySelector("[data-request-attachments]").replaceChildren();
+            routingHistory.replaceChildren();
+            routingPanel.hidden = true;
+            feedback.textContent = error.status === 404 && !canForward
+                ? "This request is no longer assigned to your office. Refreshing the list." : error.message;
+            return true;
+        }
+        async function forwardRequest() {
+            if (!canForward || !selectedRequest || routingBusy || statusBusy) return;
+            const record = selectedRequest, version = detailVersion;
+            if (forwardTarget.value === record.assigned_office) return;
+            const signature = JSON.stringify([record.id, record.assignment_revision, forwardTarget.value]);
+            if (!routingNonce || signature !== routingSignature) { routingNonce = token(); routingSignature = signature; }
+            const body = new FormData();
+            body.set("csrf", csrf);
+            body.set("request_id", record.id);
+            body.set("assigned_office", forwardTarget.value);
+            body.set("expected_office", record.assigned_office);
+            body.set("assignment_revision", record.assignment_revision);
+            body.set("client_token", routingNonce);
+            routingBusy = true;
+            ++statusRevision;
+            updateActionControls();
+            showStatusNotice("Forwarding request...");
+            try {
+                const data = await api("../admin/forward-request.php", {body, signal: lifecycle.signal});
+                if (disposed) return;
+                requireRole(data);
+                syncRequestStatus(data.request);
+                await loadList(currentPage);
+                if (version === detailVersion && selectedRequest?.id === record.id) {
+                    showStatusNotice(data.message + (data.routing_warning ? " " + data.routing_warning : ""), data.routing_warning ? "info" : "success");
+                }
+            } catch (error) {
+                if (disposed || error.name === "AbortError") return;
+                if (error.data?.request) syncRequestStatus(error.data.request);
+                if (loseRequestAccess(error)) await loadList(currentPage);
+                else if (version === detailVersion) showStatusNotice(error.message, "error");
+            } finally {
+                routingBusy = false;
+                ++statusRevision;
+                if (!disposed) updateActionControls();
+            }
+        }
+        async function refreshRequestQueues() {
+            try {
+                if (!document.hidden && !statusBusy && !routingBusy && !sending) {
+                    await loadList(currentPage);
+                    if (admin && selectedRequest && !disposed) {
+                        const id = selectedRequest.id, version = detailVersion, revision = statusRevision;
+                        try {
+                            const data = await api("records.php", {params: {id}, signal: lifecycle.signal});
+                            if (!disposed && version === detailVersion && revision === statusRevision && !statusBusy && !routingBusy) {
+                                requireRole(data);
+                                syncRequestStatus(data.request);
+                            }
+                        } catch (error) {
+                            if (!disposed && version === detailVersion && error.name !== "AbortError") loseRequestAccess(error);
+                        }
+                    }
+                }
+            } finally {
+                if (!disposed) queueRefreshTimer = setTimeout(refreshRequestQueues, 15000);
             }
         }
 
@@ -443,7 +572,10 @@
             } catch (error) {
                 if (version !== chatVersion || error.name === "AbortError") return;
                 notice.textContent = error.message;
-                if ([401, 403, 404].includes(error.status)) retry = false;
+                if ([401, 403, 404].includes(error.status)) {
+                    retry = false;
+                    if (loseRequestAccess(error)) loadList(currentPage);
+                }
             } finally {
                 if (version === chatVersion && !disposed && chatRecord) {
                     refreshing = false;
@@ -520,7 +652,10 @@
                 await refreshChat();
                 history.scrollTop = history.scrollHeight;
             } catch (error) {
-                if (version === chatVersion && error.name !== "AbortError") notice.textContent = error.message;
+                if (version === chatVersion && error.name !== "AbortError") {
+                    notice.textContent = error.message;
+                    if (loseRequestAccess(error)) await loadList(currentPage);
+                }
             } finally {
                 if (version === chatVersion) { sending = false; updateBusy(); input.focus(); }
             }
@@ -559,6 +694,7 @@
             modal.querySelector("#rdResponseFile").value = "";
             modal.querySelector(".rd-char-count").textContent = "0/500";
             updateResponseSelection();
+            renderRouting(record);
             updateActionControls();
         }
         async function openDetails(id, trigger) {
@@ -657,6 +793,10 @@
             add("›", currentPage + 1, currentPage >= listPages);
         }
         function renderList(data) {
+            if (admin) {
+                routingWarning.textContent = (data.routing_warnings || []).join(" ");
+                routingWarning.hidden = !routingWarning.textContent;
+            }
             tbody.replaceChildren();
             data.requests.forEach((record, index) => {
                 const row = element("tr");
@@ -672,7 +812,11 @@
                 const values = [(data.page - 1) * data.per_page + index + 1, record.reference_no];
                 if (admin) values.push(record.student_name);
                 values.push(record.request_type, date(record.created_at));
-                values.forEach(value => row.append(element("td", "", String(value))));
+                values.forEach((value, index) => {
+                    const cell = element("td", "", String(value));
+                    if (admin && index === 3) cell.append(element("small", "request-routing-office", record.assigned_office));
+                    row.append(cell);
+                });
                 const status = element("td");
                 status.append(element("span", admin ? "request-status-badge badge-" + record.status.toLowerCase() : "request-status " + record.status.toLowerCase(), record.status));
                 row.append(status);
@@ -683,7 +827,7 @@
                 button.setAttribute("aria-haspopup", "dialog");
                 button.setAttribute("aria-label", (admin ? "View request " : "Message about ") + record.reference_no);
                 if (admin) {
-                    button.disabled = statusBusy;
+                    button.disabled = statusBusy || routingBusy;
                     button.setAttribute("aria-controls", modal.id);
                     button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
                 } else {
@@ -848,7 +992,7 @@
                     const result = await api("create-request.php", {body, signal: lifecycle.signal});
                     if (disposed) return;
                     submission.reset();
-                    message.textContent = "Request submitted: " + result.request.reference_no + ". Open Message in My Requests to contact the administrator.";
+                    message.textContent = "Request submitted: " + result.request.reference_no + ". Assigned to " + result.request.assigned_office + ". Open Message in My Requests to contact your assigned office.";
                     await loadList();
                 } catch (error) {
                     if (!disposed && error.name !== "AbortError") message.textContent = error.message;
@@ -862,11 +1006,13 @@
 
         listen(container.querySelector("#studentRequestForm"), "submit", event => event.preventDefault());
         loadList();
+        queueRefreshTimer = setTimeout(refreshRequestQueues, 15000);
         const cleanup = () => {
             disposed = true;
             closeChat(false);
             clearTimeout(listTimer);
             clearTimeout(statusNoticeTimer);
+            clearTimeout(queueRefreshTimer);
             listController?.abort();
             detailController?.abort();
             lifecycle.abort();

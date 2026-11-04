@@ -1,5 +1,5 @@
 <?php
-require __DIR__ . '/../php/auth/session.php';
+require_once __DIR__ . '/../php/auth/staff-access.php';
 require_once __DIR__ . '/../php/announcement-common.php';
 
 function postReply(int $status, string $message, array $extra = []): never
@@ -16,7 +16,8 @@ function postReply(int $status, string $message, array $extra = []): never
     }
     exit;
 }
-if (empty($_SESSION['admin_id'])) postReply(401, 'Your session expired. Please sign in again.');
+require_once __DIR__ . '/../db.php';
+$staff = knsRequireStaffAccess($pdo, 'announcements');
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Allow: POST');
     postReply(405, 'Use the Create Post form to publish an announcement.');
@@ -52,37 +53,53 @@ try {
 } catch (InvalidArgumentException $error) {
     postReply(422, $error->getMessage());
 }
-require __DIR__ . '/../db.php';
+require_once __DIR__ . '/../db.php';
 $admin = $pdo->prepare('SELECT id FROM admin_account WHERE id = ?');
-$admin->execute([(int) $_SESSION['admin_id']]);
+$admin->execute([$staff['id']]);
 if (!$admin->fetchColumn()) postReply(403, 'This administrator account is no longer available.');
-$mediaPath = null;
-$mediaType = null;
-$destination = null;
-if (isset($_FILES['media']) && ($_FILES['media']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
-    $file = $_FILES['media'];
-    if (!is_int($file['error'] ?? null) || $file['error'] !== UPLOAD_ERR_OK) postReply(422, 'The attachment could not be uploaded. Check its size and try again.');
-    if (($file['size'] ?? 0) < 1 || $file['size'] > 20 * 1024 * 1024) postReply(422, 'Choose a nonempty attachment of at most 20 MB.');
-    if (!is_string($file['tmp_name'] ?? null) || !is_uploaded_file($file['tmp_name'])) postReply(422, 'Select a valid attachment.');
-    $mime = mime_content_type($file['tmp_name']);
-    $allowedFiles = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp', 'video/mp4' => 'mp4', 'video/webm' => 'webm'];
-    if (!isset($allowedFiles[$mime])) postReply(422, 'Choose a JPG, PNG, GIF, WEBP, MP4, or WEBM file.');
-    $mediaType = str_starts_with($mime, 'image/') ? 'image' : 'video';
-    $uploadFolder = __DIR__ . '/../uploads/announcements/';
-    if (!is_dir($uploadFolder) && !mkdir($uploadFolder, 0755, true)) postReply(500, 'Unable to prepare the attachment folder.');
-    $fileName = 'announcement_' . bin2hex(random_bytes(16)) . '.' . $allowedFiles[$mime];
-    $destination = $uploadFolder . $fileName;
-    if (!move_uploaded_file($file['tmp_name'], $destination)) postReply(500, 'Unable to save the attachment. Please try again.');
-    $mediaPath = 'uploads/announcements/' . $fileName;
-}
+$allowedFiles = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp', 'video/mp4' => 'mp4', 'video/webm' => 'webm'];
 try {
-    $stmt = $pdo->prepare('INSERT INTO announcements (announcement_type, title, highlights, description, media_path, media_type, expires_at) VALUES (:announcement_type, :title, :highlights, :description, :media_path, :media_type, :expires_at)');
-    $stmt->execute($fields + ['media_path' => $mediaPath, 'media_type' => $mediaType]);
+    $files = knsAnnouncementUploads($_FILES['media'] ?? null);
+    // Validate the entire selection before moving any files.
+    foreach ($files as &$file) {
+        if (!is_uploaded_file($file['tmp_name'])) throw new InvalidArgumentException('Select valid attachments.');
+        $mime = mime_content_type($file['tmp_name']);
+        if (!isset($allowedFiles[$mime])) throw new InvalidArgumentException('Choose JPG, PNG, GIF, WEBP images, or one MP4 or WEBM video.');
+        $file['type'] = str_starts_with($mime, 'image/') ? 'image' : 'video';
+        $file['extension'] = $allowedFiles[$mime];
+        if (count($files) > 1 && $file['type'] === 'video') {
+            throw new InvalidArgumentException('Choose multiple images or one video. Videos cannot be combined with other attachments.');
+        }
+    }
+    unset($file);
+} catch (InvalidArgumentException $error) {
+    postReply(422, $error->getMessage());
+}
+$destinations = [];
+$attachments = [];
+try {
+    $uploadFolder = __DIR__ . '/../uploads/announcements/';
+    if ($files && !is_dir($uploadFolder) && !mkdir($uploadFolder, 0755, true)) throw new RuntimeException('Unable to prepare the attachment folder.');
+    foreach ($files as $file) {
+        $fileName = 'announcement_' . bin2hex(random_bytes(16)) . '.' . $file['extension'];
+        $destination = $uploadFolder . $fileName;
+        if (!move_uploaded_file($file['tmp_name'], $destination)) throw new RuntimeException('Unable to save an attachment.');
+        $destinations[] = $destination;
+        $attachments[] = ['path' => 'uploads/announcements/' . $fileName, 'type' => $file['type']];
+    }
+    // Keep the first attachment in the legacy columns for existing integrations.
+    $fields['media_path'] = $attachments[0]['path'] ?? null;
+    $fields['media_type'] = $attachments[0]['type'] ?? null;
+    $fields['media_attachments'] = $attachments ? json_encode($attachments, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES) : null;
+    $stmt = $pdo->prepare('INSERT INTO announcements (announcement_type, title, highlights, description, media_path, media_type, media_attachments, expires_at) VALUES (:announcement_type, :title, :highlights, :description, :media_path, :media_type, :media_attachments, :expires_at)');
+    $stmt->execute($fields);
     $id = (int) $pdo->lastInsertId();
     $_SESSION['announcement_submissions'][$token] = $id;
     postReply(201, 'Your post was published.', ['announcement_id' => $id]);
 } catch (Throwable $error) {
-    if ($destination !== null && is_file($destination)) unlink($destination);
+    foreach ($destinations as $destination) {
+        if (is_file($destination) && !@unlink($destination)) error_log('Unable to clean up failed announcement attachment: ' . basename($destination));
+    }
     error_log('Announcement publishing failed: ' . $error->getMessage());
     postReply(500, 'Unable to publish your post. Please try again.');
 }
