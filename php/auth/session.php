@@ -33,6 +33,9 @@ if (empty($_SESSION['csrf'])) {
     $_SESSION['csrf'] = bin2hex(random_bytes(32));
 }
 
+require_once __DIR__ . '/student-setup-guard.php';
+knsEnforceStudentSetup();
+
 function currentStudentId(): ?int
 {
     $studentId = $_SESSION['student_id'] ?? null;

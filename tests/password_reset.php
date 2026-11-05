@@ -12,6 +12,7 @@ foreach (['students', 'password_reset_tokens', 'password_reset_rate_limits'] as 
     $definition = preg_replace('/^CREATE TABLE/', 'CREATE TEMPORARY TABLE', $definition, 1);
     $pdo->exec($definition);
 }
+$pdo->exec(file_get_contents(__DIR__ . '/../database/migrations/20261105_student_account_setup.sql'));
 $insert = $pdo->prepare(
     'INSERT INTO students (student_number, password_hash, first_name, last_name, course, year_level, section, status, email, contact_number)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'

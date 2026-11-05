@@ -1,6 +1,7 @@
 <?php
 ini_set('display_errors', '0');
 require_once __DIR__ . '/../auth/staff-access.php';
+require_once __DIR__ . '/../academic-term-common.php';
 
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -288,6 +289,12 @@ function gradeUploadValidate(array $values, string $sheetName, int $calendar): a
         if (isset($limits[$field]) && mb_strlen($value, 'UTF-8') > $limits[$field]) {
             throw new GradeUploadValidationException("{$field} exceeds {$limits[$field]} characters.");
         }
+    }
+    try {
+        $values['academic_year'] = knsAcademicYear($values['academic_year']);
+        $values['semester'] = knsAcademicSemester($values['semester']);
+    } catch (KnsAcademicTermError $error) {
+        throw new GradeUploadValidationException($error->getMessage());
     }
     if ($sheetName === 'Subject Grades') {
         foreach (['prelim_grade', 'midterm_grade', 'final_grade', 'overall_grade'] as $field) {

@@ -1,0 +1,97 @@
+/* Academic-term controls only; existing page content retains its own styles. */
+.student-list-header[data-kns-term-banner] { display: flex; align-items: center; gap: 10px; }
+.kns-terms { display: flex; align-items: center; flex: 0 0 auto; gap: 18px; margin-left: auto; padding: 14px 18px 14px 0; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+.kns-terms [hidden] { display: none !important; }
+.kns-terms svg { width: 20px; height: 20px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.kns-terms .kns-terms-launch { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 40px; padding: 9px 16px; border: 1px solid #e6ece8; border-radius: 9px; background: #fff; color: #064b2d; font: 700 14px/1.35 Inter, ui-sans-serif, system-ui, sans-serif; white-space: nowrap; cursor: pointer; box-shadow: 0 1px 3px #002f1914; }
+.kns-terms .kns-terms-launch:hover { background: #eff8f1; }
+.kns-terms .kns-terms-banner-summary { position: relative; min-width: 240px; max-width: 320px; padding: 10px 14px; border: 1px solid #ffffff42; border-radius: 10px; background: #ffffff0d; color: #effaf3; font-size: 12px; line-height: 1.5; }
+.kns-terms .kns-terms-banner-summary::before { content: ''; position: absolute; top: 14px; bottom: 14px; left: -11px; border-left: 1px solid #ffffff65; }
+.kns-terms .kns-terms-eyebrow { display: flex; align-items: center; gap: 12px; color: #8bd4a8; font-size: 11px; font-weight: 700; }
+.kns-terms .kns-terms-banner-name { margin-top: 5px; font-weight: 650; }
+.kns-terms .kns-terms-banner-end { margin-top: 2px; }
+.kns-terms .kns-terms-badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 20px; background: #008c13; color: #fff; font-size: 11px; font-weight: 700; line-height: 1.3; text-transform: uppercase; white-space: nowrap; }
+.kns-terms .kns-terms-badge[data-status="Scheduled"] { background: #e3f3e9; color: #145c38; }
+.kns-terms .kns-terms-badge[data-status="Completed"] { background: #eef0ef; color: #526158; }
+.kns-terms .kns-terms-banner-summary .kns-terms-badge { background: #99dda9; color: #125530; }
+.kns-terms .kns-terms-modal { position: fixed; inset: 0; box-sizing: border-box; width: min(640px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); margin: auto; padding: 22px 24px 18px; overflow-y: auto; border: 1px solid #e6ede8; border-radius: 15px; background: #fff; color: #101c15; box-shadow: 0 18px 60px #071e1833; font: 14px/1.45 Inter, ui-sans-serif, system-ui, sans-serif; }
+.kns-terms .kns-terms-modal::backdrop { background: #0008; }
+.kns-terms .kns-terms-modal *, .kns-terms .kns-terms-modal *::before, .kns-terms .kns-terms-modal *::after { box-sizing: border-box; }
+.kns-terms .kns-terms-modal.is-history { width: min(920px, calc(100vw - 32px)); }
+.kns-terms .kns-terms-close { position: absolute; top: 16px; right: 16px; display: grid; place-items: center; width: 30px; height: 30px; padding: 3px; border: 0; border-radius: 6px; background: transparent; color: #17241c; cursor: pointer; }
+.kns-terms .kns-terms-close svg { width: 23px; height: 23px; stroke-width: 1.5; }
+.kns-terms .kns-terms-title { margin: 0; padding-right: 28px; color: #064c2f; font-size: 27px; font-weight: 750; line-height: 1.2; letter-spacing: -.3px; }
+.kns-terms .kns-terms-intro { margin: 5px 0 18px; color: #444b52; font-size: 14px; line-height: 1.5; }
+.kns-terms .kns-terms-current { display: flex; align-items: center; gap: 20px; padding: 15px 20px; border: 1px solid #c3e7ce; border-radius: 11px; background: #e4f5e8; }
+.kns-terms .kns-terms-calendar-icon { display: grid; place-items: center; flex: 0 0 54px; width: 54px; height: 54px; border-radius: 17px; background: #c5e8d0; color: #035331; }
+.kns-terms .kns-terms-calendar-icon svg { width: 32px; height: 32px; }
+.kns-terms .kns-terms-current-copy { flex: 1; min-width: 0; padding-left: 20px; border-left: 1px solid #4ea66d; }
+.kns-terms .kns-terms-current-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; color: #09602f; font-size: 13px; font-weight: 750; }
+.kns-terms .kns-terms-current-name { margin-top: 5px; color: #07180d; font-size: 14px; font-weight: 650; }
+.kns-terms .kns-terms-current-end { margin-top: 2px; color: #07180d; font-size: 14px; }
+.kns-terms .kns-terms-form { margin-top: 13px; padding-top: 12px; border-top: 1px solid #edf0ee; }
+.kns-terms .kns-terms-form-heading, .kns-terms .kns-terms-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.kns-terms .kns-terms-form-heading h3, .kns-terms .kns-terms-history-heading h3, .kns-terms .kns-terms-records-title { margin: 0; color: #064c2f; font-size: 19px; font-weight: 750; line-height: 1.35; }
+.kns-terms .kns-terms-planned { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 20px; background: #e2f4e7; color: #064b2d; font-size: 12px; font-weight: 650; white-space: nowrap; }
+.kns-terms .kns-terms-planned svg { width: 15px; height: 15px; }
+.kns-terms .kns-terms-fields { display: grid; grid-template-columns: .95fr 1fr 1.1fr 1.1fr; gap: 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.kns-terms .kns-terms-field { min-width: 0; }
+.kns-terms .kns-terms-field label { display: block; margin-bottom: 5px; color: #111b15; font-size: 12px; font-weight: 650; }
+.kns-terms .kns-terms-field input, .kns-terms .kns-terms-field select { display: block; width: 100%; min-width: 0; min-height: 38px; margin: 0; padding: 7px 10px; border: 1px solid #c7cdd1; border-radius: 7px; background: #fff; color: #111b15; font: 12px/1.4 Inter, ui-sans-serif, system-ui, sans-serif; }
+.kns-terms .kns-terms-field input[type="date"] { padding-inline: 7px; }
+.kns-terms .kns-terms-note { display: flex; align-items: center; gap: 10px; margin-top: 19px; padding: 10px 14px; border-radius: 10px; background: #e4f5e8; color: #06492c; font-size: 11px; line-height: 1.5; }
+.kns-terms .kns-terms-note svg { width: 19px; height: 19px; }
+.kns-terms .kns-terms-actions { display: flex; align-items: center; justify-content: flex-end; gap: 14px; margin-top: 18px; }
+.kns-terms .kns-terms-history-link { display: inline-flex; align-items: center; gap: 6px; padding: 4px 0; border: 0; background: transparent; color: #07552f; font: 600 12px/1.5 Inter, ui-sans-serif, system-ui, sans-serif; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.kns-terms .kns-terms-history-link svg { width: 19px; height: 19px; }
+.kns-terms .kns-terms-actions .kns-terms-history-link { margin-right: auto; }
+.kns-terms .kns-terms-cancel, .kns-terms .kns-terms-submit { min-height: 38px; padding: 8px 24px; border: 1px solid #4a9470; border-radius: 8px; background: #fff; color: #07512e; font: 700 14px/1.4 Inter, ui-sans-serif, system-ui, sans-serif; cursor: pointer; white-space: nowrap; }
+.kns-terms .kns-terms-submit { min-width: 150px; border-color: #078447; background: linear-gradient(180deg, #059a46, #007c3b); color: #fff; box-shadow: 0 2px 4px #07512e12; }
+.kns-terms .kns-terms-cancel:hover, .kns-terms .kns-terms-close:hover { background: #f0f7f2; }
+.kns-terms .kns-terms-submit:hover { background: #007a38; }
+.kns-terms .kns-terms-message { margin: 0 0 14px; padding: 10px 12px; border: 1px solid #bfdfc9; border-radius: 7px; background: #edf8f0; color: #12572f; font-size: 13px; }
+.kns-terms .kns-terms-message[data-state="error"] { border-color: #f0c9c5; background: #fff5f4; color: #a3261c; }
+.kns-terms .kns-terms-permission { margin: 12px 0 0; color: #53645a; font-size: 12px; }
+.kns-terms .kns-terms-history { margin-top: 20px; }
+.kns-terms .kns-terms-table-wrap { overflow-x: auto; border: 1px solid #dce6df; border-radius: 8px; }
+.kns-terms .kns-terms-table { width: 100%; border-collapse: collapse; color: #172c20; font-size: 12px; text-align: left; }
+.kns-terms .kns-terms-table th { padding: 10px 12px; background: #edf5ef; color: #225638; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.kns-terms .kns-terms-table td { padding: 11px 12px; border-top: 1px solid #e6ece8; vertical-align: middle; }
+.kns-terms .kns-terms-table .kns-terms-empty { padding: 24px 14px; color: #65766b; text-align: center; }
+.kns-terms .kns-terms-record-button, .kns-terms .kns-terms-record-tabs button, .kns-terms .kns-terms-pagination button { padding: 6px 9px; border: 1px solid #bdd6c6; border-radius: 6px; background: #fff; color: #105834; font: 600 12px/1.4 Inter, ui-sans-serif, system-ui, sans-serif; cursor: pointer; white-space: nowrap; }
+.kns-terms .kns-terms-records { margin-top: 22px; padding-top: 18px; border-top: 1px solid #e6ece8; }
+.kns-terms .kns-terms-record-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.kns-terms .kns-terms-record-tabs button[aria-pressed="true"] { border-color: #176b41; background: #e4f5e8; }
+.kns-terms .kns-terms-pagination { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 12px; font-size: 12px; }
+.kns-terms .kns-terms-history-footer { display: flex; justify-content: flex-end; margin-top: 18px; }
+.kns-terms button:disabled { opacity: .55; cursor: default; }
+.kns-terms button:focus-visible, .kns-terms input:focus-visible, .kns-terms select:focus-visible { outline: 3px solid #82bc98; outline-offset: 2px; }
+@media (max-width: 1250px) {
+    .kns-terms { gap: 14px; padding-right: 14px; }
+    .kns-terms .kns-terms-launch { padding-inline: 11px; font-size: 12px; }
+    .kns-terms .kns-terms-banner-summary { min-width: 210px; padding-inline: 11px; font-size: 11px; }
+}
+@media (max-width: 1000px) {
+    .student-list-header[data-kns-term-banner] { flex-wrap: wrap; gap: 0; }
+    .kns-terms { justify-content: flex-end; width: 100%; margin: 0; padding: 0 18px 16px; }
+    .kns-terms .kns-terms-banner-summary { flex: 1; max-width: 320px; }
+}
+@media (max-width: 600px) {
+    .kns-terms { justify-content: flex-start; gap: 14px; padding-inline: 18px; }
+    .kns-terms .kns-terms-banner-summary { min-width: 0; }
+    .kns-terms .kns-terms-eyebrow { gap: 6px; font-size: 10px; }
+    .kns-terms .kns-terms-badge { padding-inline: 7px; font-size: 10px; }
+    .kns-terms .kns-terms-modal { padding: 22px 18px 18px; }
+    .kns-terms .kns-terms-title { font-size: 23px; }
+    .kns-terms .kns-terms-current { gap: 12px; padding: 14px 12px; }
+    .kns-terms .kns-terms-calendar-icon { flex-basis: 42px; width: 42px; height: 42px; border-radius: 12px; }
+    .kns-terms .kns-terms-current-copy { padding-left: 12px; }
+    .kns-terms .kns-terms-current-name, .kns-terms .kns-terms-current-end { font-size: 12px; }
+    .kns-terms .kns-terms-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kns-terms .kns-terms-actions { flex-wrap: wrap; gap: 10px; }
+    .kns-terms .kns-terms-actions .kns-terms-history-link { flex: 1 0 100%; margin-bottom: 2px; }
+    .kns-terms .kns-terms-form-heading h3 { font-size: 16px; }
+    .kns-terms .kns-terms-planned { padding-inline: 8px; font-size: 10px; }
+    .kns-terms .kns-terms-note { align-items: flex-start; }
+    .kns-terms .kns-terms-history-heading { align-items: flex-start; flex-direction: column; }
+}

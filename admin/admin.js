@@ -9,7 +9,7 @@ const ADMIN_PAGES = {
     },
     "results.php": {
         navigation: ".results-button",
-        initializers: [initStudentUpload, initGradeUpload, initStudentList],
+        initializers: [initStudentUpload, initGradeUpload, initStudentList, container => window.KNSAcademicTerms?.init(container)],
     },
     "requests.html": {
         navigation: ".may-request-button",

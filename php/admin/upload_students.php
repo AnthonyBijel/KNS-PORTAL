@@ -59,6 +59,7 @@ if ($size === false || $size === 0 || $size > 10 * 1024 * 1024) {
 
 require_once __DIR__ . '/../../db.php';
 require __DIR__ . '/../../vendor/autoload.php';
+require __DIR__ . '/../auth/student-account-setup.php';
 
 // Match the nullable columns and lengths in the local students table.
 $required = ['student_number', 'first_name', 'last_name', 'course', 'year_level', 'section'];
@@ -68,7 +69,7 @@ $limits = [
     'email' => 254, 'contact_number' => 30, 'guardian_name' => 200,
     'guardian_contact' => 30, 'academic_year' => 20, 'semester' => 30
 ];
-$fields = array_merge(array_keys($limits), ['password', 'year_level', 'status', 'address', 'birth_date']);
+$fields = array_merge(array_keys($limits), ['year_level', 'status', 'address', 'birth_date']);
 $aliases = [
     'studentno' => 'student_number', 'studentnum' => 'student_number',
     'studentid' => 'student_number', 'studentidnumber' => 'student_number',
@@ -158,7 +159,7 @@ try {
     foreach ($headerCells as $cell) {
         $key = normalizeStudentHeader((string) $cell->getValue());
         if (!isset($aliases[$key])) {
-            continue; // Includes legacy photo columns: photos never enter the import data.
+            continue; // Includes legacy Password and photo columns: neither enters the import data.
         }
         $field = $aliases[$key];
         if (isset($headers[$field])) {
@@ -180,9 +181,9 @@ try {
     failUpload('Unable to read the workbook. Upload an unencrypted, valid .xlsx or .xls file with headers in row 1.');
 }
 
-$counts = ['imported' => 0, 'created' => 0, 'updated' => 0, 'skipped' => 0];
+$counts = ['imported' => 0, 'created' => 0, 'updated' => 0, 'skipped' => 0, 'sent' => 0];
 $rowErrors = [];
-$findStudent = $pdo->prepare('SELECT id FROM students WHERE student_number = ? LIMIT 1 FOR UPDATE');
+$setup = new KnsStudentAccountSetup($pdo);
 $lastRow = $sheet->getHighestDataRow();
 if ($lastRow >= 2) {
     foreach ($sheet->getRowIterator(2, $lastRow) as $row) {
@@ -209,7 +210,7 @@ if ($lastRow >= 2) {
                 // Display formats preserve leading zeros on IDs and phone numbers.
                 $raw = in_array($field, ['student_number', 'contact_number', 'guardian_contact'], true)
                     ? $cell->getFormattedValue() : $cell->getValue();
-                $values[$field] = $field === 'password' ? (string) ($raw ?? '') : trim((string) ($raw ?? ''));
+                $values[$field] = trim((string) ($raw ?? ''));
             }
             foreach ($required as $field) {
                 if (($values[$field] ?? '') === '') {
@@ -252,44 +253,23 @@ if ($lastRow >= 2) {
             if (array_key_exists('birth_date', $values)) {
                 $values['birth_date'] = parseStudentBirthDate($values['birth_date'], $book->getExcelCalendar());
             }
-            $password = $values['password'] ?? '';
-            unset($values['password']);
-            if (trim($password) !== '') {
-                if (strlen($password) > 72) {
-                    throw new InvalidArgumentException('password exceeds 72 bytes. Use a shorter password.');
-                }
-                $values['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
-            }
             foreach ($values as $field => $value) {
                 if ($value === '' && !in_array($field, $required, true)) {
                     $values[$field] = null;
                 }
             }
 
-            // A transaction per row lets valid records survive another row's failure.
-            // Lock the existing account so blank passwords cannot create passwordless accounts.
-            $pdo->beginTransaction();
-            $findStudent->execute([$values['student_number']]);
-            $studentId = $findStudent->fetchColumn();
-            if ($studentId === false && !isset($values['password_hash'])) {
-                throw new InvalidArgumentException('password is required for a new student account.');
-            }
-            $columns = array_keys($values); // All keys come from the fixed header whitelist.
-            if ($studentId !== false) {
-                unset($values['student_number']);
-                $assignments = array_map(static fn ($field) => "`{$field}` = ?", array_keys($values));
-                $statement = $pdo->prepare('UPDATE students SET ' . implode(', ', $assignments) . ' WHERE id = ?');
-                $statement->execute([...array_values($values), $studentId]);
-            } else {
-                $quoted = array_map(static fn ($field) => "`{$field}`", $columns);
-                $statement = $pdo->prepare('INSERT INTO students (' . implode(', ', $quoted)
-                    . ') VALUES (' . implode(', ', array_fill(0, count($columns), '?')) . ')');
-                $statement->execute(array_values($values));
-            }
-            // profile_photo is deliberately absent from both INSERT and UPDATE.
-            $pdo->commit();
+            // Each row commits before attempting email/SMS delivery.
+            $result = $setup->saveImportedStudent($values);
             $counts['imported']++;
-            $counts[$studentId === false ? 'created' : 'updated']++;
+            $counts[$result['created'] ? 'created' : 'updated']++;
+            if ($result['delivery'] !== null) {
+                if ($result['delivery']['ok']) {
+                    $counts['sent']++;
+                } else {
+                    $rowErrors[] = ['row' => $rowNumber, 'reason' => 'Account saved, but temporary-password delivery failed. Check the saved contacts and recovery sender configuration, then use Send fresh temporary password in Students List.'];
+                }
+            }
         } catch (Throwable $error) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
@@ -298,10 +278,10 @@ if ($lastRow >= 2) {
                 $reason = $error->getMessage();
             } elseif ($error instanceof PDOException) {
                 $reason = 'Database could not save this row (constraint conflict or database error). Check the students schema and server log, then retry this row.';
-                error_log("Student import row {$rowNumber}: " . $error->getMessage());
+                error_log("Student import row {$rowNumber} failed (" . get_class($error) . ').');
             } else {
                 $reason = 'Unable to read or save this row. Check its cell values and the server log.';
-                error_log("Student import row {$rowNumber}: " . $error->getMessage());
+                error_log("Student import row {$rowNumber} failed (" . get_class($error) . ').');
             }
             $rowErrors[] = ['row' => $rowNumber, 'reason' => $reason];
         }
@@ -321,10 +301,11 @@ header('Content-Type: text/html; charset=utf-8');
     <h1>Student import results</h1>
     <p>Imported: <strong><?= $counts['imported'] ?></strong>
         (<?= $counts['created'] ?> new, <?= $counts['updated'] ?> updated).</p>
+    <p>Temporary passwords sent: <strong><?= $counts['sent'] ?></strong>.</p>
     <p>Skipped blank rows: <strong><?= $counts['skipped'] ?></strong>.</p>
     <p>Rows with errors: <strong><?= count($rowErrors) ?></strong>.</p>
     <?php if ($rowErrors): ?>
-        <p>Correct the following rows and upload them again. Successfully imported rows remain saved.</p>
+        <p>Correct validation errors and re-upload those rows. For saved accounts with delivery errors, use Send fresh temporary password in Students List. Successfully imported rows remain saved.</p>
         <table border="1" cellpadding="8">
             <thead><tr><th scope="col">Excel row</th><th scope="col">Reason</th></tr></thead>
             <tbody>

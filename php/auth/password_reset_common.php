@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/student-password-policy.php';
+require_once __DIR__ . '/../student-term-enrollments.php';
 
 final class KnsPasswordResetError extends RuntimeException
 {
@@ -58,8 +60,14 @@ function knsResetDeliveryConfig(string $channel): array
 
 function knsResetDeliver(string $channel, string $destination, string $otp): void
 {
-    $config = knsResetDeliveryConfig($channel);
     $message = "Your KNS Portal password reset code is $otp. It expires in 10 minutes. Do not share this code.";
+    knsDeliverMessage($channel, $destination, 'KNS Portal password reset code', $message);
+}
+
+// Recovery and account setup share the exact sender, PHPMailer transport, and TLS settings.
+function knsDeliverMessage(string $channel, string $destination, string $subject, string $message): void
+{
+    $config = knsResetDeliveryConfig($channel);
     if ($channel === 'email') {
         require_once __DIR__ . '/../../vendor/autoload.php';
         $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
@@ -75,7 +83,7 @@ function knsResetDeliver(string $channel, string $destination, string $otp): voi
         $mail->CharSet = 'UTF-8';
         $mail->setFrom($config['smtp_from'], 'KNS Portal');
         $mail->addAddress($destination);
-        $mail->Subject = 'KNS Portal password reset code';
+        $mail->Subject = $subject;
         $mail->Body = $message;
         if (!$mail->send()) throw new RuntimeException('Email delivery failed.');
         return;
@@ -138,6 +146,7 @@ final class KnsPasswordResetService
 
     private function studentByNumber(string $number, bool $lock = false): array
     {
+        knsSyncStudentTermByNumber($this->pdo, $number);
         $stmt = $this->pdo->prepare(
             'SELECT id, student_number, status, email, contact_number FROM students WHERE student_number = ? LIMIT 1'
             . ($lock ? ' FOR UPDATE' : '')
@@ -152,6 +161,7 @@ final class KnsPasswordResetService
 
     private function lockStudent(int $id): void
     {
+        knsSyncStudentTerm($this->pdo, $id);
         $stmt = $this->pdo->prepare('SELECT status FROM students WHERE id = ? FOR UPDATE');
         $stmt->execute([$id]);
         if ($stmt->fetchColumn() !== 'Active') {
@@ -323,12 +333,10 @@ final class KnsPasswordResetService
         if (empty($grant['token_id']) || ($grant['expires'] ?? 0) <= time()) {
             throw new KnsPasswordResetError('Verify a new recovery code before changing your password.', 410);
         }
-        if (!mb_check_encoding($password, 'UTF-8') || mb_strlen($password, 'UTF-8') < 12
-            || strlen($password) > 72 || str_contains($password, "\0")) {
-            throw new KnsPasswordResetError('Use a password of at least 12 characters and at most 72 bytes.');
-        }
-        if (!hash_equals($password, $confirmation)) {
-            throw new KnsPasswordResetError('The new passwords do not match.');
+        try {
+            knsValidateStudentPassword($password, $confirmation);
+        } catch (InvalidArgumentException $error) {
+            throw new KnsPasswordResetError($error->getMessage());
         }
         $hash = password_hash($password, PASSWORD_DEFAULT);
         $this->pdo->beginTransaction();
@@ -338,7 +346,7 @@ final class KnsPasswordResetService
             if ($token['used_at'] === null) {
                 throw new KnsPasswordResetError('Verify your recovery code first.', 403);
             }
-            $stmt = $this->pdo->prepare('UPDATE students SET password_hash = ? WHERE id = ?');
+            $stmt = $this->pdo->prepare('UPDATE students SET password_hash = ?, requires_password_change = 0, temporary_password_expires_at = NULL WHERE id = ?');
             $stmt->execute([$hash, $grant['student_id']]);
             $stmt = $this->pdo->prepare(
                 'UPDATE password_reset_tokens SET used_at = COALESCE(used_at, UTC_TIMESTAMP()),

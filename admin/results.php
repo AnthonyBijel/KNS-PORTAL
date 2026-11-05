@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__ . '/../php/auth/staff-access.php';
 require_once __DIR__ . '/../db.php';
-knsRequireStaffAccess($pdo, 'results');
+$studentListStaff = knsRequireStaffAccess($pdo, 'results');
+require_once __DIR__ . '/../php/student-term-enrollments.php';
+knsSyncTermAccounts($pdo);
 $search = $_GET['q'] ?? '';
 if (!is_string($search) || !mb_check_encoding($search, 'UTF-8') || mb_strlen($search, 'UTF-8') > 300) {
     http_response_code(422);
@@ -83,7 +85,7 @@ $page = min($page, $totalPages);
 $offset = ($page - 1) * $perPage;
 
 $studentStatement = $pdo->prepare(
-    'SELECT s.student_number, s.first_name, s.middle_name, s.last_name, s.course, s.year_level, s.section, s.status
+    'SELECT s.id, s.requires_password_change, s.student_number, s.first_name, s.middle_name, s.last_name, s.course, s.year_level, s.section, s.status
      FROM students s' . $studentWhere . ' ORDER BY s.id DESC LIMIT ? OFFSET ?'
 );
 foreach ($studentParameters as $parameterIndex => $parameter) {
@@ -97,7 +99,7 @@ $firstPage = max(1, min($page - 2, $totalPages - 4));
 $lastPage = min($totalPages, $firstPage + 4);
 ?>
 
-<header class="student-list-header">
+<header class="student-list-header" data-kns-term-banner>
     <div class="student-list-header-content">
         <span class="student-list-header-label">STUDENT MANAGEMENT</span>
 
@@ -108,6 +110,7 @@ $lastPage = min($totalPages, $firstPage + 4);
             Use filters or search to quickly find a student.
         </p>
     </div>
+    <?php require __DIR__ . '/academic-terms-panel.php'; ?>
 </header>
 
 <section class="student-list-upload">
@@ -122,7 +125,7 @@ $lastPage = min($totalPages, $firstPage + 4);
             <h3>Upload Student List (Excel)</h3>
             <p>Upload student records from an .xlsx or .xls workbook (maximum 10 MB).</p>
 
-            <a href="../downloads/KNS_Student_Upload_Template.xlsx?v=student-terms-20261029" class="template-link" download>
+            <a href="../downloads/KNS_Student_Upload_Template.xlsx?v=student-setup-20261105" class="template-link" download>
                 <span aria-hidden="true">&#8595;</span> Download Excel Template
             </a>
             <form id="student-upload-form" action="../php/admin/upload_students.php"
@@ -187,7 +190,8 @@ $lastPage = min($totalPages, $firstPage + 4);
     <p>Students upload their own profile photos in Student Information.</p>
     <p>Use the Student Upload sheet (or the first sheet) with headers in row 1 and one student per row.
         Required columns: student_number, first_name, last_name, course, year_level, section.
-        Supply password for new accounts; leave it blank to keep an existing password.</p>
+        New Active accounts need a valid email or phone to receive a generated temporary password. Workbook passwords are ignored; existing valid passwords are preserved.</p>
+    <p>Pending Active accounts can receive a fresh temporary password using the Administrator action under Status. Each send replaces the previous temporary password. Check delivery errors before retrying.</p>
     <p>Other template columns are optional. Missing optional columns keep existing data; blank cells in
         supplied optional columns clear that field. Blank status defaults to Active for a new account
         and keeps the current status for an existing account.</p>
@@ -306,6 +310,16 @@ $lastPage = min($totalPages, $firstPage + 4);
                                 <span class="status-dot-table"></span>
                                 <span><?= htmlspecialchars((string) ($student['status'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
                             </div>
+                            <?php if ((int) $student['requires_password_change']): ?>
+                                <small>Password setup pending</small>
+                                <?php if ($student['status'] === 'Active' && $studentListStaff['role'] === 'Administrator'): ?>
+                                    <form method="post" action="../php/admin/resend-student-password.php">
+                                        <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf'], ENT_QUOTES, 'UTF-8') ?>">
+                                        <input type="hidden" name="student_id" value="<?= (int) $student['id'] ?>">
+                                        <button type="submit">Send fresh temporary password</button>
+                                    </form>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>

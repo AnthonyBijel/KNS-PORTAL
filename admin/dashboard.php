@@ -31,6 +31,7 @@ function e($value)
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard.org</title>
+    <link rel="stylesheet" href="academic-terms.css?v=<?= filemtime(__DIR__ . '/academic-terms.css') ?>">
     <link rel="stylesheet" href="admin.css?v=<?= filemtime(__DIR__ . '/admin.css') ?>">
     <link rel="stylesheet" href="../dashboard/announcement-share.css?v=<?= filemtime(__DIR__ . '/../dashboard/announcement-share.css') ?>">
     <link rel="stylesheet" href="../request/messenger.css?v=<?= filemtime(__DIR__ . '/../request/messenger.css') ?>">
@@ -148,6 +149,7 @@ function e($value)
     <script src="../request/messenger.js?v=<?= filemtime(__DIR__ . '/../request/messenger.js') ?>"></script>
     <script src="../dashboard/notifications.js?v=<?= filemtime(__DIR__ . '/../dashboard/notifications.js') ?>"></script>
     <script src="../dashboard/announcement-share.js?v=<?= filemtime(__DIR__ . '/../dashboard/announcement-share.js') ?>"></script>
+    <script src="academic-terms.js?v=<?= filemtime(__DIR__ . '/academic-terms.js') ?>"></script>
     <script src="admin.js?v=<?= filemtime(__DIR__ . '/admin.js') ?>"></script>
     <script src="../dashboard/announcement-gallery.js?v=<?= filemtime(__DIR__ . '/../dashboard/announcement-gallery.js') ?>"></script>
 </body>
