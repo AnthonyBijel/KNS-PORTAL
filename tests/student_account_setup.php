@@ -1,14 +1,28 @@
 <?php
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+define('KNS_TERM_EMAIL_DEFER', true);
 require __DIR__ . '/../db.php';
 require __DIR__ . '/../php/auth/student-account-setup.php';
 require __DIR__ . '/../vendor/autoload.php';
-$pdo->exec("SET time_zone = '+00:00'");
-// Connection-local tables shadow production tables; no real student data is copied.
+// All writes, including enrollment snapshots and migrations, use this disposable database.
+$source = $pdo;
+$database = 'kns_setup_unit_' . bin2hex(random_bytes(6));
+$source->exec('CREATE DATABASE ' . $database . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+try {
+$pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8mb4", $username, $password,
+    [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
 foreach (['students', 'password_reset_tokens', 'password_reset_rate_limits'] as $table) {
-    $definition = $pdo->query("SHOW CREATE TABLE $table")->fetch(PDO::FETCH_NUM)[1];
-    $pdo->exec(preg_replace('/^CREATE TABLE/', 'CREATE TEMPORARY TABLE', $definition, 1));
+    $pdo->exec($source->query("SHOW CREATE TABLE $table")->fetch(PDO::FETCH_NUM)[1]);
 }
+$pdo->exec("SET time_zone = '+00:00'");
+$pdo->exec(file_get_contents(__DIR__ . '/../database/migrations/20261105_academic_term_management.sql'));
+$pdo->exec(file_get_contents(__DIR__ . '/../database/migrations/20261105_student_term_activation.sql'));
+$pdo->exec(file_get_contents(__DIR__ . '/../database/migrations/20261106_student_term_grace.sql'));
+$fixtureToday = new DateTimeImmutable('today', knsAcademicTermZone());
+$fixtureYear = $fixtureToday->format('Y') . '-' . ((int) $fixtureToday->format('Y') + 1);
+(new KnsAcademicTerms($pdo))->schedule(['academic_year'=>$fixtureYear,'semester'=>'1st Semester',
+    'start_date'=>$fixtureToday->modify('-1 day')->format('Y-m-d'),
+    'official_end_date'=>$fixtureToday->modify('+365 days')->format('Y-m-d')], 1);
 $checks = 0;
 function checkSetup(bool $condition, string $message): void
 {
@@ -29,9 +43,10 @@ function setupRow(PDO $pdo, string $number): array
 }
 function setupValues(string $number): array
 {
+    global $fixtureYear;
     return ['student_number' => $number, 'first_name' => 'Example', 'last_name' => 'Student',
         'course' => 'BSCS', 'year_level' => 1, 'section' => 'TEST', 'email' => 'student@example.invalid',
-        'contact_number' => '09171234567'];
+        'contact_number' => '09171234567', 'status' => 'Active', 'academic_year' => $fixtureYear, 'semester' => '1st Semester'];
 }
 $oldHash = password_hash('Fixture-existing-password', PASSWORD_DEFAULT);
 $stmt = $pdo->prepare('INSERT INTO students (student_number,first_name,last_name,course,year_level,section,password_hash,profile_photo)
@@ -124,7 +139,7 @@ $result = $service->saveImportedStudent($input);
 $row = setupRow($pdo, 'INACTIVE');
 checkSetup($result['delivery'] === null && $row['password_hash'] === null && (int) $row['requires_password_change'] === 1, 'Inactive import issued a password');
 rejectSetup(fn() => $service->resend((int) $row['id']), 'Inactive account received password');
-$service->saveImportedStudent(['student_number' => 'INACTIVE', 'status' => 'Active', 'email' => 'activated@example.invalid']);
+$service->saveImportedStudent(array_replace(setupValues('INACTIVE'), ['email' => 'activated@example.invalid']));
 checkSetup(setupRow($pdo, 'INACTIVE')['password_hash'] !== null, 'Activation did not provision account');
 // Recovery must clear setup and expiry even when the temporary password has expired.
 $pdo->exec("UPDATE students SET temporary_password_expires_at = DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 SECOND) WHERE student_number = 'FAILED'");
@@ -142,4 +157,8 @@ $headers = $book->getSheetByName('Student Upload')->rangeToArray('A1:Q1')[0];
 checkSetup(!in_array('password', $headers, true) && count($headers) === 17 && in_array('email', $headers, true) && in_array('contact_number', $headers, true), 'Workbook headers changed unexpectedly');
 checkSetup($book->getSheetByName('Student Upload')->getCell('K2')->getDataType() === 's', 'Phone text formatting lost');
 $book->disconnectWorksheets();
-echo "PASS: $checks student setup checks; temporary tables only; no real messages sent.\n";
+echo "PASS: $checks student setup checks; disposable database only; no real messages sent.\n";
+} finally {
+    $pdo = null;
+    $source->exec('DROP DATABASE ' . $database);
+}

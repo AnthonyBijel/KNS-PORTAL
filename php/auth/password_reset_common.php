@@ -64,8 +64,10 @@ function knsResetDeliver(string $channel, string $destination, string $otp): voi
     knsDeliverMessage($channel, $destination, 'KNS Portal password reset code', $message);
 }
 
-// Recovery and account setup share the exact sender, PHPMailer transport, and TLS settings.
-function knsDeliverMessage(string $channel, string $destination, string $subject, string $message): void
+final class KnsMailDeliveryUncertain extends RuntimeException {}
+
+// Recovery, account setup, and term notices share the sender, PHPMailer transport, and TLS settings.
+function knsDeliverMessage(string $channel, string $destination, string $subject, string $message, ?string $messageId = null): void
 {
     $config = knsResetDeliveryConfig($channel);
     if ($channel === 'email') {
@@ -85,7 +87,31 @@ function knsDeliverMessage(string $channel, string $destination, string $subject
         $mail->addAddress($destination);
         $mail->Subject = $subject;
         $mail->Body = $message;
-        if (!$mail->send()) throw new RuntimeException('Email delivery failed.');
+        $noticeSmtp = null;
+        if ($messageId !== null) {
+            $mail->MessageID = $messageId;
+            // Track submission phase without recording protocol data or changing SMTP settings.
+            $noticeSmtp = new class extends \PHPMailer\PHPMailer\SMTP {
+                public bool $dataAttempted = false;
+                public function data($msg_data)
+                {
+                    $this->dataAttempted = true;
+                    return parent::data($msg_data);
+                }
+            };
+            $mail->setSMTPInstance($noticeSmtp);
+        }
+        try {
+            if (!$mail->send()) throw new RuntimeException('Email delivery failed.');
+        } catch (\PHPMailer\PHPMailer\Exception $error) {
+            $reply = trim($mail->getSMTPInstance()->getLastReply());
+            // If SMTP acceptance cannot be ruled out, automatic retry could duplicate a notice.
+            if ($noticeSmtp !== null && $noticeSmtp->dataAttempted
+                && ($reply === '' || str_starts_with($reply, '354') || str_starts_with($reply, '250'))) {
+                throw new KnsMailDeliveryUncertain('SMTP acceptance could not be confirmed.');
+            }
+            throw $error;
+        }
         return;
     }
 
@@ -148,12 +174,12 @@ final class KnsPasswordResetService
     {
         knsSyncStudentTermByNumber($this->pdo, $number);
         $stmt = $this->pdo->prepare(
-            'SELECT id, student_number, status, email, contact_number FROM students WHERE student_number = ? LIMIT 1'
+            'SELECT * FROM students WHERE student_number = ? LIMIT 1'
             . ($lock ? ' FOR UPDATE' : '')
         );
         $stmt->execute([$number]);
         $student = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$student || $student['status'] !== 'Active') {
+        if (!knsStudentMayAccess($student)) {
             throw new KnsPasswordResetError('Recovery is unavailable for these student details. Contact Student Services.');
         }
         return $student;
@@ -162,9 +188,9 @@ final class KnsPasswordResetService
     private function lockStudent(int $id): void
     {
         knsSyncStudentTerm($this->pdo, $id);
-        $stmt = $this->pdo->prepare('SELECT status FROM students WHERE id = ? FOR UPDATE');
+        $stmt = $this->pdo->prepare('SELECT * FROM students WHERE id = ? FOR UPDATE');
         $stmt->execute([$id]);
-        if ($stmt->fetchColumn() !== 'Active') {
+        if (!knsStudentMayAccess($stmt->fetch(PDO::FETCH_ASSOC) ?: null)) {
             throw new KnsPasswordResetError('Recovery is unavailable for these student details. Contact Student Services.');
         }
     }

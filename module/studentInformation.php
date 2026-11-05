@@ -7,6 +7,9 @@ require __DIR__ . '/../db.php';
 
 $stmt = $pdo->prepare(
     'SELECT
+        term_auto_inactive,
+        term_inactivated_at,
+        term_expires_at,
         student_number,
         first_name,
         middle_name,
@@ -23,13 +26,12 @@ $stmt = $pdo->prepare(
         guardian_name,
         profile_photo
      FROM students
-     WHERE id = ? AND status = ?
+     WHERE id = ? AND ' . knsStudentAccessSql() . '
      LIMIT 1'
 );
 
 $stmt->execute([
-    currentStudentId(),
-    'Active'
+    currentStudentId()
 ]);
 
 $student = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -115,6 +117,7 @@ $profilePhoto = !empty($student['profile_photo'])
             <div class="profile-status" aria-label="Student status">
                 <span class="status-dot" aria-hidden="true"></span>
                 <span><?= e($student['status']) ?></span>
+                <?php if ($graceNotice = knsStudentGraceNotice($student)): ?><small><?= e($graceNotice) ?></small><?php endif; ?>
             </div>
         </div>
 

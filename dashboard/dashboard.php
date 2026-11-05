@@ -6,15 +6,14 @@ requireStudent();
 require __DIR__ . '/../db.php';
 
 $stmt = $pdo->prepare(
-    'SELECT first_name, middle_name, last_name, course, status
+    'SELECT *
      FROM students
-     WHERE id = ? AND status = ?
+     WHERE id = ? AND ' . knsStudentAccessSql() . '
      LIMIT 1'
 );
 
 $stmt->execute([
-    currentStudentId(),
-    'Active'
+    currentStudentId()
 ]);
 
 $student = $stmt->fetch(PDO::FETCH_ASSOC);

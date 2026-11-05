@@ -37,8 +37,8 @@ try {
     }
     // Read a consistent snapshot of both tables if an admin uploads concurrently.
     $pdo->beginTransaction();
-    $studentQuery = $pdo->prepare('SELECT student_number, course FROM students WHERE id = ? AND status = ? LIMIT 1');
-    $studentQuery->execute([$studentId, 'Active']);
+    $studentQuery = $pdo->prepare('SELECT student_number, course FROM students WHERE id = ? AND ' . knsStudentAccessSql() . ' LIMIT 1');
+    $studentQuery->execute([$studentId]);
     $student = $studentQuery->fetch(PDO::FETCH_ASSOC);
     if ($student === false) {
         $pdo->rollBack();

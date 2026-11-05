@@ -7,8 +7,13 @@ require_once __DIR__ . '/../php/announcement-common.php';
 $stmt = $pdo->query("SELECT * FROM announcements WHERE (expires_at IS NULL OR expires_at > UTC_TIMESTAMP()) ORDER BY created_at DESC");
 $announcements = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $categories = ["All", "Academic", "Events", "Guidelines", "Others"];
+$graceQuery = $pdo->prepare('SELECT * FROM students WHERE id = ?');
+$graceQuery->execute([currentStudentId()]);
+$graceNotice = knsStudentGraceNotice($graceQuery->fetch(PDO::FETCH_ASSOC));
+
 ?>
 
+<?php if ($graceNotice): ?><p role="status"><?= knsAnnouncementEscape($graceNotice) ?></p><?php endif; ?>
 <div class="greeting-contianer">
     <div class="welcome-text-box">
         <p class="date-layer">ANNOUNCEMENT</p>

@@ -1,5 +1,16 @@
 # Academic Term Management
 
+Current access and retention rules are extended by the
+[three-month grace and email guide](20261106_student_term_grace_README.md).
+Apply `20261106_student_term_grace.sql` after the prerequisites. Term-inactive
+students retain full access until their exact grace expiry; manual Inactive and
+Graduated accounts remain blocked. Refer to that guide for archival and scheduler setup.
+
+
+Also apply `20261105_student_term_activation.sql` after this migration. Its
+[setup and scheduler guide](20261105_student_term_activation_README.md) describes
+the current activation rules. Historical snapshots do not authorize activation.
+
 Back up the existing `kns_portal` database in phpMyAdmin first. Select that existing
 database, open Import, and import `20261105_academic_term_management.sql` before
 using Manage Terms. The migration creates calendar and enrollment-history tables,
@@ -42,30 +53,31 @@ prevents duplicate year/semester entries. There are no edit/delete term endpoint
 ## Enrollment and access
 
 The existing student Excel import remains the enrollment workflow; the workbook,
-upload cards, instructions, filters, and student table are unchanged by this
-feature. Save the calendar term first, then import its academic_year/semester and
-course/year_level/section. Matching student numbers reuse the same account and
+upload cards, filters, and student table keep their existing layout. Save the
+calendar term first, then explicitly import status=Active with academic_year,
+semester, course, year_level, and section. The instructions explain these rules. Matching student numbers reuse the same account and
 password. Each changed academic profile or enrollment decision appends a snapshot;
 re-uploading identical data adds no duplicate snapshot. Course transfers preserve
 prior snapshots, including changes within the same term.
 
 Future enrollment is saved immediately in history, while the student's current
 course/section remains the profile of the term that is still active. After the
-start date, the profile switches to the new enrollment. Only the latest enrollment
-decision within a term controls access; all revisions remain readable in history.
+start date, the profile switches to the new enrollment. The latest approved
+Active import for that term supplies the effective enrollment. Profile-only
+imports do not approve activation; all revisions remain readable in history.
 
 As requested, a managed enrollment's end makes the account Inactive until an
 Active re-enrollment becomes effective. Accounts without a current enrollment
 also remain inactive before a scheduled start date. Term-driven inactivity is
-tracked separately, allowing automatic reactivation of that same account on the
-new term's start date. Manually Inactive and Graduated accounts stay blocked;
-set status=Active through the existing import when intentionally re-enrolling
-one of those accounts. Account passwords and photos are never replaced by term
+tracked separately. Only a complete, explicit Active enrollment imported for a
+saved current/upcoming term approves activation on that term's start date.
+Manually Inactive and Graduated accounts stay blocked; supply the complete Active
+enrollment row through the existing import to intentionally re-enroll them. Account passwords and photos are never replaced by term
 transitions. Scheduling alone never enrolls a student in another term.
 
 Calendar checks run before login, student-only pages/APIs, password recovery, and
-admin term/list reads. Therefore a still-open student session cannot bypass the
-end date. For status updates exactly at local midnight even without traffic,
+admin term/list reads. Existing student sessions retain full grace access and are blocked at the
+exact grace expiry. For status updates exactly at local midnight even without traffic,
 configure Windows Task Scheduler to run daily:
 
 ```text
@@ -91,8 +103,8 @@ The migration captures the academic profile actually present today. It cannot
 reconstruct earlier courses or section changes already overwritten before this
 feature existed. Existing grades and assessments remain available under their
 saved academic-year/semester labels; add the matching term's actual dates to
-browse them in term history. Unknown legacy term dates remain unknown, with no
-invented expiry. When a saved term matches those labels, the preserved enrollment
+browse them in term history. Unknown legacy term dates remain unknown. The saved calendar's elapsed official
+end dates still deactivate Active accounts even without linked enrollment rows. When a saved term matches those labels, the preserved enrollment
 snapshots are linked to it. No account or academic record is hard-deleted.
 
 Run the isolated tests with `php tests/academic_terms.php`. Existing account and

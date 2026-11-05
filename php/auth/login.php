@@ -37,7 +37,7 @@ require_once __DIR__ . '/../student-term-enrollments.php';
 knsSyncStudentTermByNumber($pdo, $studentNumber);
 
 $stmt = $pdo->prepare(
-    'SELECT id, password_hash, status, requires_password_change, temporary_password_expires_at > UTC_TIMESTAMP() AS temporary_password_live
+    'SELECT *, temporary_password_expires_at > UTC_TIMESTAMP() AS temporary_password_live
      FROM students
      WHERE student_number = ?
      LIMIT 1'
@@ -48,7 +48,7 @@ $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (
     $student &&
-    $student['status'] === 'Active' &&
+    knsStudentMayAccess($student) &&
     !empty($student['password_hash']) &&
     password_verify($loginPassword, $student['password_hash'])
 ) {

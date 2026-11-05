@@ -1,8 +1,21 @@
 <?php
-// Optional daily task; request-time checks also enforce calendar boundaries.
+// Daily CLI status/expiry/outbox processing. Never expose this as a web endpoint.
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
-require __DIR__ . '/../db.php';
+$syncCompleted = false;
+// db.php can die on connection failure; Task Scheduler must still receive a nonzero result.
+register_shutdown_function(static function () use (&$syncCompleted): void { if (!$syncCompleted) exit(1); });
 require __DIR__ . '/student-term-enrollments.php';
-if (!knsAcademicTermsInstalled($pdo)) { fwrite(STDERR, "Apply the academic-term migration first.\n"); exit(1); }
-knsSyncTermAccounts($pdo);
-echo "Academic-term account dates synchronized.\n";
+try {
+    require __DIR__ . '/../db.php';
+    knsRequireEnrollmentActivation($pdo);
+    $checked = knsSyncTermAccounts($pdo);
+    knsProcessTermPhotoCleanup($pdo);
+    knsProcessTermEmails($pdo);
+    echo 'Academic-term account dates synchronized for ' . $checked . ' accounts on '
+        . knsAcademicTermToday() . ' (' . knsAcademicTermConfig()['timezone'] . ").\n";
+    echo 'Term-end email/cleanup status: ' . json_encode(knsTermDeliveryCounts($pdo)) . "\n";
+    $syncCompleted = true;
+} catch (Throwable $error) {
+    fwrite(STDERR, "Academic-term synchronization failed. Check database access and the academic-term, activation, and 20261106_student_term_grace.sql migrations.\n");
+    exit(1);
+}
