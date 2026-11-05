@@ -1,0 +1,3 @@
+RewriteEngine On
+# Keep existing student fragment URLs while enforcing the PHP session/setup guard.
+RewriteRule ^(?:module/(?:module-results|request)|request/(?:request|result-request|request-status))\.html$ php/auth/student-page.php [END]

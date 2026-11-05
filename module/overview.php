@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../php/auth/session.php';
+requireStudent();
 require __DIR__ . "/../db.php";
 require_once __DIR__ . '/../php/announcement-common.php';
 

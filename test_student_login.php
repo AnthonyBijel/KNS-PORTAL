@@ -19,6 +19,7 @@ header('X-Frame-Options: DENY');
 header('X-Content-Type-Options: nosniff');
 
 require __DIR__ . '/db.php';
+require_once __DIR__ . '/php/student-term-enrollments.php';
 
 function escape($value)
 {
@@ -85,17 +86,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $attempts['count']++;
                     $_SESSION['attempts'] = $attempts;
-                    $stmt = $pdo->prepare('SELECT id, password_hash, status FROM students WHERE student_number = ? LIMIT 1');
+                    knsSyncStudentTermByNumber($pdo, trim($number));
+                    $stmt = $pdo->prepare('SELECT id, password_hash, status, requires_password_change FROM students WHERE student_number = ? LIMIT 1');
                     $stmt->execute([trim($number)]);
                     $account = $stmt->fetch(PDO::FETCH_ASSOC);
-                    if ($account && $account['status'] === 'Active' && !empty($account['password_hash']) && password_verify($password, $account['password_hash'])) {
+                    if ($account && $account['status'] === 'Active' && !(int) $account['requires_password_change'] && !empty($account['password_hash']) && password_verify($password, $account['password_hash'])) {
                         session_regenerate_id(true);
                         $_SESSION['student_id'] = (int) $account['id'];
                         $_SESSION['csrf'] = bin2hex(random_bytes(32));
                         unset($_SESSION['attempts']);
                         $message = 'Login successful. The information below was read from your database.';
                     } else {
-                        $message = 'Invalid student number/password, or account is inactive. You are not logged in.';
+                        $message = 'Invalid student number/password, account is inactive, or password setup is pending. Use the portal login to finish account setup. You are not logged in.';
                     }
                 }
             }
@@ -112,7 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if ($schemaReady && isset($_SESSION['student_id'])) {
-    $stmt = $pdo->prepare('SELECT student_number, first_name, last_name, course, year_level, section, status FROM students WHERE id = ?');
+    knsSyncStudentTerm($pdo, (int) $_SESSION['student_id']);
+    $stmt = $pdo->prepare('SELECT student_number, first_name, last_name, course, year_level, section, status FROM students WHERE id = ? AND requires_password_change = 0');
     $stmt->execute([$_SESSION['student_id']]);
     $student = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$student || $student['status'] !== 'Active') {
