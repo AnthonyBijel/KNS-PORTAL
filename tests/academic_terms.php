@@ -1,5 +1,6 @@
 <?php
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+define('KNS_TERM_EMAIL_DEFER', true);
 require __DIR__ . '/../db.php';
 require __DIR__ . '/../php/auth/student-account-setup.php';
 require __DIR__ . '/../vendor/autoload.php';
@@ -84,18 +85,27 @@ function termReject(callable $action, int $status, string $label): void
 }
 function termStudent(PDO $pdo, string $number = 'TERM-STUDENT'): array
 {
-    $statement=$pdo->prepare('SELECT * FROM students WHERE student_number=?');$statement->execute([$number]);return $statement->fetch(PDO::FETCH_ASSOC);
+    $statement=$pdo->prepare('SELECT * FROM students WHERE student_number=?');$statement->execute([$number]);return $statement->fetch(PDO::FETCH_ASSOC) ?: [];
 }
 try {
     mkdir($app,0700,true);mkdir($temporary.'/sessions');
     $source->exec('CREATE DATABASE '.$database.' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');$created=true;
     $dsn="mysql:host=$host;dbname=$database;charset=utf8mb4";
     $pdo=new PDO($dsn,$username,$password,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
-    $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
-    foreach($source->query("SHOW FULL TABLES WHERE Table_type='BASE TABLE'")->fetchAll(PDO::FETCH_NUM) as $row){
-        $name='`'.str_replace('`','``',$row[0]).'`';$pdo->exec($source->query('SHOW CREATE TABLE '.$name)->fetch(PDO::FETCH_NUM)[1]);
+    // Schema only in dependency order; FK checks remain enabled.
+    $pending=array_fill_keys($source->query("SHOW FULL TABLES WHERE Table_type='BASE TABLE'")->fetchAll(PDO::FETCH_COLUMN),true);
+    while($pending){
+        $progress=false;
+        foreach(array_keys($pending) as $table){
+            $refs=$source->prepare('SELECT REFERENCED_TABLE_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND REFERENCED_TABLE_NAME IS NOT NULL');
+            $refs->execute([$table]);$blocked=false;
+            foreach($refs->fetchAll(PDO::FETCH_COLUMN) as $ref)if($ref!==$table&&isset($pending[$ref]))$blocked=true;
+            if($blocked)continue;
+            $quoted=chr(96).str_replace(chr(96),chr(96).chr(96),$table).chr(96);
+            $pdo->exec($source->query('SHOW CREATE TABLE '.$quoted)->fetch(PDO::FETCH_NUM)[1]);unset($pending[$table]);$progress=true;
+        }
+        if(!$progress)throw new RuntimeException('Cyclic fixture schema dependency');
     }
-    $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
     $today=new DateTimeImmutable('today',knsAcademicTermZone());
     $schoolYear=(int)$today->format('Y');$priorYear=($schoolYear-1).'-'.$schoolYear;$currentYear=$schoolYear.'-'.($schoolYear+1);
     $passwordHash=password_hash('Fixture-student-password',PASSWORD_DEFAULT);
@@ -110,6 +120,9 @@ try {
     $originalAssessments=$pdo->query('SELECT * FROM grade_assessments')->fetchAll(PDO::FETCH_ASSOC);
     $migration=file_get_contents($root.'/database/migrations/20261105_academic_term_management.sql');
     $pdo->exec($migration);$pdo->exec($migration);
+    $activationMigration=file_get_contents($root.'/database/migrations/20261105_student_term_activation.sql');
+    $pdo->exec($activationMigration);$pdo->exec($activationMigration);
+    $graceMigration=file_get_contents($root.'/database/migrations/20261106_student_term_grace.sql');$pdo->exec($graceMigration);$pdo->exec($graceMigration);
     httpCheck((int)$pdo->query('SELECT COUNT(*) FROM student_enrollments')->fetchColumn()===1,'Migration duplicated enrollment snapshots');
     httpCheck(termStudent($pdo)['password_hash']===$passwordHash && termStudent($pdo)['profile_photo']==='uploads/students/fixture.png','Migration changed password/photo');
     httpCheck($pdo->query('SELECT * FROM subject_grades')->fetchAll(PDO::FETCH_ASSOC)===$originalGrades,'Migration changed grades');
@@ -144,14 +157,59 @@ try {
     httpCheck(termStudent($pdo)['status']==='Active','Access ended during official end date');
     knsSyncStudentTerm($pdo,$studentId,$today);
     httpCheck(termStudent($pdo)['status']==='Inactive' && (int)termStudent($pdo)['term_auto_inactive']===1,'Ended enrollment did not deactivate account');
-    $setup->saveImportedStudent(['student_number'=>'TERM-STUDENT','academic_year'=>$currentYear,'semester'=>'1st Semester','course'=>'BSIT','section'=>'CURRENT','year_level'=>2]);
+    // Account-wide cutoff: neither a missing snapshot nor a NULL term link bypasses expiry.
+    $clone=$pdo->prepare("INSERT INTO students(student_number,password_hash,first_name,last_name,course,year_level,section,status,email,academic_year,semester,profile_photo)
+        SELECT ?,password_hash,first_name,last_name,course,year_level,section,?,email,NULL,NULL,profile_photo FROM students WHERE id=?");
+    foreach(['NO-ENROLLMENT','UNLINKED-ENROLLMENT','SCHEDULE-ONLY'] as $number) {
+        $clone->execute([$number,'Active',$studentId]);
+        if($number!=='NO-ENROLLMENT')knsEnrollmentSnapshot($pdo,(int)$pdo->lastInsertId(),termStudent($pdo,$number));
+    }
+    knsSyncTermAccounts($pdo,$today->modify('-1 day')->setTime(23,59,59));
+    foreach(['NO-ENROLLMENT','UNLINKED-ENROLLMENT'] as $number)httpCheck(termStudent($pdo,$number)['status']==='Active','Legacy access ended before the official end date: '.$number);
+    $legacyBefore=termStudent($pdo,'NO-ENROLLMENT');
+    knsSyncTermAccounts($pdo,$today);
+    foreach(['NO-ENROLLMENT','UNLINKED-ENROLLMENT'] as $number)httpCheck(termStudent($pdo,$number)['status']==='Inactive','Calendar cutoff missed '.$number);
+    knsSyncTermAccounts($pdo,$today);
+    $legacyAfter=termStudent($pdo,'NO-ENROLLMENT');
+    foreach(['id','password_hash','profile_photo','email','first_name','last_name'] as $field)httpCheck($legacyAfter[$field]===$legacyBefore[$field],'Cutoff changed account data: '.$field);
+    $scheduleOnly=termStudent($pdo,'SCHEDULE-ONLY');
+    $scheduleOnly['academic_year']=$currentYear;$scheduleOnly['semester']='2nd Semester';$scheduleOnly['status']='Active';
+    knsEnrollmentSnapshot($pdo,(int)$scheduleOnly['id'],$scheduleOnly);
+    knsSyncStudentTerm($pdo,(int)$scheduleOnly['id'],new DateTimeImmutable($future['start_date'],knsAcademicTermZone()));
+    httpCheck(termStudent($pdo,'SCHEDULE-ONLY')['status']==='Inactive','Scheduled/legacy snapshot granted activation');
+    $complete=['student_number'=>'NO-ENROLLMENT','academic_year'=>$currentYear,'semester'=>'1st Semester','course'=>'BSCS','year_level'=>1,'section'=>'NEW'];
+    $setup->saveImportedStudent($complete);
+    httpCheck(termStudent($pdo,'NO-ENROLLMENT')['status']==='Inactive','Missing status approved enrollment');
+    $blankHistoryCount=(int)$pdo->query('SELECT COUNT(*) FROM student_enrollments')->fetchColumn();
+    $setup->saveImportedStudent(array_replace($complete,['status'=>'']));
+    httpCheck((int)$pdo->query('SELECT COUNT(*) FROM student_enrollments')->fetchColumn()===$blankHistoryCount,'Identical blank-status reimport duplicated history');
+    httpCheck(termStudent($pdo,'NO-ENROLLMENT')['status']==='Inactive','Blank status approved enrollment');
+    $beforeRejected=termStudent($pdo,'NO-ENROLLMENT');
+    foreach(['academic_year','semester','course','year_level','section'] as $field) {
+        $bad=array_replace($complete,['status'=>'Active']);unset($bad[$field]);
+        try{$setup->saveImportedStudent($bad);throw new RuntimeException('Incomplete Active enrollment accepted: '.$field);}
+        catch(InvalidArgumentException $error){httpCheck(termStudent($pdo,'NO-ENROLLMENT')===$beforeRejected,'Rejected row changed account: '.$field);}
+    }
+    foreach([['academic_year'=>$priorYear],['academic_year'=>($schoolYear+3).'-'.($schoolYear+4)],['section'=>'']] as $invalid) {
+        try{$setup->saveImportedStudent(array_replace($complete,['status'=>'Active'],$invalid));throw new RuntimeException('Invalid/unsaved/completed term was accepted');}
+        catch(InvalidArgumentException $error){httpCheck(termStudent($pdo,'NO-ENROLLMENT')===$beforeRejected,'Rejected term changed account');}
+    }
+    $beforeFailedHistory=(int)$pdo->query("SELECT COUNT(*) FROM student_enrollments WHERE student_id=".$beforeRejected['id'])->fetchColumn();
+    try{$setup->saveImportedStudent(array_replace($complete,['student_number'=>'FAILED-ENROLLMENT','first_name'=>'No','last_name'=>'Contact','status'=>'Active','email'=>null]));throw new RuntimeException('Failed new account import was accepted');}
+    catch(InvalidArgumentException $error){httpCheck(!termStudent($pdo,'FAILED-ENROLLMENT'),'Failed enrollment created an account');}
+    httpCheck((int)$pdo->query("SELECT COUNT(*) FROM student_enrollments WHERE student_id=".$beforeRejected['id'])->fetchColumn()===$beforeFailedHistory,'Rejected enrollment appended history');
+    $setup->saveImportedStudent(['student_number'=>'BLANK-NEW','first_name'=>'Blank','last_name'=>'Status','course'=>'BSCS','year_level'=>1,'section'=>'NEW']);
+    httpCheck(termStudent($pdo,'BLANK-NEW')['status']==='Inactive','New blank-status account defaulted to Active');
+
+
+    $setup->saveImportedStudent(['student_number'=>'TERM-STUDENT','academic_year'=>$currentYear,'semester'=>'1st Semester','course'=>'BSIT','section'=>'CURRENT','year_level'=>2,'status'=>'Active']);
     $enrolled=termStudent($pdo);
     httpCheck((int)$enrolled['id']===$studentId && $enrolled['status']==='Active' && $enrolled['course']==='BSIT','Re-enrollment did not reuse/reactivate account');
     httpCheck($enrolled['password_hash']===$passwordHash && $enrolled['profile_photo']==='uploads/students/fixture.png' && $sent===0,'Re-enrollment replaced credentials/photo or sent password');
-    $setup->saveImportedStudent(['student_number'=>'TERM-STUDENT','academic_year'=>$currentYear,'semester'=>'2nd Semester','course'=>'BSA','section'=>'FUTURE','year_level'=>3]);
+    $setup->saveImportedStudent(['student_number'=>'TERM-STUDENT','academic_year'=>$currentYear,'semester'=>'2nd Semester','course'=>'BSA','section'=>'FUTURE','year_level'=>3,'status'=>'Active']);
     httpCheck(termStudent($pdo)['course']==='BSIT' && termStudent($pdo)['section']==='CURRENT' && termStudent($pdo)['status']==='Active','Future enrollment replaced current profile/access');
     $count=(int)$pdo->query('SELECT COUNT(*) FROM student_enrollments')->fetchColumn();
-    $setup->saveImportedStudent(['student_number'=>'TERM-STUDENT','academic_year'=>$currentYear,'semester'=>'2nd Semester','course'=>'BSA','section'=>'FUTURE','year_level'=>3]);
+    $setup->saveImportedStudent(['student_number'=>'TERM-STUDENT','academic_year'=>$currentYear,'semester'=>'2nd Semester','course'=>'BSA','section'=>'FUTURE','year_level'=>3,'status'=>'Active']);
     httpCheck((int)$pdo->query('SELECT COUNT(*) FROM student_enrollments')->fetchColumn()===$count,'Identical reimport duplicated enrollment');
     knsSyncStudentTerm($pdo,$studentId,$endInstant);
     httpCheck(termStudent($pdo)['status']==='Active' && termStudent($pdo)['course']==='BSIT','Current enrollment ended early');
@@ -161,7 +219,7 @@ try {
     knsSyncStudentTerm($pdo,$studentId,$afterFuture->modify('+1 second'));
     httpCheck(termStudent($pdo)['status']==='Inactive','Final enrollment did not expire');
     knsSyncStudentTerm($pdo,$studentId,$today);
-    $setup->saveImportedStudent(['student_number'=>'TERM-STUDENT','academic_year'=>$currentYear,'semester'=>'1st Semester','course'=>'BSED','section'=>'TRANSFER']);
+    $setup->saveImportedStudent(['student_number'=>'TERM-STUDENT','academic_year'=>$currentYear,'semester'=>'1st Semester','course'=>'BSED','section'=>'TRANSFER','year_level'=>2,'status'=>'Active']);
     httpCheck(termStudent($pdo)['course']==='BSED' && (int)$pdo->query('SELECT COUNT(*) FROM student_enrollments')->fetchColumn()>$count,'Transfer did not append history');
     httpCheck($pdo->query('SELECT * FROM student_enrollments ORDER BY id LIMIT 1')->fetch(PDO::FETCH_ASSOC)===$initialSnapshot,'Import overwrote earlier course/section snapshot');
     $setup->saveImportedStudent(['student_number'=>'TERM-STUDENT','status'=>'Inactive']);
@@ -170,13 +228,26 @@ try {
     $setup->saveImportedStudent(['student_number'=>'TERM-STUDENT','status'=>'Graduated']);
     knsSyncStudentTerm($pdo,$studentId,$today);
     httpCheck(termStudent($pdo)['status']==='Graduated','Graduated account was auto-reactivated');
-    $setup->saveImportedStudent(['student_number'=>'TERM-STUDENT','status'=>'Active']);
+    $setup->saveImportedStudent(['student_number'=>'TERM-STUDENT','academic_year'=>$currentYear,'semester'=>'1st Semester','course'=>'BSED','section'=>'TRANSFER','year_level'=>2,'status'=>'Active']);
     httpCheck(termStudent($pdo)['status']==='Active','Intentional re-enrollment did not restore access');
     httpCheck(count($calendar->records($prior['id'],'grades',1)['records'])===1,'Legacy grade labels unavailable in history');
     httpCheck(count($calendar->records($prior['id'],'assessments',1)['records'])===1,'Legacy assessment labels unavailable in history');
     httpCheck($pdo->query('SELECT * FROM subject_grades')->fetchAll(PDO::FETCH_ASSOC)===$originalGrades && $pdo->query('SELECT * FROM grade_assessments')->fetchAll(PDO::FETCH_ASSOC)===$originalAssessments,'Enrollment transitions modified historical scores');
     $setup->saveImportedStudent(['student_number'=>'FUTURE-STUDENT','first_name'=>'Future','last_name'=>'Student','academic_year'=>$currentYear,'semester'=>'2nd Semester','course'=>'BSCS','section'=>'FUTURE','year_level'=>1,'status'=>'Active','email'=>'future@example.invalid']);
     httpCheck(termStudent($pdo,'FUTURE-STUDENT')['status']==='Inactive','Future-only student received early access');
+    $pending=termStudent($pdo,'FUTURE-STUDENT');
+    knsSyncStudentTerm($pdo,(int)$pending['id'],new DateTimeImmutable($future['start_date'].' 00:00:00',knsAcademicTermZone()));
+    httpCheck(termStudent($pdo,'FUTURE-STUDENT')['status']==='Active','Approved future enrollment did not activate at start');
+    knsSyncStudentTerm($pdo,(int)$pending['id'],$today);
+    httpCheck(termStudent($pdo,'FUTURE-STUDENT')['status']==='Inactive','Future enrollment became active before start');
+    $setup->saveImportedStudent(['student_number'=>'FUTURE-STUDENT','status'=>'Graduated']);
+    knsSyncStudentTerm($pdo,(int)$pending['id'],new DateTimeImmutable($future['start_date'],knsAcademicTermZone()));
+    httpCheck(termStudent($pdo,'FUTURE-STUDENT')['status']==='Graduated','Graduated pending account reactivated');
+    $setup->saveImportedStudent(['student_number'=>'FUTURE-STUDENT','academic_year'=>$currentYear,'semester'=>'1st Semester','course'=>'BSCS','year_level'=>1,'section'=>'NEW','status'=>'Active']);
+    httpCheck(termStudent($pdo,'FUTURE-STUDENT')['status']==='Active','Complete enrollment did not unblock Graduated account');
+    knsSyncStudentTerm($pdo,(int)$pending['id'],new DateTimeImmutable($future['start_date'],knsAcademicTermZone()));
+    httpCheck(termStudent($pdo,'FUTURE-STUDENT')['status']==='Inactive','Revoked future authorization survived manual blocking');
+
     // Create authenticated fixtures in the disposable database only.
     $adminInsert=$pdo->prepare('INSERT INTO admin_account(username,password_hash,admin_name,role,school_name,school_email,school_contact) VALUES(?,?,?,?,?,?,?)');
     foreach(['admin'=>'Administrator','registrar'=>'Registrar','osa'=>'OSA'] as $name=>$role)$adminInsert->execute(['fixture.'.$name,password_hash('Fixture-staff-password',PASSWORD_DEFAULT),'Test '.$role,$role,'Test School',$name.'@example.invalid','09171234567']);
@@ -228,15 +299,37 @@ ROUTER;
     $statement=$pdo->prepare('UPDATE academic_terms SET start_date=?,official_end_date=? WHERE id=?');
     $statement->execute([$today->modify('-2 days')->format('Y-m-d'),$today->modify('-1 day')->format('Y-m-d'),$current['id']]);
     $response=$student->request('/dashboard/dashboard.php');
-    httpCheck(str_ends_with($response['location'],'/login.php') && termStudent($pdo)['status']==='Inactive','Existing session bypassed enrollment end date');
+    httpCheck($response['status']===200 && termStudent($pdo)['status']==='Inactive','Existing session lost grace access');
+    foreach(['/module/studentInformation.php','/module/overview.php','/php/module/get-results.php','/php/student/notifications.php','/php/request/records.php'] as $path){
+        httpCheck($student->request($path)['status']===200,'Grace access failed: '.$path);
+    }
+    $student->token('/module/studentInformation.php');
+    $photoFile=$temporary.'/grace-photo.png';$photoImage=imagecreatetruecolor(2,2);imagepng($photoImage,$photoFile);imagedestroy($photoImage);
+    $photoResponse=$student->request('/php/student/upload_profile_photo.php',['csrf'=>$student->csrf,'profile_photo'=>new CURLFile($photoFile,'image/png','grace.png')],'application/json');
+    httpCheck($photoResponse['status']===200,'Grace profile photo workflow was blocked');
     $statement->execute([$current['start_date'],$current['official_end_date'],$current['id']]);
     knsSyncStudentTerm($pdo,$studentId);
     $past=new SetupBrowser($base);
-    $setup->saveImportedStudent(['student_number'=>'ENDED-STUDENT','first_name'=>'Ended','last_name'=>'Student','academic_year'=>$priorYear,'semester'=>'1st Semester','course'=>'BSCS','section'=>'OLD','year_level'=>1,'status'=>'Active','email'=>'ended@example.invalid']);
+    $setup->saveImportedStudent(['student_number'=>'ENDED-STUDENT','first_name'=>'Ended','last_name'=>'Student','academic_year'=>$priorYear,'semester'=>'1st Semester','course'=>'BSCS','section'=>'OLD','year_level'=>1,'status'=>'Inactive','email'=>'ended@example.invalid']);
     $endedId=(int)termStudent($pdo,'ENDED-STUDENT')['id'];
     $statement=$pdo->prepare('UPDATE students SET password_hash=?,requires_password_change=0,temporary_password_expires_at=NULL,status=\'Active\',term_auto_inactive=0 WHERE id=?');$statement->execute([$passwordHash,$endedId]);
-    httpCheck(str_ends_with($past->login('ENDED-STUDENT','Fixture-student-password')['location'],'/login.php') && termStudent($pdo,'ENDED-STUDENT')['status']==='Inactive','Expired enrollment bypassed login');
+    httpCheck(str_ends_with($past->login('ENDED-STUDENT','Fixture-student-password')['location'],'/dashboard/dashboard.php') && termStudent($pdo,'ENDED-STUDENT')['status']==='Inactive','Term-inactive account lost grace login');
     foreach(['enrollments','grades','assessments'] as $kind){$response=$admin->request($endpoint.'?term_id='.$prior['id'].'&kind='.$kind,null,'application/json');httpCheck($response['status']===200 && json_decode($response['body'],true)['total']>=1,'Term history unavailable: '.$kind);}
+    foreach(['NO-ENROLLMENT','UNLINKED-ENROLLMENT'] as $number) {
+        $blocked=new SetupBrowser($base);
+        httpCheck(str_ends_with($blocked->login($number,'Fixture-student-password')['location'],'/dashboard/dashboard.php'),'Legacy account lost grace login: '.$number);
+    }
+    $legacySession=new SetupBrowser($base);
+    // Independent fixture simulates an old authenticated session with no enrollment history.
+    $clone->execute(['SESSION-NO-ENROLLMENT','Active',$studentId]);
+    $legacySessionRow=termStudent($pdo,'SESSION-NO-ENROLLMENT');
+    // An authorized current enrollment permits login; removing only its fixture snapshots exercises the fallback.
+    $setup->saveImportedStudent(['student_number'=>'SESSION-NO-ENROLLMENT','academic_year'=>$currentYear,'semester'=>'1st Semester','course'=>'BSCS','year_level'=>1,'section'=>'TEST','status'=>'Active']);
+    $legacySession->login('SESSION-NO-ENROLLMENT','Fixture-student-password');
+    $pdo->prepare('DELETE FROM student_enrollments WHERE student_id=?')->execute([$legacySessionRow['id']]);
+    $response=$legacySession->request('/php/module/get-results.php',null,'application/json');
+    httpCheck($response['status']===200 && termStudent($pdo,'SESSION-NO-ENROLLMENT')['status']==='Inactive','Existing legacy session lost grace API access');
+
     // Exercise existing student and grade workbook endpoints without altering their UI.
     $book=new \PhpOffice\PhpSpreadsheet\Spreadsheet();$sheet=$book->getActiveSheet();$sheet->setTitle('Student Upload');
     $sheet->fromArray([['student_number','first_name','last_name','course','year_level','section','academic_year','semester','status'],['TERM-STUDENT','Example','Student','BSBA',3,'NEW-COURSE',$currentYear,'2nd Semester','Active']]);
@@ -244,6 +337,26 @@ ROUTER;
     $response=$admin->request('/php/admin/upload_students.php',['csrf'=>$admin->csrf,'student_excel'=>new CURLFile($workbook,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','enrollment.xlsx')]);
     httpCheck($response['status']===200 && str_contains($response['body'],'(0 new, 1 updated)'),'Enrollment workbook created another account');
     httpCheck(termStudent($pdo)['course']==='BSED' && termStudent($pdo)['status']==='Active','Future workbook changed current course/access');
+    // Rejected/blank/missing Excel rows cannot reactivate students; Registrar can import valid rows.
+    $sheet->fromArray([['NO-ENROLLMENT','Legacy','Student','BSCS',1,'BAD',$currentYear,'1st Semester','']],null,'A2');
+    $sheet->setCellValue('I2','');
+    \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($book,'Xlsx')->save($workbook);
+    $response=$admin->request('/php/admin/upload_students.php',['csrf'=>$admin->csrf,'student_excel'=>new CURLFile($workbook,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','blank.xlsx')]);
+    httpCheck(termStudent($pdo,'NO-ENROLLMENT')['status']==='Inactive','Blank Excel status reactivated account');
+    $sheet->setCellValue('I2','Active');$sheet->setCellValue('G2',($schoolYear+3).'-'.($schoolYear+4));
+    \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($book,'Xlsx')->save($workbook);
+    $response=$admin->request('/php/admin/upload_students.php',['csrf'=>$admin->csrf,'student_excel'=>new CURLFile($workbook,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','bad.xlsx')]);
+    httpCheck(str_contains($response['body'],'saved current or upcoming') && termStudent($pdo,'NO-ENROLLMENT')['status']==='Inactive','Rejected Excel row reactivated account');
+    $sheet->setCellValue('G2',$currentYear);
+    \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($book,'Xlsx')->save($workbook);
+    $osa=new SetupBrowser($base);$osa->token();$osa->request('/php/auth/admin_login.php',['csrf'=>$osa->csrf,'student_number'=>'fixture.osa','password'=>'Fixture-staff-password']);$osa->token();
+    httpCheck($osa->request('/php/admin/upload_students.php',['csrf'=>$osa->csrf,'student_excel'=>new CURLFile($workbook,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','valid.xlsx')])['status']===403,'OSA imported enrollment');
+    httpCheck($anonymous->request('/php/admin/upload_students.php',['student_excel'=>new CURLFile($workbook,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','valid.xlsx')],'application/json')['status']===401,'Anonymous import allowed');
+    $registrar=new SetupBrowser($base);$registrar->token();$registrar->request('/php/auth/admin_login.php',['csrf'=>$registrar->csrf,'student_number'=>'fixture.registrar','password'=>'Fixture-staff-password']);$registrar->token();
+    $response=$registrar->request('/php/admin/upload_students.php',['csrf'=>$registrar->csrf,'student_excel'=>new CURLFile($workbook,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','valid.xlsx')]);
+    httpCheck(str_contains($response['body'],'(0 new, 1 updated)') && termStudent($pdo,'NO-ENROLLMENT')['status']==='Active','Registrar could not re-enroll existing account');
+    httpCheck(termStudent($pdo,'UNLINKED-ENROLLMENT')['status']==='Inactive','Omitted Excel student was reactivated');
+    httpCheck(termStudent($pdo,'NO-ENROLLMENT')['password_hash']===$legacyBefore['password_hash'] && termStudent($pdo,'NO-ENROLLMENT')['profile_photo']===$legacyBefore['profile_photo'],'Workbook re-enrollment changed credentials/photo');
     $gradeBook=new \PhpOffice\PhpSpreadsheet\Spreadsheet();$gradeSheet=$gradeBook->getActiveSheet();$gradeSheet->setTitle('Subject Grades');
     $gradeSheet->fromArray([['student_number','academic_year','semester','subject_code','subject_name','prelim_grade','midterm_grade','final_grade','overall_grade'],['TERM-STUDENT',$currentYear,'2nd Semester','CS101','Future subject',80,85,90,85]]);
     $assessmentSheet=$gradeBook->createSheet();$assessmentSheet->setTitle('Assessments');
@@ -288,6 +401,27 @@ ROUTER;
     }
     sort($statuses);
     httpCheck($statuses===[200,409] && count($calendar->calendar()['terms'])===5,'Concurrent scheduling accepted overlapping terms');
+    // Enforce the exact expiry on login and a session established during grace.
+    $expiredSession=new SetupBrowser($base);$expiredSession->login('UNLINKED-ENROLLMENT','Fixture-student-password');
+    $pdo->prepare('UPDATE students SET term_expires_at=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 1 SECOND) WHERE student_number=?')->execute(['UNLINKED-ENROLLMENT']);
+    $expiredResponse=$expiredSession->request('/php/request/records.php',null,'application/json');
+    httpCheck($expiredResponse['status']===401 && termStudent($pdo,'UNLINKED-ENROLLMENT')['archived_at']!==null,'Expired session retained normal feature access');
+    $expiredLogin=new SetupBrowser($base);
+    httpCheck(str_ends_with($expiredLogin->login('UNLINKED-ENROLLMENT','Fixture-student-password')['location'],'/login.php'),'Archived account could log in');
+    $archivedList=$admin->request('/admin/results.php');
+    httpCheck(!str_contains($archivedList['body'],'UNLINKED-ENROLLMENT'),'Archived identity remained in Students List');
+    // Run the shipped scheduler against the copied fixture app, never the portal database.
+    $historyCount=(int)$pdo->query('SELECT COUNT(*) FROM student_enrollments')->fetchColumn();
+    for($syncAttempt=0;$syncAttempt<2;$syncAttempt++){
+        $syncProcess=proc_open([PHP_BINARY,$app.'/php/sync-academic-terms.php'],[0=>['pipe','r'],1=>['pipe','w'],2=>['pipe','w']],$syncPipes,$app,$environment,['bypass_shell'=>true]);
+        fclose($syncPipes[0]);$syncOutput=stream_get_contents($syncPipes[1]);fclose($syncPipes[1]);$syncErrors=stream_get_contents($syncPipes[2]);fclose($syncPipes[2]);
+        httpCheck(proc_close($syncProcess)===0 && $syncErrors==='' && str_contains($syncOutput,'Asia/Manila'),'CLI sync failed against fixture database');
+    }
+    httpCheck((int)$pdo->query('SELECT COUNT(*) FROM student_enrollments')->fetchColumn()===$historyCount,'Repeated CLI sync appended enrollment history');
+    file_put_contents($app.'/db.php','<?php die("fixture database unavailable");');
+    $syncFailure=proc_open([PHP_BINARY,$app.'/php/sync-academic-terms.php'],[0=>['pipe','r'],1=>['pipe','w'],2=>['pipe','w']],$failurePipes,$app,$environment,['bypass_shell'=>true]);
+    fclose($failurePipes[0]);stream_get_contents($failurePipes[1]);fclose($failurePipes[1]);stream_get_contents($failurePipes[2]);fclose($failurePipes[2]);
+    httpCheck(proc_close($syncFailure)===1,'Scheduler reported success when db.php terminated on connection failure');
     echo "PASS: $checks academic-term/data/HTTP checks; disposable fixtures only; no real messages sent.\n";
 } finally {
     if(is_resource($server)){proc_terminate($server);proc_close($server);}

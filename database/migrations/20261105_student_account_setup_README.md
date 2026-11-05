@@ -1,5 +1,12 @@
 # Student temporary-password setup
 
+Current access and retention rules are extended by the
+[three-month grace and email guide](20261106_student_term_grace_README.md).
+Apply `20261106_student_term_grace.sql` after the prerequisites. Term-inactive
+students retain full access until their exact grace expiry; manual Inactive and
+Graduated accounts remain blocked. Refer to that guide for archival and scheduler setup.
+
+
 Apply the migration before using the changed PHP code. Back up the existing local
 `kns_portal` database using phpMyAdmin Export, then select **kns_portal > Import**
 and choose `database/migrations/20261105_student_account_setup.sql`. This alters
@@ -26,6 +33,10 @@ message and uses plain text. Email is tried first, then a valid saved SMS number
 Provider acceptance is reported as sent; final inbox/handset delivery depends on
 the provider. Do not enable SMTP debug logging for messages containing passwords.
 
+Apply `20261105_student_term_activation.sql` after academic-term management;
+see [the enrollment guide](20261105_student_term_activation_README.md).
+Active imports now require explicit Active status and all enrollment details for a
+saved current/upcoming term. Blank status creates Inactive new accounts.
 New Active imports need a valid saved email or phone. Legacy Password columns
 are ignored, including their cell values. New Inactive/Graduated records have no
 usable password and remain pending; importing their activation provisions a

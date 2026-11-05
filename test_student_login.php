@@ -87,10 +87,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $attempts['count']++;
                     $_SESSION['attempts'] = $attempts;
                     knsSyncStudentTermByNumber($pdo, trim($number));
-                    $stmt = $pdo->prepare('SELECT id, password_hash, status, requires_password_change FROM students WHERE student_number = ? LIMIT 1');
+                    $stmt = $pdo->prepare('SELECT id, password_hash, status, requires_password_change, term_auto_inactive, term_inactivated_at, term_expires_at, archived_at FROM students WHERE student_number = ? LIMIT 1');
                     $stmt->execute([trim($number)]);
                     $account = $stmt->fetch(PDO::FETCH_ASSOC);
-                    if ($account && $account['status'] === 'Active' && !(int) $account['requires_password_change'] && !empty($account['password_hash']) && password_verify($password, $account['password_hash'])) {
+                    if ($account && knsStudentMayAccess($account) && !(int) $account['requires_password_change'] && !empty($account['password_hash']) && password_verify($password, $account['password_hash'])) {
                         session_regenerate_id(true);
                         $_SESSION['student_id'] = (int) $account['id'];
                         $_SESSION['csrf'] = bin2hex(random_bytes(32));
@@ -115,10 +115,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 if ($schemaReady && isset($_SESSION['student_id'])) {
     knsSyncStudentTerm($pdo, (int) $_SESSION['student_id']);
-    $stmt = $pdo->prepare('SELECT student_number, first_name, last_name, course, year_level, section, status FROM students WHERE id = ? AND requires_password_change = 0');
+    $stmt = $pdo->prepare('SELECT student_number, first_name, last_name, course, year_level, section, status, term_auto_inactive, term_inactivated_at, term_expires_at, archived_at FROM students WHERE id = ? AND requires_password_change = 0');
     $stmt->execute([$_SESSION['student_id']]);
     $student = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$student || $student['status'] !== 'Active') {
+    if (!knsStudentMayAccess($student)) {
         unset($_SESSION['student_id']);
         $student = null;
     }

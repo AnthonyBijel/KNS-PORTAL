@@ -60,6 +60,11 @@ if ($size === false || $size === 0 || $size > 10 * 1024 * 1024) {
 require_once __DIR__ . '/../../db.php';
 require __DIR__ . '/../../vendor/autoload.php';
 require __DIR__ . '/../auth/student-account-setup.php';
+try {
+    knsRequireEnrollmentActivation($pdo);
+} catch (RuntimeException $error) {
+    failUpload('Import the academic-term management, term activation, and 20261106_student_term_grace.sql migrations before uploading students.', 503);
+}
 
 // Match the nullable columns and lengths in the local students table.
 $required = ['student_number', 'first_name', 'last_name', 'course', 'year_level', 'section'];
@@ -181,6 +186,8 @@ try {
     failUpload('Unable to read the workbook. Upload an unencrypted, valid .xlsx or .xls file with headers in row 1.');
 }
 
+// Apply elapsed calendar boundaries independently of which student rows were supplied.
+knsSyncTermAccounts($pdo);
 $counts = ['imported' => 0, 'created' => 0, 'updated' => 0, 'skipped' => 0, 'sent' => 0];
 $rowErrors = [];
 $setup = new KnsStudentAccountSetup($pdo);
@@ -247,7 +254,7 @@ if ($lastRow >= 2) {
                 }
                 $values['status'] = $statuses[$statusKey];
             } else {
-                // The DB supplies Active on insert; preserve status on update.
+                // Blank status never authorizes enrollment; new accounts default to Inactive.
                 unset($values['status']);
             }
             if (array_key_exists('birth_date', $values)) {
@@ -288,6 +295,8 @@ if ($lastRow >= 2) {
     }
 }
 $book->disconnectWorksheets();
+knsAfterTermCommit($pdo);
+$termEmailCounts = knsTermDeliveryCounts($pdo);
 header('Content-Type: text/html; charset=utf-8');
 ?>
 <!doctype html>
@@ -301,6 +310,8 @@ header('Content-Type: text/html; charset=utf-8');
     <h1>Student import results</h1>
     <p>Imported: <strong><?= $counts['imported'] ?></strong>
         (<?= $counts['created'] ?> new, <?= $counts['updated'] ?> updated).</p>
+    <p>Active status requires a complete, explicit Active enrollment for a saved current or upcoming term. Future enrollments activate on their start date; blank status does not re-enroll a student. Term-inactive students retain full access during their grace period.</p>
+    <p>Term-end emails: queued <?= $termEmailCounts['queued'] ?>; sent <?= $termEmailCounts['sent'] ?>; failed <?= $termEmailCounts['failed'] ?>; uncertain <?= $termEmailCounts['uncertain'] ?>. Failed deliveries retry during scheduled sync. Missing/invalid saved emails must be corrected. Uncertain deliveries need sender review before any resend.</p>
     <p>Temporary passwords sent: <strong><?= $counts['sent'] ?></strong>.</p>
     <p>Skipped blank rows: <strong><?= $counts['skipped'] ?></strong>.</p>
     <p>Rows with errors: <strong><?= count($rowErrors) ?></strong>.</p>

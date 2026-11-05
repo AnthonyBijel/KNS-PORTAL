@@ -238,7 +238,7 @@ require __DIR__ . '/../../db.php';
 try {
     $pdo->exec("SET time_zone = '+00:00'");
     $identity = $requestActor['role'] === 'student'
-        ? $pdo->prepare("SELECT id FROM students WHERE id = ? AND status = 'Active'")
+        ? $pdo->prepare('SELECT id FROM students WHERE id = ? AND ' . knsStudentAccessSql())
         : $pdo->prepare('SELECT id, role FROM admin_account WHERE id = ? AND is_active = 1 AND role IN ('
             . ($officeId !== null ? "'Registrar', 'OSA'" : "'Administrator'") . ')');
     $identity->execute([$requestActor['id']]);

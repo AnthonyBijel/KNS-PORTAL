@@ -82,6 +82,9 @@ final class KnsStudentAccountSetup
     {
         // Workbook passwords and profile photos cannot reach SQL.
         $values = array_intersect_key($values, array_flip(self::FIELDS));
+        if (array_key_exists('status', $values) && trim((string) $values['status']) === '') unset($values['status']);
+        $explicitStatus = array_key_exists('status', $values);
+        $values = knsValidateImportedEnrollment($this->pdo, $values);
         $password = null;
         $this->pdo->beginTransaction();
         try {
@@ -89,7 +92,12 @@ final class KnsStudentAccountSetup
             $statement->execute([$values['student_number']]);
             $existing = $statement->fetch(PDO::FETCH_ASSOC);
             $created = $existing === false;
-            $saved = array_replace($existing ?: ['status' => 'Active'], $values);
+            if ($existing && !empty($existing['archived_at']) && (($values['status'] ?? '') !== 'Active'
+                || trim((string) ($values['first_name'] ?? '')) === '' || trim((string) ($values['last_name'] ?? '')) === '')) {
+                throw new InvalidArgumentException('An archived identity requires a complete, explicit Active enrollment import with the student name and valid contact details.');
+            }
+            $saved = array_replace($existing ?: ['status' => 'Inactive'], $values);
+            if ($created && !$explicitStatus) $values['status'] = 'Inactive';
             $hasPassword = !empty($existing['password_hash'])
                 && (password_get_info($existing['password_hash'])['algo'] ?? null) !== null;
             if ($saved['status'] === 'Active' && !$hasPassword) {
@@ -117,9 +125,10 @@ final class KnsStudentAccountSetup
                     $statement->execute([...array_values($values), $id]);
                 }
             }
-            knsCaptureImportedEnrollment($this->pdo, $id, $existing ?: null, $saved, array_key_exists('status', $values));
+            knsCaptureImportedEnrollment($this->pdo, $id, $existing ?: null, $saved, $explicitStatus);
             $student = $password !== null ? $this->student($id) : null;
             $this->pdo->commit();
+            if (!(defined('KNS_TERM_EMAIL_DEFER') && KNS_TERM_EMAIL_DEFER)) knsAfterTermCommit($this->pdo, $id);
         } catch (Throwable $error) {
             if ($this->pdo->inTransaction()) $this->pdo->rollBack();
             unset($password);
@@ -137,8 +146,9 @@ final class KnsStudentAccountSetup
     {
         $this->pdo->beginTransaction();
         try {
+            knsSyncStudentTerm($this->pdo, $id);
             $student = $this->student($id, true);
-            if ($student['status'] !== 'Active' || !(int) $student['requires_password_change']) {
+            if (!knsStudentMayAccess($student) || !(int) $student['requires_password_change']) {
                 throw new InvalidArgumentException('Only an Active account still awaiting a password change can receive a fresh temporary password.');
             }
             $this->requireContact($student);
@@ -163,8 +173,9 @@ final class KnsStudentAccountSetup
         knsValidateStudentPassword($password, $confirmation);
         $this->pdo->beginTransaction();
         try {
+            knsSyncStudentTerm($this->pdo, $id);
             $student = $this->student($id, true);
-            if ($student['status'] !== 'Active' || !(int) $student['requires_password_change']
+            if (!knsStudentMayAccess($student) || !(int) $student['requires_password_change']
                 || !(int) $student['temporary_password_live']
                 || !hash_equals(hash('sha256', (string) $student['password_hash']), $proof)) {
                 throw new InvalidArgumentException('This setup session expired or was replaced. Sign in again or use Forgot Password.');

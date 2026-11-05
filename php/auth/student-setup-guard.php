@@ -39,22 +39,24 @@ function knsEnforceStudentSetup(): void
         require __DIR__ . '/../../db.php';
         require_once __DIR__ . '/../student-term-enrollments.php';
         knsSyncStudentTerm($pdo, $id);
-        $statement = $pdo->prepare('SELECT status, password_hash, requires_password_change,
+        $statement = $pdo->prepare('SELECT *,
             temporary_password_expires_at > UTC_TIMESTAMP() AS temporary_password_live FROM students WHERE id = ?');
         $statement->execute([$id]);
         $student = $statement->fetch(PDO::FETCH_ASSOC);
     } catch (Throwable $error) {
         http_response_code(503);
-        exit('Student account setup is unavailable. Ask the administrator to apply 20261105_student_account_setup.sql.');
+        exit('Student account checks are unavailable. Ask the administrator to verify the student account setup, academic-term management, student-term activation, and 20261106_student_term_grace.sql migrations.');
     }
     $pending = $student && (int) $student['requires_password_change'];
     $proof = $_SESSION['student_setup_hash'] ?? null;
-    if (!$student || $student['status'] !== 'Active'
+    if (!knsStudentMayAccess($student)
         || ($pending && (!(int) $student['temporary_password_live'] || !is_string($proof)))
         || ($proof !== null && (!is_string($proof) || !$pending
             || !hash_equals(hash('sha256', (string) $student['password_hash']), $proof)))) {
         unset($_SESSION['student_id'], $_SESSION['student_setup_hash']);
-        $_SESSION['login_error'] = 'Your setup session expired or was replaced. Sign in again or use Forgot Password.';
+        $_SESSION['login_error'] = !knsStudentMayAccess($student)
+            ? 'Your account is inactive or unavailable. Contact the Registrar about enrollment.'
+            : 'Your setup session expired or was replaced. Sign in again or use Forgot Password.';
         knsSetupBlocked(knsPortalUrl('login.php'), $_SESSION['login_error'], 401);
     }
     if ($pending && $script !== realpath(dirname(__DIR__, 2) . '/change-password.php')) {

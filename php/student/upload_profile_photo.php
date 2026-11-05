@@ -36,8 +36,8 @@ $image = null;
 $stream = null;
 
 try {
-    $studentQuery = $pdo->prepare('SELECT id FROM students WHERE id = ? AND status = ? LIMIT 1');
-    $studentQuery->execute([$studentId, 'Active']);
+    $studentQuery = $pdo->prepare('SELECT id FROM students WHERE id = ? AND ' . knsStudentAccessSql() . ' LIMIT 1');
+    $studentQuery->execute([$studentId]);
     if (!$studentQuery->fetchColumn()) {
         photoReply(401, 'Your student account is unavailable. Please sign in again.');
     }
@@ -122,8 +122,8 @@ try {
         throw new RuntimeException('Unable to save the photo. Please try again later.');
     }
     $photoPath = 'uploads/students/' . $filename;
-    $update = $pdo->prepare('UPDATE students SET profile_photo = ? WHERE id = ? AND status = ?');
-    $update->execute([$photoPath, $studentId, 'Active']);
+    $update = $pdo->prepare('UPDATE students SET profile_photo = ? WHERE id = ? AND ' . knsStudentAccessSql() . '');
+    $update->execute([$photoPath, $studentId]);
     if ($update->rowCount() !== 1) {
         throw new RuntimeException('Your student account changed. Reload Student Information and try again.');
     }

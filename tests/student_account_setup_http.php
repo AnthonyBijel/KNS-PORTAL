@@ -1,5 +1,6 @@
 <?php
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+define('KNS_TERM_EMAIL_DEFER', true);
 require __DIR__ . '/../db.php';
 require __DIR__ . '/../php/auth/student-account-setup.php';
 require __DIR__ . '/../vendor/autoload.php';
@@ -89,6 +90,14 @@ try {
     }
     $pdo->exec(file_get_contents($root . '/database/migrations/20261105_student_account_setup.sql'));
     $pdo->exec(file_get_contents($root . '/database/migrations/20261105_student_account_setup.sql'));
+    $pdo->exec(file_get_contents($root . '/database/migrations/20261105_academic_term_management.sql'));
+    $pdo->exec(file_get_contents($root . '/database/migrations/20261105_student_term_activation.sql'));
+    $pdo->exec(file_get_contents($root . '/database/migrations/20261106_student_term_grace.sql'));
+    $fixtureToday = new DateTimeImmutable('today', knsAcademicTermZone());
+    $fixtureYear = $fixtureToday->format('Y') . '-' . ((int) $fixtureToday->format('Y') + 1);
+    (new KnsAcademicTerms($pdo))->schedule(['academic_year'=>$fixtureYear,'semester'=>'1st Semester',
+        'start_date'=>$fixtureToday->modify('-1 day')->format('Y-m-d'),
+        'official_end_date'=>$fixtureToday->modify('+365 days')->format('Y-m-d')], 1);
     foreach (['php', 'admin', 'dashboard', 'module', 'request', 'config'] as $dir) copySetupTree($root . '/' . $dir, $app . '/' . $dir);
     foreach (['login.php', 'change-password.php', 'test_student_login.php'] as $file) copy($root . '/' . $file, $app . '/' . $file);
     mkdir($app . '/vendor');
@@ -129,6 +138,7 @@ ROUTER);
     });
     $values = ['student_number' => 'HTTP-STUDENT', 'first_name' => 'Sample', 'last_name' => 'Student',
         'course' => 'BSCS', 'year_level' => 1, 'section' => 'TEST', 'email' => 'http@example.invalid'];
+    $values += ['academic_year'=>$fixtureYear,'semester'=>'1st Semester','status'=>'Active'];
     $setup->saveImportedStudent($values);
     $initial = $delivered;
     $id = (int) $pdo->query("SELECT id FROM students WHERE student_number='HTTP-STUDENT'")->fetchColumn();
@@ -190,6 +200,10 @@ ROUTER);
         ['IMPORT-INACTIVE','ignored','Inactive','Student','BSCS',1,'TEST','Inactive'],
         ['IMPORT-PHONE','ignored','Phone','Student','BSCS',1,'TEST','Active',null,'09171234567'],
     ]);
+    $sheet->setCellValue('L1','academic_year');$sheet->setCellValue('M1','semester');
+    for($fixtureRow=2;$fixtureRow<=6;$fixtureRow++){
+        $sheet->setCellValue('L'.$fixtureRow,$fixtureYear);$sheet->setCellValue('M'.$fixtureRow,'1st Semester');
+    }
     $workbook = $temporary . '/import.xlsx';
     \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($book,'Xlsx')->save($workbook);
     $response = $admin->request('/php/admin/upload_students.php',['csrf'=>$admin->csrf,'student_excel'=>new CURLFile($workbook,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','students.xlsx')]);
@@ -202,6 +216,7 @@ ROUTER);
     // The current workbook needs no Password header at all.
     $sheet->removeColumn('B');
     $sheet->fromArray([['IMPORT-NO-PASSWORD','No','Password','BSCS',1,'TEST','Active','new@example.invalid']],null,'A7');
+    $sheet->setCellValue('K7',$fixtureYear);$sheet->setCellValue('L7','1st Semester');
     \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($book,'Xlsx')->save($workbook);
     $response=$admin->request('/php/admin/upload_students.php',['csrf'=>$admin->csrf,'student_excel'=>new CURLFile($workbook,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','students.xlsx')]);
     httpCheck((int)$pdo->query("SELECT COUNT(*) FROM students WHERE student_number='IMPORT-NO-PASSWORD' AND requires_password_change=1")->fetchColumn()===1,'Import without Password column failed');

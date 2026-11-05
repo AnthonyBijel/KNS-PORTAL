@@ -40,11 +40,11 @@ require_once __DIR__ . '/../db.php';
 
 // Dropdown values come from the stored records, including uploaded course/section names.
 $filterOptions = [
-    'academic_year' => $pdo->query("SELECT DISTINCT academic_year FROM students WHERE TRIM(academic_year) <> '' ORDER BY academic_year DESC")->fetchAll(PDO::FETCH_COLUMN),
-    'semester' => $pdo->query("SELECT DISTINCT semester FROM students WHERE TRIM(semester) <> '' ORDER BY semester")->fetchAll(PDO::FETCH_COLUMN),
-    'course' => $pdo->query("SELECT DISTINCT course FROM students WHERE TRIM(course) <> '' ORDER BY course")->fetchAll(PDO::FETCH_COLUMN),
-    'year_level' => $pdo->query('SELECT DISTINCT year_level FROM students ORDER BY year_level')->fetchAll(PDO::FETCH_COLUMN),
-    'section' => $pdo->query("SELECT DISTINCT section FROM students WHERE TRIM(section) <> '' ORDER BY section")->fetchAll(PDO::FETCH_COLUMN),
+    'academic_year' => $pdo->query("SELECT DISTINCT academic_year FROM students WHERE archived_at IS NULL AND TRIM(academic_year) <> '' ORDER BY academic_year DESC")->fetchAll(PDO::FETCH_COLUMN),
+    'semester' => $pdo->query("SELECT DISTINCT semester FROM students WHERE archived_at IS NULL AND TRIM(semester) <> '' ORDER BY semester")->fetchAll(PDO::FETCH_COLUMN),
+    'course' => $pdo->query("SELECT DISTINCT course FROM students WHERE archived_at IS NULL AND TRIM(course) <> '' ORDER BY course")->fetchAll(PDO::FETCH_COLUMN),
+    'year_level' => $pdo->query('SELECT DISTINCT year_level FROM students WHERE archived_at IS NULL ORDER BY year_level')->fetchAll(PDO::FETCH_COLUMN),
+    'section' => $pdo->query("SELECT DISTINCT section FROM students WHERE archived_at IS NULL AND TRIM(section) <> '' ORDER BY section")->fetchAll(PDO::FETCH_COLUMN),
 ];
 foreach ($filters as $name => $value) {
     if ($value !== '' && !in_array($value, array_map('strval', $filterOptions[$name]), true)) {
@@ -53,7 +53,7 @@ foreach ($filters as $name => $value) {
     }
 }
 
-$studentConditions = [];
+$studentConditions = ['s.archived_at IS NULL'];
 $studentParameters = [];
 if ($search !== '') {
     // Group search alternatives so every selected filter still applies.
@@ -85,7 +85,9 @@ $page = min($page, $totalPages);
 $offset = ($page - 1) * $perPage;
 
 $studentStatement = $pdo->prepare(
-    'SELECT s.id, s.requires_password_change, s.student_number, s.first_name, s.middle_name, s.last_name, s.course, s.year_level, s.section, s.status
+    'SELECT s.id, s.requires_password_change, s.student_number, s.first_name, s.middle_name, s.last_name, s.course, s.year_level, s.section, s.status, s.term_auto_inactive, s.term_inactivated_at, s.term_expires_at,
+        (SELECT delivery_status FROM student_term_emails m WHERE m.student_id = s.id ORDER BY m.id DESC LIMIT 1) AS term_email_status,
+        (SELECT failure_code FROM student_term_emails m WHERE m.student_id = s.id ORDER BY m.id DESC LIMIT 1) AS term_email_failure
      FROM students s' . $studentWhere . ' ORDER BY s.id DESC LIMIT ? OFFSET ?'
 );
 foreach ($studentParameters as $parameterIndex => $parameter) {
@@ -193,11 +195,15 @@ $lastPage = min($totalPages, $firstPage + 4);
         New Active accounts need a valid email or phone to receive a generated temporary password. Workbook passwords are ignored; existing valid passwords are preserved.</p>
     <p>Pending Active accounts can receive a fresh temporary password using the Administrator action under Status. Each send replaces the previous temporary password. Check delivery errors before retrying.</p>
     <p>Other template columns are optional. Missing optional columns keep existing data; blank cells in
-        supplied optional columns clear that field. Blank status defaults to Active for a new account
-        and keeps the current status for an existing account.</p>
-    <p>Optional academic_year (for example 2026-2027) and semester (1st Semester, 2nd Semester, or Summer)
-        are saved on the student account and used by the list filters. Re-upload the same student_number
-        to update these values. Older workbooks can omit these columns to preserve existing values.</p>
+        supplied optional columns clear that field. Blank status creates an Inactive new account
+        and keeps the existing account decision, subject to term expiry. It never approves re-enrollment.</p>
+    <p>To enroll or re-enroll, supply status=Active and academic_year (for example 2026-2027),
+        semester (1st Semester, 2nd Semester, or Summer), course, year_level, and section in the row.
+        Save that current or upcoming term in Manage Terms first. Re-upload the same student_number
+        to keep the same account. Future enrollment activates on its start date; term scheduling alone
+        never activates an account. After the official end date, term-inactive students retain full access
+        for three calendar months unless manually blocked. A qualifying enrollment cancels pending expiry.
+        Expired accounts are removed from this list; their historical records remain available.</p>
     <p>Headers allow case, space, hyphen, and underscore variations, including Student Number and student_number.
         Extra columns are ignored; duplicate recognized headers must be corrected.
         Use 3 or 3rd Year for year_level. Birth dates accept Excel dates, YYYY-MM-DD,
@@ -310,9 +316,13 @@ $lastPage = min($totalPages, $firstPage + 4);
                                 <span class="status-dot-table"></span>
                                 <span><?= htmlspecialchars((string) ($student['status'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
                             </div>
+                            <?php if ($graceNotice = knsStudentGraceNotice($student)): ?><small><?= htmlspecialchars($graceNotice, ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?>
+                            <?php if (in_array($student['term_email_status'], ['queued','failed','uncertain'], true)): ?>
+                                <small>Term-end email: <?= htmlspecialchars($student['term_email_status'], ENT_QUOTES, 'UTF-8') ?><?= $student['term_email_failure'] === 'no_valid_email' ? ' (no valid saved email)' : '' ?>. Failed deliveries retry in scheduled sync; uncertain deliveries require sender review.</small>
+                            <?php endif; ?>
                             <?php if ((int) $student['requires_password_change']): ?>
                                 <small>Password setup pending</small>
-                                <?php if ($student['status'] === 'Active' && $studentListStaff['role'] === 'Administrator'): ?>
+                                <?php if (knsStudentMayAccess($student) && $studentListStaff['role'] === 'Administrator'): ?>
                                     <form method="post" action="../php/admin/resend-student-password.php">
                                         <input type="hidden" name="csrf" value="<?= htmlspecialchars($_SESSION['csrf'], ENT_QUOTES, 'UTF-8') ?>">
                                         <input type="hidden" name="student_id" value="<?= (int) $student['id'] ?>">
