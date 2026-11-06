@@ -22,7 +22,14 @@
 .kns-terms .kns-terms-close svg { width: 23px; height: 23px; stroke-width: 1.5; }
 .kns-terms .kns-terms-title { margin: 0; padding-right: 28px; color: #064c2f; font-size: 27px; font-weight: 750; line-height: 1.2; letter-spacing: -.3px; }
 .kns-terms .kns-terms-intro { margin: 5px 0 18px; color: #444b52; font-size: 14px; line-height: 1.5; }
-.kns-terms .kns-terms-current { display: flex; align-items: center; gap: 20px; padding: 15px 20px; border: 1px solid #c3e7ce; border-radius: 11px; background: #e4f5e8; }
+.kns-terms .kns-terms-current { position: relative; display: flex; align-items: center; gap: 20px; padding: 15px 20px; border: 1px solid #c3e7ce; border-radius: 11px; background: #e4f5e8; }
+.kns-terms .kns-terms-edit { position: absolute; top: 7px; right: 7px; display: grid; place-items: center; width: 28px; height: 28px; padding: 5px; border: 0; border-radius: 6px; background: transparent; color: #09602f; cursor: pointer; }
+.kns-terms .kns-terms-edit svg { width: 16px; height: 16px; }
+.kns-terms .kns-terms-edit:hover { background: #c5e8d0; }
+.kns-terms .kns-terms-current-heading { padding-right: 16px; }
+.kns-terms .kns-terms-confirm-intro { margin: 6px 0 14px; color: #444b52; font-size: 14px; line-height: 1.5; }
+.kns-terms .kns-terms-confirm-title { margin: 0; color: #064c2f; font-size: 19px; }
+.kns-terms .kns-terms-password-fields { margin: 18px 0 0; padding: 0; border: 0; }
 .kns-terms .kns-terms-calendar-icon { display: grid; place-items: center; flex: 0 0 54px; width: 54px; height: 54px; border-radius: 17px; background: #c5e8d0; color: #035331; }
 .kns-terms .kns-terms-calendar-icon svg { width: 32px; height: 32px; }
 .kns-terms .kns-terms-current-copy { flex: 1; min-width: 0; padding-left: 20px; border-left: 1px solid #4ea66d; }

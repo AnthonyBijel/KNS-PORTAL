@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/../request/messenger-common.php';
+require_once __DIR__ . '/staff-settings-common.php';
 
 if ($requestActor['role'] !== 'admin') requestFail(403, 'Administrator notifications require an administrator session.');
 $method = $_SERVER['REQUEST_METHOD'];
@@ -31,6 +32,14 @@ function adminNotificationFeed(bool $scoped): string
 
 function adminNotificationPublic(array $row): array
 {
+    if (in_array($row['source_type'], ['announcement','activity'], true)) {
+        return ['key'=>$row['source_type'].':'.$row['source_id'], 'type'=>$row['source_type'],
+            'source_id'=>(int)$row['source_id'], 'request_id'=>null, 'student_id'=>null, 'student_name'=>'',
+            'title'=>$row['source_type']==='announcement' ? $row['student_name'] : 'Account activity',
+            'description'=>mb_substr(preg_replace('/\s+/u',' ',trim($row['description'])),0,160),
+            'context'=>$row['source_type']==='announcement' ? 'System announcements' : 'Your account',
+            'read'=>$row['read_at']!==null, 'created_at'=>requestTimestamp($row['created_at'])];
+    }
     $request = $row['source_type'] === 'request';
     $description = preg_replace('/\s+/u', ' ', trim($row['description'] ?? ''));
     $description = mb_strlen($description) > 160 ? mb_substr($description, 0, 157) . '…' : $description;
@@ -63,12 +72,28 @@ try {
     $scoped = !requestCanForward($requestActor);
     $feed = adminNotificationFeed($scoped);
     $feedParams = $scoped ? [$requestActor['office'], $requestActor['office']] : [];
+    $preferences = knsStaffPreferences($pdo, $adminId);
+    if ($preferences['installed']) {
+        if (!$preferences['notify_requests']) $feed = 'SELECT * FROM (' . $feed . ') requests_disabled WHERE 1=0';
+        if ($preferences['notify_announcements']) {
+            $feed .= " UNION ALL SELECT 'announcement' COLLATE utf8mb4_unicode_ci, a.id, NULL, NULL, '', '',
+                COALESCE(NULLIF(a.title,''),'System announcement') COLLATE utf8mb4_unicode_ci, '',
+                a.description COLLATE utf8mb4_unicode_ci, a.created_at FROM announcements a
+                WHERE a.created_at >= ? AND (a.expires_at IS NULL OR a.expires_at > UTC_TIMESTAMP())";
+            $feedParams[] = $preferences['created_at'];
+        }
+        if ($preferences['notify_activity']) {
+            $feed .= " UNION ALL SELECT 'activity' COLLATE utf8mb4_unicode_ci, a.id, NULL, NULL, '', '', '', '',
+                a.description, a.created_at FROM staff_account_activity a WHERE a.admin_id = ?";
+            $feedParams[] = $adminId;
+        }
+    }
     if ($method === 'POST') {
         $action = requestText($_POST, 'action', 30, true);
         $pdo->beginTransaction();
         if ($action === 'read') {
             $type = requestText($_POST, 'type', 20, true);
-            if (!in_array($type, ['request', 'message'], true)) throw new InvalidArgumentException('Invalid notification type.');
+            if (!in_array($type, ['request', 'message', 'announcement', 'activity'], true)) throw new InvalidArgumentException('Invalid notification type.');
             $id = requestInteger($_POST['source_id'] ?? null);
             $stmt = $pdo->prepare('SELECT e.*, NULL AS read_at FROM (' . $feed .
                 ') e WHERE e.source_type = ? AND e.source_id = ? LIMIT 1');
@@ -78,7 +103,7 @@ try {
                 $pdo->rollBack();
                 requestFail(404, 'This notification is no longer available.');
             }
-            requestRecord($pdo, (int) $row['request_id'], $requestActor, true);
+            if (in_array($type, ['request','message'], true)) requestRecord($pdo, (int) $row['request_id'], $requestActor, true);
             $stmt = $pdo->prepare('INSERT INTO admin_notification_reads (admin_id, source_type, source_id)
                 VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE read_at = admin_notification_reads.read_at');
             $stmt->execute([$adminId, $type, $id]);
@@ -126,7 +151,7 @@ try {
         $position = $decoded === false ? null : json_decode($decoded, true);
         if (!is_array($position) || !is_string($position['at'] ?? null)
             || !preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/D', $position['at'])
-            || !in_array($position['type'] ?? null, ['request', 'message'], true)) {
+            || !in_array($position['type'] ?? null, ['request', 'message', 'announcement', 'activity'], true)) {
             throw new InvalidArgumentException('Invalid notification page.');
         }
         $id = requestInteger($position['id'] ?? null);

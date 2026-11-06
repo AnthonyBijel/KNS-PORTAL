@@ -24,6 +24,7 @@ $termCalendarIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="
         <div class="kns-terms-message" data-terms-message role="status" hidden></div>
         <div data-terms-schedule-view>
             <div class="kns-terms-current">
+                <button type="button" class="kns-terms-edit" data-terms-edit hidden aria-label="Edit active academic term" title="Edit active academic term"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5M4 20l5-1L21 7a2.1 2.1 0 0 0-5-5L4 14z"/></svg></button>
                 <div class="kns-terms-calendar-icon"><?= $termCalendarIcon ?></div>
                 <div class="kns-terms-current-copy">
                     <div class="kns-terms-current-heading">CURRENT TERM <span class="kns-terms-badge" data-terms-current-status hidden></span></div>
@@ -48,6 +49,19 @@ $termCalendarIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="
                 </div>
             </form>
         </div>
+        <section data-terms-confirm-view hidden aria-labelledby="kns-term-confirm-title">
+            <h3 id="kns-term-confirm-title" class="kns-terms-confirm-title">Confirm Academic Term Changes</h3>
+            <p class="kns-terms-confirm-intro">Review the changes below. Changes to term dates may affect student access.</p>
+            <div class="kns-terms-table-wrap"><table class="kns-terms-table"><thead><tr><th scope="col">Detail</th><th scope="col">Current</th><th scope="col">New</th></tr></thead><tbody data-terms-review></tbody></table></div>
+            <p class="kns-terms-permission" data-terms-resulting-status></p>
+            <form data-terms-confirm-form>
+                <fieldset class="kns-terms-password-fields">
+                    <div class="kns-terms-field"><label for="kns-term-password">Your Admin / Registrar Password</label><input type="password" id="kns-term-password" name="confirmation_password" autocomplete="current-password" maxlength="4096" required aria-describedby="kns-term-password-note"></div>
+                    <p class="kns-terms-permission" id="kns-term-password-note">Enter the current password for your signed-in Admin or Registrar account to apply these changes.</p>
+                </fieldset>
+                <div class="kns-terms-actions"><button type="button" class="kns-terms-cancel" data-terms-confirm-back>Back to Edit</button><button type="submit" class="kns-terms-submit">Confirm &amp; Update</button></div>
+            </form>
+        </section>
         <section class="kns-terms-history" data-terms-history-view hidden aria-label="Academic term history">
             <div class="kns-terms-history-heading"><h3>Term History</h3><button type="button" class="kns-terms-history-link" data-terms-back>Back to Manage Terms</button></div>
             <div class="kns-terms-table-wrap"><table class="kns-terms-table"><thead><tr><th>Academic Year</th><th>Semester</th><th>Start Date</th><th>Official End Date</th><th>Status</th><th>Records</th></tr></thead><tbody data-terms-history-rows><tr><td colspan="6">Loading terms...</td></tr></tbody></table></div>

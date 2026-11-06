@@ -9,7 +9,7 @@ const ADMIN_PAGES = {
     },
     "results.php": {
         navigation: ".results-button",
-        initializers: [initStudentUpload, initGradeUpload, initStudentList, container => window.KNSAcademicTerms?.init(container)],
+        initializers: [initStudentUpload, initGradeUpload, initStudentList, container => window.KNSAcademicTerms?.init(container), container => window.KNSStudentListDownload?.init(container)],
     },
     "requests.html": {
         navigation: ".may-request-button",
@@ -17,7 +17,7 @@ const ADMIN_PAGES = {
     },
     "profile.php": {
         navigation: ".student-information-button",
-        initializers: [initAdminProfile, initAdminPhoto, initOfficeAccounts],
+        initializers: [initOfficeAccounts, container => window.KNSStaffSettings?.init(container)],
     },
 };
 
@@ -422,79 +422,6 @@ function initMediaPreview(container) {
     input.closest('dialog').addEventListener('close', () => { selectedFiles = []; });
 }
 
-// The profile fragment is inserted with innerHTML, so bind its controls after loading it.
-function initAdminPhoto(container) {
-    const form = container.querySelector("#admin-photo-form");
-    if (!form) return;
-    const input = form.querySelector("[name='profile_photo']");
-    const button = form.querySelector("[data-choose-photo]");
-    const label = button.querySelector("[data-photo-label]");
-    const message = container.querySelector("#admin-photo-message");
-    const image = button.querySelector("[data-admin-photo]");
-    const buttonLabel = button.getAttribute("aria-label");
-    let uploading = false;
-
-    button.addEventListener("click", () => {
-        if (!uploading) input.click();
-    });
-    input.addEventListener("change", () => {
-        if (!uploading && input.files.length) form.requestSubmit();
-    });
-
-    form.addEventListener("submit", async event => {
-        event.preventDefault();
-        if (uploading) return;
-        const file = input.files[0];
-        if (!file) return;
-        if (file.size > 2 * 1024 * 1024) {
-            message.textContent = "Choose a photo at most 2 MB in size.";
-            message.dataset.state = "error";
-            input.value = "";
-            return;
-        }
-        const body = new FormData(form);
-        uploading = true;
-        button.disabled = true;
-        input.disabled = true;
-        form.setAttribute("aria-busy", "true");
-        button.setAttribute("aria-label", "Uploading your profile photo");
-        label.textContent = "Uploading...";
-        message.textContent = "Saving your profile photo...";
-        message.dataset.state = "pending";
-        try {
-            const response = await fetch(form.action, {
-                method: "POST",
-                credentials: "same-origin",
-                headers: { Accept: "application/json" },
-                body,
-            });
-            if (response.status === 401) {
-                window.location.assign("../login.php");
-                return;
-            }
-            const data = await response.json();
-            if (!response.ok || !data.ok) {
-                throw new Error(data.message || "Unable to save your photo.");
-            }
-            image.src = "../" + data.photo_path;
-            message.textContent = data.message;
-            message.dataset.state = "success";
-        } catch (error) {
-            message.textContent = error.message || "Unable to upload your photo. Please try again.";
-            message.dataset.state = "error";
-        } finally {
-            input.value = ""; // Selecting the same file again must still trigger a change.
-            uploading = false;
-            button.disabled = false;
-            input.disabled = false;
-            form.removeAttribute("aria-busy");
-            button.setAttribute("aria-label", buttonLabel);
-            label.textContent = "Change photo";
-        }
-    });
-}
-
-// Profile: office registration, real account list, and Admin-confirmed deactivation.
 function initOfficeAccounts(container) {
     const launch = container.querySelector('[data-open-office-accounts]');
     const list = container.querySelector('#kns-office-accounts');
@@ -731,87 +658,6 @@ function initOfficeAccounts(container) {
 }
 
 // Profile: save the signed-in admin's details and refresh the dashboard labels.
-function initAdminProfile(container) {
-    const form = container.querySelector("#admin-profile-form");
-    if (!form) return;
-
-    const message = form.querySelector("#admin-profile-message");
-    const fieldset = form.querySelector("fieldset");
-    const saveButton = form.querySelector("button[type='submit']");
-
-    form.addEventListener("input", event => {
-        event.target.removeAttribute("aria-invalid");
-    });
-    form.addEventListener("reset", () => {
-        message.textContent = "";
-        message.removeAttribute("data-state");
-        form.querySelectorAll("[aria-invalid]").forEach(field => field.removeAttribute("aria-invalid"));
-    });
-
-    form.addEventListener("submit", async event => {
-        event.preventDefault();
-        const body = new FormData(form);
-        fieldset.disabled = true;
-        saveButton.textContent = "Saving...";
-        message.textContent = "Saving changes...";
-        message.dataset.state = "pending";
-        form.querySelectorAll("[aria-invalid]").forEach(field => field.removeAttribute("aria-invalid"));
-        let firstInvalidField = null;
-
-        try {
-            const response = await fetch(form.action, {
-                method: "POST",
-                body,
-                headers: { Accept: "application/json" },
-            });
-            const data = await response.json();
-
-            if (response.status === 401) {
-                window.location.assign("../login.php");
-                return;
-            }
-            if (!response.ok || !data.ok) {
-                Object.entries(data.errors || {}).forEach(([name]) => {
-                    const field = form.elements.namedItem(name);
-                    if (field) {
-                        field.setAttribute("aria-invalid", "true");
-                        firstInvalidField ||= field;
-                    }
-                });
-                throw new Error(Object.values(data.errors || {}).join(" ") || data.message || "Unable to save your profile.");
-            }
-
-            Object.entries(data.profile).forEach(([name, value]) => {
-                const field = form.elements.namedItem(name);
-                if (field) {
-                    field.value = value ?? "";
-                    field.defaultValue = value ?? "";
-                }
-            });
-            const labels = {
-                admin_name: "[data-admin-name]",
-                role: "[data-admin-role]",
-                school_name: "[data-school-name]",
-            };
-            Object.entries(labels).forEach(([name, selector]) => {
-                document.querySelectorAll(selector).forEach(label => {
-                    label.textContent = data.profile[name] ?? "";
-                });
-            });
-            message.textContent = data.message;
-            message.dataset.state = "success";
-        } catch (error) {
-            message.textContent = error.message || "Unable to save your profile. Please try again.";
-            message.dataset.state = "error";
-        } finally {
-            fieldset.disabled = false;
-            saveButton.textContent = "Save Changes";
-            if (firstInvalidField) firstInvalidField.focus();
-        }
-    });
-}
-
-// Startup: run once, after the dashboard shell is available.
 function initAdminDashboard() {
     if (dashboardInitialized) return;
     if (!document.getElementById("main-content-contianer")) return;
@@ -820,6 +666,11 @@ function initAdminDashboard() {
     window.KNSNotifications.init({
         role: "admin",
         navigate: async notification => {
+            if (notification.type === "announcement" || notification.type === "activity") {
+                const opened = await loadPage(notification.type === "announcement" ? "overview.php" : "profile.php");
+                if (!opened) throw new Error("Unable to open this notification.");
+                return;
+            }
             const opened = await loadPage("requests.html", {
                 requestId: notification.request_id,
                 openMessenger: notification.type === "message"

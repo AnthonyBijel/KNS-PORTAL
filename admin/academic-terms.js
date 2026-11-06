@@ -10,8 +10,16 @@ window.KNSAcademicTerms = Object.freeze({
         const message = find('[data-terms-message]');
         const submit = form.querySelector('[type=submit]');
         const fields = form.querySelector('fieldset');
+        const editButton = find('[data-terms-edit]');
+        const confirmView = find('[data-terms-confirm-view]');
+        const confirmForm = find('[data-terms-confirm-form]');
+        const confirmSubmit = confirmForm.querySelector('[type=submit]');
+        const scheduleNote = form.querySelector('.kns-terms-note span').textContent;
         let csrf = root.dataset.csrf;
         let canSchedule = root.dataset.canSchedule === 'true';
+        let canEdit = false;
+        let editingTerm = null;
+        let pendingUpdate = null;
         let calendar = null;
         let busy = false;
         let selectedTerm = null;
@@ -55,6 +63,48 @@ window.KNSAcademicTerms = Object.freeze({
             node.textContent = status;
             node.dataset.status = status;
             node.hidden = !status;
+        }
+        function updatePermissions() {
+            fields.disabled = busy || (editingTerm ? !canEdit : !canSchedule);
+            submit.disabled = fields.disabled;
+            editButton.hidden = !canEdit || !calendar?.current || !!editingTerm;
+            editButton.disabled = busy;
+        }
+        function setEditing(term = null) {
+            editingTerm = term ? {...term} : null;
+            pendingUpdate = null;
+            confirmForm.reset();
+            form.reset();
+            if (term) {
+                for (const key of ['academic_year', 'semester', 'start_date', 'official_end_date']) form.elements[key].value = term[key];
+            }
+            form.querySelector('h3').textContent = term ? 'Edit Active Academic Term' : 'Schedule Next Academic Term';
+            submit.textContent = term ? 'Review Changes' : 'Schedule Term';
+            find('.kns-terms-title').textContent = term ? 'Edit Academic Term' : 'Manage Academic Terms';
+            find('.kns-terms-intro').textContent = term ? 'Review your changes, then confirm with your password before saving.' : 'View the current academic term and schedule the next term.';
+            form.querySelector('.kns-terms-note span').textContent = term ? 'Changes are applied only after you confirm with your current Admin or Registrar password.' : scheduleNote;
+            const permission = form.querySelector('.kns-terms-permission');
+            if (permission) permission.hidden = !!term;
+            find('[data-terms-history]').hidden = !!term;
+            confirmView.hidden = true;
+            find('[data-terms-schedule-view]').hidden = false;
+            updatePermissions();
+            updatePlanned();
+        }
+        function setBusy(value) {
+            busy = value;
+            root.querySelectorAll('[data-terms-close], [data-terms-history], [data-terms-confirm-back]').forEach(button => { button.disabled = value; });
+            confirmForm.querySelector('fieldset').disabled = value;
+            confirmSubmit.disabled = value;
+            updatePermissions();
+        }
+        function acceptCalendar(data) {
+            calendar = data;
+            canSchedule = data.can_schedule;
+            canEdit = data.can_edit;
+            updatePermissions();
+            renderCurrent(data.current);
+            renderHistory();
         }
         function renderCurrent(term) {
             const bannerName = find('[data-terms-banner-name]');
@@ -103,15 +153,10 @@ window.KNSAcademicTerms = Object.freeze({
         async function loadCalendar() {
             const data = await request(root.dataset.endpoint);
             if (!root.isConnected) return;
-            calendar = data;
-            canSchedule = data.can_schedule;
-            fields.disabled = !canSchedule || busy;
-            submit.disabled = !canSchedule || busy;
-            renderCurrent(data.current);
+            acceptCalendar(data);
             find('[data-terms-years]').replaceChildren(...data.academic_years.map(year => {
                 const option = element('option'); option.value = year; return option;
             }));
-            renderHistory();
             updatePlanned();
         }
         function updatePlanned() {
@@ -125,6 +170,7 @@ window.KNSAcademicTerms = Object.freeze({
             form.elements.official_end_date.min = start || '1000-01-01';
         }
         function historyView(show) {
+            confirmView.hidden = true;
             find('[data-terms-schedule-view]').hidden = show;
             find('[data-terms-history-view]').hidden = !show;
             dialog.classList.toggle('is-history', show);
@@ -168,9 +214,26 @@ window.KNSAcademicTerms = Object.freeze({
             }
         }
         find('[data-terms-open]').addEventListener('click', () => {
+            setEditing();
             historyView(false);
             dialog.showModal();
             loadCalendar().catch(error => notify(error.message, true));
+        });
+        editButton.addEventListener('click', () => {
+            if (busy || !canEdit || !calendar?.current) return;
+            setEditing(calendar.current);
+            notify();
+            form.elements.academic_year.focus();
+        });
+        dialog.addEventListener('close', () => { setEditing(); historyView(false); });
+        find('[data-terms-confirm-back]').addEventListener('click', () => {
+            if (busy) return;
+            pendingUpdate = null;
+            confirmForm.reset();
+            confirmView.hidden = true;
+            find('[data-terms-schedule-view]').hidden = false;
+            notify();
+            submit.focus();
         });
         root.querySelectorAll('[data-terms-close]').forEach(button => button.addEventListener('click', () => { if (!busy) dialog.close(); }));
         dialog.addEventListener('cancel', event => { if (busy) event.preventDefault(); });
@@ -205,19 +268,65 @@ window.KNSAcademicTerms = Object.freeze({
         form.addEventListener('input', updatePlanned);
         form.addEventListener('submit', async event => {
             event.preventDefault();
-            if (busy || !canSchedule) return;
+            if (busy || (editingTerm ? !canEdit : !canSchedule)) return;
             const body = new FormData(form); body.set('csrf', csrf);
-            busy = true; fields.disabled = true; submit.disabled = true; submit.textContent = 'Saving...';
-            root.querySelectorAll('[data-terms-close], [data-terms-history]').forEach(button => { button.disabled = true; });
+            if (editingTerm) {
+                const details = [['academic_year', 'Academic Year'], ['semester', 'Semester'], ['start_date', 'Start Date'], ['official_end_date', 'Official End Date']];
+                if (details.every(([key]) => body.get(key).trim() === editingTerm[key])) { notify('No changes to save.'); return; }
+                body.set('action', 'update');
+                body.set('term_id', editingTerm.id);
+                body.set('revision', editingTerm.revision);
+                pendingUpdate = body;
+                const rows = details.map(([key, label]) => {
+                    const row = element('tr');
+                    const date = key === 'start_date' || key === 'official_end_date';
+                    for (const value of [label, date ? dateLabel(editingTerm[key]) : editingTerm[key], date ? dateLabel(body.get(key)) : body.get(key)]) row.append(element('td', '', value));
+                    return row;
+                });
+                find('[data-terms-review]').replaceChildren(...rows);
+                const status = body.get('start_date') > calendar.today ? 'Scheduled' : body.get('official_end_date') < calendar.today ? 'Completed' : 'Active';
+                find('[data-terms-resulting-status]').textContent = 'Term status after saving: ' + status;
+                find('[data-terms-schedule-view]').hidden = true;
+                confirmView.hidden = false;
+                confirmForm.reset();
+                notify();
+                confirmForm.elements.confirmation_password.focus();
+                return;
+            }
+            setBusy(true); submit.textContent = 'Saving...';
             notify();
             try {
                 const data = await request(root.dataset.endpoint, body);
                 if (!root.isConnected) return;
-                calendar = data; renderCurrent(data.current); renderHistory(); form.reset(); updatePlanned(); notify(data.message);
+                acceptCalendar(data); form.reset(); updatePlanned(); notify(data.message);
             } catch (error) { if (root.isConnected) notify(error.message, true); }
             finally {
-                busy = false; fields.disabled = !canSchedule; submit.disabled = !canSchedule; submit.textContent = 'Schedule Term';
-                root.querySelectorAll('[data-terms-close], [data-terms-history]').forEach(button => { button.disabled = false; });
+                setBusy(false); submit.textContent = 'Schedule Term';
+            }
+        });
+        confirmForm.addEventListener('submit', async event => {
+            event.preventDefault();
+            if (busy || !canEdit || !pendingUpdate || !editingTerm) return;
+            const body = pendingUpdate;
+            body.set('csrf', csrf);
+            body.set('confirmation_password', confirmForm.elements.confirmation_password.value);
+            confirmForm.reset();
+            setBusy(true); confirmSubmit.textContent = 'Updating...';
+            notify();
+            try {
+                const data = await request(root.dataset.endpoint, body);
+                if (!root.isConnected) return;
+                acceptCalendar(data);
+                setEditing();
+                historyView(false);
+                notify(data.message);
+            } catch (error) {
+                if (root.isConnected) notify(error.message, true);
+            } finally {
+                body.delete('confirmation_password');
+                setBusy(false); confirmSubmit.textContent = 'Confirm & Update';
+                if (root.isConnected && !confirmView.hidden) confirmForm.elements.confirmation_password.focus();
+                else if (root.isConnected) (editButton.hidden ? find('[data-terms-close]') : editButton).focus();
             }
         });
         async function refresh() {
