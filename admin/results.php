@@ -266,6 +266,8 @@ $lastPage = min($totalPages, $firstPage + 4);
             <h1>Total Student:</h1>
             <p><?= htmlspecialchars((string) $totalStudents, ENT_QUOTES, 'UTF-8') ?></p>
         </div>
+        <div class="student-list-tools">
+            <?php require __DIR__ . '/student-list-download-panel.php'; ?>
         <div class="searchbox">
             <img src="..//asset/logo/image.png" alt="">
             <input class="searchbar" type="text" placeholder="Search by name, student, or section..."
@@ -273,6 +275,7 @@ $lastPage = min($totalPages, $firstPage + 4);
                 aria-label="Search students by name, student number, or section"
                 aria-controls="student-results-body"
                 value="<?= htmlspecialchars($search, ENT_QUOTES, 'UTF-8') ?>">
+        </div>
         </div>
 
     </div>

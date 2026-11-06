@@ -91,23 +91,19 @@ function knsTermSemesterSql(string $alias): string
         WHEN $key = 'summer' THEN 'Summer' ELSE (TRIM($alias.semester) COLLATE utf8mb4_unicode_ci) END";
 }
 
+function knsAcademicTermRevision(array $term): string
+{
+    return hash('sha256', json_encode(array_map(static fn($key) => $term[$key],
+        ['academic_year', 'semester', 'start_date', 'official_end_date']), JSON_THROW_ON_ERROR));
+}
+
 final class KnsAcademicTerms
 {
     public function __construct(private PDO $pdo) {}
 
     public function schedule(array $input, int $staffId): array
     {
-        $values = [];
-        foreach (['academic_year', 'semester', 'start_date', 'official_end_date'] as $key) {
-            $value = $input[$key] ?? '';
-            if (!is_string($value) || strlen($value) > 60) throw new KnsAcademicTermError('Enter valid term details.');
-            $values[$key] = trim($value);
-        }
-        $year = knsAcademicYear($values['academic_year']);
-        $semester = knsAcademicSemester($values['semester']);
-        $start = knsAcademicTermDate($values['start_date'], 'Start Date');
-        $end = knsAcademicTermDate($values['official_end_date'], 'Official End Date');
-        if ($end < $start) throw new KnsAcademicTermError('Official End Date must be on or after Start Date.');
+        [$year, $semester, $start, $end] = $this->details($input);
         $this->pdo->beginTransaction();
         try {
             $this->pdo->query('SELECT id FROM academic_term_calendar_lock WHERE id = 1 FOR UPDATE')->fetchColumn();
@@ -133,6 +129,92 @@ final class KnsAcademicTerms
             'start_date' => $start, 'official_end_date' => $end];
     }
 
+    private function details(array $input): array
+    {
+        $values = [];
+        foreach (['academic_year', 'semester', 'start_date', 'official_end_date'] as $key) {
+            $value = $input[$key] ?? '';
+            if (!is_string($value) || strlen($value) > 60) throw new KnsAcademicTermError('Enter valid term details.');
+            $values[$key] = trim($value);
+        }
+        $year = knsAcademicYear($values['academic_year']);
+        $semester = knsAcademicSemester($values['semester']);
+        $start = knsAcademicTermDate($values['start_date'], 'Start Date');
+        $end = knsAcademicTermDate($values['official_end_date'], 'Official End Date');
+        if ($end < $start) throw new KnsAcademicTermError('Official End Date must be on or after Start Date.');
+        return [$year, $semester, $start, $end];
+    }
+
+    public function update(array $input, int $staffId): array
+    {
+        $id = filter_var($input['term_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $password = $input['confirmation_password'] ?? null;
+        $revision = $input['revision'] ?? null;
+        if (!$id) throw new KnsAcademicTermError('Choose a valid active term.');
+        if (!is_string($password) || $password === '' || strlen($password) > 4096) {
+            throw new KnsAcademicTermError('Enter your current Admin or Registrar password.');
+        }
+        if (!is_string($revision) || !preg_match('/^[a-f0-9]{64}$/D', $revision)) {
+            throw new KnsAcademicTermError('Reopen the active term editor and try again.', 409);
+        }
+        [$year, $semester, $start, $end] = $this->details($input);
+        $this->pdo->beginTransaction();
+        try {
+            $this->pdo->query('SELECT id FROM academic_term_calendar_lock WHERE id = 1 FOR UPDATE')->fetchColumn();
+            // Recheck the signed-in identity and its current password inside the save transaction.
+            $statement = $this->pdo->prepare('SELECT role, is_active, password_hash FROM admin_account WHERE id = ? FOR UPDATE');
+            $statement->execute([$staffId]);
+            $staff = $statement->fetch(PDO::FETCH_ASSOC);
+            if (!$staff || (int) $staff['is_active'] !== 1 || !in_array($staff['role'], ['Administrator', 'Registrar'], true)) {
+                throw new KnsAcademicTermError('Only an active Administrator or Registrar can edit the current term.', 403);
+            }
+            if (!password_verify($password, $staff['password_hash'])) {
+                throw new KnsAcademicTermError('Incorrect password. Enter the password for your signed-in Admin or Registrar account.');
+            }
+            $statement = $this->pdo->prepare('SELECT * FROM academic_terms WHERE id = ? FOR UPDATE');
+            $statement->execute([$id]);
+            $term = $statement->fetch(PDO::FETCH_ASSOC);
+            if (!$term) throw new KnsAcademicTermError('Academic term was not found.', 404);
+            if (knsAcademicTermStatus($term) !== 'Active') throw new KnsAcademicTermError('Only the active academic term can be edited. Reopen Manage Terms.', 409);
+            if (!hash_equals(knsAcademicTermRevision($term), $revision)) {
+                throw new KnsAcademicTermError('This term changed while you were editing. Cancel and reopen the editor to review its latest details.', 409);
+            }
+            $statement = $this->pdo->prepare('SELECT id FROM academic_terms WHERE academic_year = ? AND semester = ? AND id <> ? LIMIT 1');
+            $statement->execute([$year, $semester, $id]);
+            if ($statement->fetchColumn() !== false) throw new KnsAcademicTermError('That academic year and semester are already saved.', 409);
+            $statement = $this->pdo->prepare('SELECT id FROM academic_terms WHERE start_date <= ? AND official_end_date >= ? AND id <> ? LIMIT 1');
+            $statement->execute([$end, $start, $id]);
+            if ($statement->fetchColumn() !== false) throw new KnsAcademicTermError('These dates overlap another saved term.', 409);
+            if ($year !== $term['academic_year'] || $semester !== $term['semester']) {
+                // Grades use year/semester labels rather than term IDs. Keep the same records attached to this term.
+                foreach (['students', 'student_enrollments', 'subject_grades', 'grade_assessments'] as $table) {
+                    $where = knsTermYearSql('r') . ' = ? AND ' . knsTermSemesterSql('r') . ' = ?';
+                    $statement = $this->pdo->prepare('SELECT r.id FROM ' . $table . ' r WHERE ' . $where . ' LIMIT 1');
+                    $statement->execute([$year, $semester]);
+                    if ($statement->fetchColumn() !== false) {
+                        throw new KnsAcademicTermError('The new academic year and semester already have records. Choose an unused term to avoid merging records.', 409);
+                    }
+                    if ($table === 'student_enrollments') $where = '(r.term_id = ? OR (r.term_id IS NULL AND ' . $where . '))';
+                    $statement = $this->pdo->prepare('UPDATE ' . $table . ' r SET r.academic_year = ?, r.semester = ? WHERE ' . $where);
+                    $parameters = [$year, $semester];
+                    if ($table === 'student_enrollments') $parameters[] = $id;
+                    $statement->execute([...$parameters, $term['academic_year'], $term['semester']]);
+                }
+            }
+            $statement = $this->pdo->prepare('UPDATE academic_terms SET academic_year = ?, semester = ?, start_date = ?, official_end_date = ? WHERE id = ?');
+            $statement->execute([$year, $semester, $start, $end, $id]);
+            $this->pdo->commit();
+        } catch (Throwable $error) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            if ($error instanceof PDOException && (int) ($error->errorInfo[1] ?? 0) === 1062) {
+                throw new KnsAcademicTermError('The edited term conflicts with existing records. No changes were saved.', 409);
+            }
+            throw $error;
+        }
+        return ['id' => (int) $id, 'academic_year' => $year, 'semester' => $semester,
+            'start_date' => $start, 'official_end_date' => $end];
+    }
+
     public function calendar(): array
     {
         $terms = $this->pdo->query('SELECT t.*, (SELECT COUNT(DISTINCT e.student_id) FROM student_enrollments e WHERE e.term_id = t.id) AS student_count
@@ -142,6 +224,7 @@ final class KnsAcademicTerms
             $term['id'] = (int) $term['id'];
             $term['student_count'] = (int) $term['student_count'];
             $term['status'] = knsAcademicTermStatus($term);
+            $term['revision'] = knsAcademicTermRevision($term);
             unset($term['created_by']);
             if ($term['status'] === 'Active') $current = $term;
         }

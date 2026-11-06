@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__ . '/../php/auth/staff-access.php';
 require __DIR__ . '/../db.php';
+require_once __DIR__ . '/../php/admin/staff-settings-common.php';
 $admin = knsRequireStaffAccess($pdo, 'overview');
+$portalPreferences = knsStaffPreferences($pdo, (int) $admin['id']);
 $isOffice = $admin['role'] !== 'Administrator';
 
 function e($value)
@@ -11,21 +13,7 @@ function e($value)
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-
-<body>
-
-</body>
-
-</html>
-<!DOCTYPE html>
-<html lang="en">
+<html lang="<?= e($portalPreferences['language']) ?>" data-staff-portal data-staff-theme="<?= e($portalPreferences['theme']) ?>" data-staff-language="<?= e($portalPreferences['language']) ?>">
 
 <head>
     <meta charset="UTF-8">
@@ -33,10 +21,13 @@ function e($value)
     <title>Dashboard.org</title>
     <link rel="stylesheet" href="academic-terms.css?v=<?= filemtime(__DIR__ . '/academic-terms.css') ?>">
     <link rel="stylesheet" href="admin.css?v=<?= filemtime(__DIR__ . '/admin.css') ?>">
+    <link rel="stylesheet" href="student-list-download.css?v=<?= filemtime(__DIR__ . '/student-list-download.css') ?>">
+    <link rel="stylesheet" href="staff-settings.css?v=<?= filemtime(__DIR__ . '/staff-settings.css') ?>">
     <link rel="stylesheet" href="../dashboard/announcement-share.css?v=<?= filemtime(__DIR__ . '/../dashboard/announcement-share.css') ?>">
     <link rel="stylesheet" href="../request/messenger.css?v=<?= filemtime(__DIR__ . '/../request/messenger.css') ?>">
     <link rel="stylesheet" href="../dashboard/notifications.css?v=<?= filemtime(__DIR__ . '/../dashboard/notifications.css') ?>">
     <link rel="stylesheet" href="../dashboard/announcement-gallery.css?v=<?= filemtime(__DIR__ . '/../dashboard/announcement-gallery.css') ?>">
+    <link rel="stylesheet" href="staff-portal.css?v=<?= filemtime(__DIR__ . '/staff-portal.css') ?>">
 </head>
 
 <body>
@@ -146,10 +137,14 @@ function e($value)
 
 
 
+    <script src="staff-translations.js?v=<?= filemtime(__DIR__ . '/staff-translations.js') ?>"></script>
+    <script src="staff-portal.js?v=<?= filemtime(__DIR__ . '/staff-portal.js') ?>"></script>
     <script src="../request/messenger.js?v=<?= filemtime(__DIR__ . '/../request/messenger.js') ?>"></script>
     <script src="../dashboard/notifications.js?v=<?= filemtime(__DIR__ . '/../dashboard/notifications.js') ?>"></script>
     <script src="../dashboard/announcement-share.js?v=<?= filemtime(__DIR__ . '/../dashboard/announcement-share.js') ?>"></script>
     <script src="academic-terms.js?v=<?= filemtime(__DIR__ . '/academic-terms.js') ?>"></script>
+    <script src="student-list-download.js?v=<?= filemtime(__DIR__ . '/student-list-download.js') ?>"></script>
+    <script src="staff-settings.js?v=<?= filemtime(__DIR__ . '/staff-settings.js') ?>"></script>
     <script src="admin.js?v=<?= filemtime(__DIR__ . '/admin.js') ?>"></script>
     <script src="../dashboard/announcement-gallery.js?v=<?= filemtime(__DIR__ . '/../dashboard/announcement-gallery.js') ?>"></script>
 </body>

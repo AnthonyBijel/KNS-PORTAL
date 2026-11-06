@@ -201,14 +201,21 @@ async function officeRoleTests(base, admin, registrar, osa) {
         check(profile.status===200 && profile.text.includes(role+' Profile') && profile.text.includes('Office Information'),role+' own profile');
         check(!profile.text.includes('data-open-office-registration') && !profile.text.includes('data-open-office-accounts')
             && !profile.text.includes('id="kns-office-registration"'),role+' profile excludes Admin account controls');
-        const update={csrf:session.csrf,admin_name:role+' Updated Staff',school_email:role.toLowerCase()+'@example.test',
-            school_contact:'09123456789',school_address:'Test office address',school_name:'Unauthorized School',
-            role:'Administrator',id:1,is_active:0,username:'test.admin'};
-        check((await session.request('/admin/profile.php',{...update,csrf:'wrong'},'POST','application/json')).status===403,role+' profile requires CSRF');
-        const duplicate=await session.request('/admin/profile.php',{...update,school_email:'admin@example.test'},'POST','application/json');
+        check(!profile.text.includes('id="admin-profile-form"') && !profile.text.includes('class="admin-profile-actions"'),role+' information card is read-only');
+        // Preference rows were created by the read-only profile GET. Suppress optional mail in these disposable accounts.
+        runPhp('$pdo='+connect+';$pdo->exec("UPDATE staff_account_settings SET notify_email=0");');
+        const settings='/php/admin/staff-settings.php';
+        const update={csrf:session.csrf,action:'profile',full_name:role+' Updated Staff'};
+        check((await session.request('/admin/profile.php',{},'POST','application/json')).status===405,role+' legacy profile endpoint is read-only');
+        check((await session.request(settings,{...update,csrf:'wrong'},'POST','application/json')).status===403,role+' settings requires CSRF');
+        check((await session.request(settings,{...update,role:'Administrator',id:1},'POST','application/json')).status===403,role+' settings rejects identity overrides');
+        check((await session.request(settings,{...update,school_name:'Unauthorized School'},'POST','application/json')).status===403,role+' school name remains protected');
+        const duplicate=await session.request(settings,{csrf:session.csrf,action:'send_email',new_email:'admin@example.test',email_confirmation:'admin@example.test'},'POST','application/json');
         check(duplicate.status===409,role+' cannot reuse an email');
-        const saved=await session.request('/admin/profile.php',update,'POST','application/json');
-        check(saved.status===200 && saved.data.profile.role===role,role+' profile saves own details without role escalation');
+        const saved=await session.request(settings,update,'POST','application/json');
+        check(saved.status===200 && saved.data.state.profile.role===role,role+' settings saves own name');
+        const contacts=await session.request(settings,{csrf:session.csrf,action:'contacts',phone_number:'09123456789',alternate_contact:'',address:'Test office address'},'POST','application/json');
+        check(contacts.status===200 && contacts.data.state.profile.address==='Test office address',role+' settings saves contact/address');
         const protectedState=JSON.parse(runPhp('$pdo='+connect+';$q=$pdo->prepare("SELECT role,username,school_name,is_active FROM admin_account WHERE username=?");$q->execute(["'+role.toLowerCase()+'.test"]);echo json_encode($q->fetch(PDO::FETCH_ASSOC));'));
         check(protectedState.role===role && protectedState.username===role.toLowerCase()+'.test'
             && protectedState.school_name==='Test School' && Number(protectedState.is_active)===1,role+' protected fields unchanged');
@@ -391,7 +398,7 @@ async function browserTests(base, context) {
             await send('Network.clearBrowserCookies');
             for(const[name,value]of session.cookies)await send('Network.setCookie',{name,value,url:base,path:'/'});
             await send('Page.navigate',{url:base+'/admin/dashboard.php?view=profile'});
-            await waitFor(()=>!!document.querySelector('#admin-profile-form'),'Office profile');
+            await waitFor(()=>!!document.querySelector('#admin-profile-details'),'Office profile');
             check(await evaluate(role=>document.querySelector('.student-info-header h1').textContent===role+' Profile'
                 && document.querySelector('.academic-text h2').textContent==='Office Information'
                 && !document.querySelector('[data-open-office-registration]')&&!document.querySelector('[data-open-office-accounts]')
@@ -400,11 +407,17 @@ async function browserTests(base, context) {
             check(JSON.stringify(before)===JSON.stringify(await evaluate(layout)),role+' profile reuses original Admin layout');
             await waitFor(()=>[...document.images].every(img=>img.complete),'Office profile images');
             await screenshot(role.toLowerCase()+'-profile');
+            check(await evaluate(()=>[...document.querySelectorAll('#admin-profile-details input,#admin-profile-details textarea')].every(input=>input.readOnly)),'Office information card is read-only');
+            await click('[data-settings-gear]');
+            await click('[data-settings-open="profile"]');
+            await waitFor(()=>document.querySelector('.ks-modal').open&&document.querySelector('.ks-modal').getAttribute('aria-busy')==='false','Office profile settings');
             await evaluate(role=>{
-                const form=document.querySelector('#admin-profile-form');form.elements.admin_name.value=role+' Browser Updated';form.requestSubmit();
+                const form=document.querySelector('[data-settings-action="profile"]');
+                form.elements.full_name.value=role+' Browser Updated';form.requestSubmit();
             },role);
-            await waitFor(()=>document.querySelector('#admin-profile-message').dataset.state==='success','Office browser profile save');
-            check(await evaluate(role=>[...document.querySelectorAll('[data-admin-name]')].every(node=>node.textContent.trim()===role+' Browser Updated'),role),role+' header and sidebar reflect own profile save');
+            await waitFor(()=>document.querySelector('[data-settings-feedback]').textContent.includes('saved')&&document.querySelector('.ks-modal').getAttribute('aria-busy')==='false','Office settings browser save');
+            await click('[data-settings-close]');
+            check(await evaluate(role=>document.querySelector('#admin-profile-name').value===role+' Browser Updated',role),'Read-only office details updated from settings');
             await click('.overview-button');
             await waitFor(()=>!!document.querySelector('.kns-overview'),'Office Overview');
             check(await evaluate(()=>!!document.querySelector('[data-create-post]') && !!document.querySelector('[data-post-form]')),role+' full Overview browser tools');

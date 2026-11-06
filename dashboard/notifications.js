@@ -138,7 +138,11 @@
                 const icon = node("span", "kn-item-icon kn-" + (item.type === "request_status" ? (item.status || "status").toLowerCase() : item.type));
                 icon.innerHTML = svg(item.type === "request_status" ? item.status : item.type);
                 const copy = node("span", "kn-copy");
-                copy.append(node("strong", "kn-item-title", item.title), node("span", "kn-description", item.description));
+                const itemTitle = node("strong", "kn-item-title", item.title);
+                const description = node("span", "kn-description", item.description);
+                if (admin && item.type !== "activity") description.setAttribute("data-staff-content","");
+                if (admin && ["announcement","message"].includes(item.type)) itemTitle.setAttribute("data-staff-content","");
+                copy.append(itemTitle, description);
                 if (item.context) copy.append(node("span", "kn-context", item.context));
                 const timestamp = node("time", "kn-time", time(item.created_at));
                 timestamp.dateTime = item.created_at;
@@ -309,6 +313,7 @@
                 render();
             } else load("more");
         });
+        if (admin) window.addEventListener("kns-staff-preferences-changed", () => load("reset"));
         window.addEventListener("resize", position);
         window.addEventListener("scroll", position, {passive: true, capture: true});
         document.addEventListener("visibilitychange", () => {

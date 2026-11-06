@@ -98,6 +98,35 @@ try {
     Wait-Js "!document.querySelector('.kns-terms-modal').open" 'Escape closes modal'
     Check-Browser ([bool](Invoke-Js "document.activeElement===document.querySelector('[data-terms-open]')")) 'Focus did not return to Manage Terms'
     [void](Invoke-Js "(()=>{const b=document.querySelector('[data-terms-open]');b.focus();b.click();})()")
+    Wait-Js "!document.querySelector('[data-terms-edit]').hidden" 'Edit icon available'
+    Check-Browser ([bool](Invoke-Js "(()=>{const b=document.querySelector('[data-terms-edit]'),c=document.querySelector('.kns-terms-current').getBoundingClientRect(),r=b.getBoundingClientRect();return r.width<=28&&c.right-r.right<=10&&r.top-c.top<=10&&b.getAttribute('aria-label').includes('Edit');})()")) 'Small edit icon placement/label incorrect'
+    $staffPassword = $config.staff_password | ConvertTo-Json -Compress
+    [void](Invoke-Js ('window.__staffPassword=' + $staffPassword))
+    [void](Invoke-Js "window.__originalEnd=document.querySelector('[data-terms-current-end]').textContent;document.querySelector('[data-terms-edit]').click();window.__originalEndValue=document.querySelector('[name=official_end_date]').value")
+    Check-Browser ([bool](Invoke-Js "document.querySelector('[data-terms-form] h3').textContent==='Edit Active Academic Term'&&!document.querySelector('[data-terms-form] fieldset').disabled")) 'Editor did not prefill/enable current term'
+    [void](Invoke-Js "(()=>{const f=document.querySelector('[data-terms-form]'),d=new Date(f.elements.official_end_date.value+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-1);f.elements.official_end_date.value=d.toISOString().slice(0,10);f.dispatchEvent(new Event('input',{bubbles:true}));f.requestSubmit();})()")
+    Wait-Js "!document.querySelector('[data-terms-confirm-view]').hidden" 'Password review shown'
+    Check-Browser ([bool](Invoke-Js "document.querySelector('[data-terms-current-end]').textContent===window.__originalEnd&&document.querySelectorAll('[data-terms-review] tr').length===4&&document.activeElement===document.querySelector('[name=confirmation_password]')")) 'Edit saved before confirmation or review/focus missing'
+    [void](Invoke-Js "document.querySelector('[name=confirmation_password]').value='wrong-password';document.querySelector('[data-terms-confirm-form]').requestSubmit()")
+    Wait-Js "document.querySelector('[data-terms-message]').textContent.includes('Incorrect password')&&!document.querySelector('[data-terms-confirm-form] fieldset').disabled" 'Wrong password rejected'
+    Check-Browser ([bool](Invoke-Js "document.querySelector('[data-terms-current-end]').textContent===window.__originalEnd&&document.querySelector('[name=confirmation_password]').value===''")) 'Wrong password changed term or was retained'
+    Check-Browser ([bool](Invoke-Js "getComputedStyle(document.querySelector('.kns-terms-confirm-intro')).color==='rgb(68, 75, 82)'")) 'Confirmation notice unreadable'
+    Save-TermScreenshot 'academic-term-password-confirmation'
+    [void](Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$false})
+    Check-Browser ([bool](Invoke-Js "(()=>{const d=document.querySelector('.kns-terms-modal');return d.scrollWidth<=d.clientWidth&&d.getBoundingClientRect().width<=innerWidth-30;})()")) 'Mobile password confirmation overflows'
+    Save-TermScreenshot 'academic-term-password-mobile'
+    [void](Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1808;height=870;deviceScaleFactor=1;mobile=$false})
+    [void](Invoke-Js "document.querySelector('[data-terms-confirm-back]').click()")
+    Check-Browser ([bool](Invoke-Js "document.querySelector('[name=official_end_date]').value!==window.__originalEndValue")) 'Back to Edit discarded draft'
+    [void](Invoke-Js "document.querySelector('[data-terms-form]').requestSubmit();document.querySelector('[name=confirmation_password]').value=window.__staffPassword;document.querySelector('[data-terms-confirm-form]').requestSubmit()")
+    Wait-Js "document.querySelector('[data-terms-message]').textContent.includes('updated after password confirmation')&&!document.querySelector('[data-terms-form] fieldset').disabled" 'Password-confirmed update'
+    Check-Browser ([bool](Invoke-Js "document.querySelector('[data-terms-current-end]').textContent!==window.__originalEnd&&document.querySelector('[name=confirmation_password]').value===''")) 'Confirmed update did not refresh or clear password'
+    [void](Invoke-Js "document.querySelector('[data-terms-edit]').click();document.querySelector('[name=official_end_date]').value=window.__originalEndValue;document.querySelector('[data-terms-form]').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('[data-terms-form]').requestSubmit();document.querySelector('[name=confirmation_password]').value=window.__staffPassword;document.querySelector('[data-terms-confirm-form]').requestSubmit()")
+    Wait-Js "document.querySelector('[data-terms-current-end]').textContent===window.__originalEnd&&!document.querySelector('[data-terms-form] fieldset').disabled" 'Restore edited date'
+    [void](Invoke-Js "document.querySelector('[data-terms-edit]').click();document.querySelector('[name=academic_year]').value='2099-2100';document.querySelector('[data-terms-close]').click()")
+    Wait-Js "!document.querySelector('.kns-terms-modal').open" 'Cancel edit closes'
+    [void](Invoke-Js "document.querySelector('[data-terms-open]').click()")
+    Check-Browser ([bool](Invoke-Js "document.querySelector('[name=academic_year]').value===''&&document.querySelector('[name=confirmation_password]').value===''")) 'Cancelled edit/password retained'
     $summer = $config.summer | ConvertTo-Json -Depth 5 -Compress
     [void](Invoke-Js ('window.__termFixture=' + $summer))
     $fill = '(()=>{const f=document.querySelector("[data-terms-form]"),v=window.__termFixture;f.elements.academic_year.value=v.academic_year;f.elements.semester.value=v.semester;const d=new Date(v.start_date+"T12:00:00Z");d.setUTCDate(d.getUTCDate()-1);f.elements.start_date.value=d.toISOString().slice(0,10);f.elements.official_end_date.value=v.official_end_date;f.dispatchEvent(new Event("input",{bubbles:true}));f.requestSubmit();})()'
@@ -122,12 +151,24 @@ try {
     [void](Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=390;height=844;deviceScaleFactor=1;mobile=$false})
     Check-Browser ([bool](Invoke-Js "(()=>{const d=document.querySelector('.kns-terms-modal'),r=d.getBoundingClientRect();return r.width<=innerWidth-30&&r.height<=innerHeight-30&&d.scrollWidth<=d.clientWidth;})()")) 'Mobile modal overflows'
     Save-TermScreenshot 'academic-terms-mobile'
-    $mobileMetrics = Invoke-Js 'JSON.stringify({width:innerWidth,clientWidth:document.documentElement.clientWidth,grid:getComputedStyle(document.querySelector(".kns-terms-fields")).gridTemplateColumns,fields:[...document.querySelectorAll(".kns-terms-field")].map(x=>{const r=x.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width};})})'
-    Check-Browser ([bool](Invoke-Js '(()=>{const fields=[...document.querySelectorAll(".kns-terms-field")].map(x=>x.getBoundingClientRect());return Math.abs(fields[0].top-fields[1].top)<2&&fields[2].top>fields[0].bottom;})()')) ('Mobile form columns incorrect: ' + $mobileMetrics)
+    $mobileMetrics = Invoke-Js 'JSON.stringify({width:innerWidth,clientWidth:document.documentElement.clientWidth,grid:getComputedStyle(document.querySelector(".kns-terms-fields")).gridTemplateColumns,fields:[...document.querySelectorAll(".kns-terms-fields .kns-terms-field")].map(x=>{const r=x.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width};})})'
+    Check-Browser ([bool](Invoke-Js '(()=>{const fields=[...document.querySelectorAll(".kns-terms-fields .kns-terms-field")].map(x=>x.getBoundingClientRect());return Math.abs(fields[0].top-fields[1].top)<2&&fields[2].top>fields[0].bottom;})()')) ('Mobile form columns incorrect: ' + $mobileMetrics)
     Save-TermScreenshot 'academic-terms-mobile'
     [void](Invoke-Cdp 'Emulation.setDeviceMetricsOverride' @{width=1808;height=870;deviceScaleFactor=1;mobile=$false})
     [void](Invoke-Js "document.querySelector('[data-terms-close]').click()")
     Check-Browser ((Invoke-Js $geometry) -eq $before) 'Surrounding UI geometry changed'
+    [void](Invoke-Cdp 'Network.clearBrowserCookies')
+    foreach ($cookie in $config.registrar_cookies) {
+        $parts = $cookie -split '=', 2
+        [void](Invoke-Cdp 'Network.setCookie' @{name=$parts[0];value=$parts[1];url=$config.base;path='/'})
+    }
+    [void](Invoke-Cdp 'Page.navigate' @{url=($config.base + '/admin/dashboard.php?view=results')})
+    Wait-Js "!!document.querySelector('[data-kns-terms][data-initialized]')&&!document.querySelector('[data-terms-edit]').hidden" 'Registrar term controls'
+    [void](Invoke-Js "document.querySelector('[data-terms-open]').click()")
+    Check-Browser ([bool](Invoke-Js "document.querySelector('[data-terms-form] fieldset').disabled")) 'Registrar scheduling was enabled'
+    [void](Invoke-Js "document.querySelector('[data-terms-edit]').click()")
+    Check-Browser ([bool](Invoke-Js "!document.querySelector('[data-terms-form] fieldset').disabled&&document.querySelector('[data-terms-form] [type=submit]').textContent==='Review Changes'")) 'Registrar could not edit active term'
+    Save-TermScreenshot 'academic-term-registrar-edit'
     Check-Browser ($script:browserErrors.Count -eq 0) ('JavaScript exceptions: ' + ($script:browserErrors -join '; '))
     Write-Output ('PASS: ' + $script:checks + ' browser/layout/accessibility checks. Screenshots: ' + $config.artifacts)
 } finally {

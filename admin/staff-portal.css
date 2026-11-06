@@ -1,0 +1,68 @@
+/* Account-wide staff palette. Light mode keeps the existing portal design. */
+html[data-staff-portal] { color-scheme:light; }
+html[data-staff-portal][data-staff-theme="dark"] {
+    color-scheme:dark; --sp-bg:#101914; --sp-surface:#1b2921; --sp-raised:#24352b;
+    --sp-field:#16231c; --sp-ink:#edf5ef; --sp-muted:#b4c6ba; --sp-line:#405749;
+    --sp-accent:#8fe0ae; --sp-soft:#244533;
+}
+.admin-profile .admin-profile-photo-view { flex:0 0 150px; overflow:hidden; }
+.admin-profile .admin-profile-photo-view img { display:block; width:100%; height:100%; object-fit:cover; }
+.admin-profile .admin-profile-readonly-note { margin:18px 0 0; color:#526b5c; font-size:13px; }
+.admin-profile #admin-profile-details [readonly] { cursor:default; }
+.kns-staff-settings .ks-form textarea { display:block; width:100%; min-width:0; min-height:66px; padding:8px 10px; border:1px solid var(--ks-border); border-radius:7px; background:var(--ks-field); color:var(--ks-text); font:13px/1.4 Inter,ui-sans-serif,system-ui,sans-serif; resize:vertical; }
+html[data-staff-portal][data-staff-theme="dark"] body { background:var(--sp-bg); color:var(--sp-ink); }
+html[data-staff-portal][data-staff-theme="dark"] .main-content-contianer { background:var(--sp-bg) !important; color:var(--sp-ink); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.header-main-contianer,.header-left-box,.header-right-box,.bell-contianer,.middle-text,.last-tex-box,.portal-notification-bell,.bell-logo) { background:var(--sp-surface); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] .sidebar-contianer { background:linear-gradient(140deg,#0b2117,#163a27); color:var(--sp-ink); }
+html[data-staff-portal][data-staff-theme="dark"] .sidebar-contianer :is(p,h1,a) { color:var(--sp-ink); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.course-bottom,.sidebar-contianer .KOLEHIYO-NG-SUBIC,.sidebar-contianer .menu-text,.help-contianer p) { color:var(--sp-muted); }
+html[data-staff-portal][data-staff-theme="dark"] .sidebar-navigator > div.selected { background:var(--sp-soft); border-color:var(--sp-accent); }
+html[data-staff-portal][data-staff-theme="dark"] .sidebar-navigator > div:hover { background:var(--sp-raised); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.user-status-contianer,.help-contianer) { background:var(--sp-raised); border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.sidebar-logo,.bell-logo,.sidebar-navigator img,.logout-logo) { filter:brightness(0) invert(.9); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-overview,.request-management,.student-info-container) { color:var(--sp-ink); --kns-ink:var(--sp-ink); --kns-green:#128045; }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-welcome,.student-list-header,.student-info-header,.request-header,.rm-header,.kn-titlebar) { background:linear-gradient(115deg,#173b28,#1d573a); border-color:var(--sp-line); color:var(--sp-ink); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-welcome,.student-list-header,.student-info-header,.request-header) :is(h1,p,span) { color:var(--sp-ink); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-stat-card,.kns-post-card,.kns-empty-state,.upload-card,.student-list-filters,.student-import-instructions,.results-main-table,.request-table-card,.request-summary-card,.student-information,.admin-profile>.profile,.rd-card,.rm-panel,.kns-notifications,.kns-share-popup,dialog) { background:var(--sp-surface); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-post-modal,.kns-delete-modal,.kns-terms-modal,.kns-list-modal,.kns-office-registration-modal,.kns-office-accounts-modal,.kns-office-confirmation-modal) { background:var(--sp-surface); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.fullname-box,.studentID-box,.course-box,.email-box,.contact-box,.address-box,.rd-panel,.rd-purpose,.rd-attachment,.rd-dropzone,.rm-history,.rm-compose,.kn-footer,.kns-attachment,.kns-media-preview-item,.kns-list-empty,.kns-terms-empty) { background:var(--sp-raised); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.results-table,.request-table,.kns-list-table,.kns-office-accounts-table,.kns-terms-table) :is(th,td) { color:var(--sp-ink); border-color:var(--sp-line); background:var(--sp-surface); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.results-table,.request-table,.kns-list-table,.kns-office-accounts-table,.kns-terms-table) th { background:var(--sp-raised); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.results-table,.request-table,.kns-list-table,.kns-office-accounts-table,.kns-terms-table) tbody tr:hover td { background:var(--sp-raised); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.results-main-table-header,.studentlist-total,.request-table-footer,.student-table-footer) { color:var(--sp-ink); background:transparent; }
+html[data-staff-portal][data-staff-theme="dark"] :is(.main-content-contianer,.kns-notifications,.kns-share-popup,.rm-panel) :is(h1,h2,h3,h4,label,legend) { color:var(--sp-ink); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.info-type,.kns-stat-card,.kns-post-copy,.upload-info,.studentlist-total,.rd-info-row,.rd-file-info,.request-summary-card) :is(p,strong,span) { color:var(--sp-ink); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.academic-text p,.student-info-header p,.kns-post-meta,.kns-post-expiry,.kns-description,.kns-duration-help,.kns-optional,.kns-feed-status,.upload-info p,.filter-group label,.request-filter-group label,.rd-info-row>span,.rd-help-text,.rd-char-count,.rm-time,.kn-description,.kn-context,.kn-time,.kn-date-group,.kn-empty,.summary-label,.admin-profile-readonly-note,.kns-list-intro,.kns-office-accounts-description,.kns-office-accounts-detail) { color:var(--sp-muted); }
+html[data-staff-portal][data-staff-theme="dark"] :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),select,textarea) { background-color:var(--sp-field); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] :is(input,textarea)::placeholder { color:#98afa0; opacity:1; }
+html[data-staff-portal][data-staff-theme="dark"] option { background:var(--sp-field); color:var(--sp-ink); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.searchbox,.request-header-search,.kns-search-box,.kns-type-filter,.kns-list-filter,.kns-terms-current,.kns-terms-history-card) { background:var(--sp-field); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-secondary,.filter-reset,.request-reset-btn,.kns-terms-launch,.kns-list-launch,.kns-list-template,.kns-office-accounts-retry,.rd-view-button,.rm-older,.kn-tab,.pagination button,.request-pagination button,.kns-list-pagination button) { background:var(--sp-raised); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-see-more,.template-link,.kns-share-button,.kn-read-all,.kn-history,.kns-list-eyebrow,.kns-terms-title,.kns-list-modal h2,.kns-office-accounts-title,.kns-office-registration-title,.rm-sender) { color:var(--sp-accent); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-modal-close,.kns-delete-icon,.kns-terms-close,.kns-list-close,.kns-office-accounts-close,.kns-office-registration-close,.rd-close) { background:var(--sp-raised); color:var(--sp-ink); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kn-item,.rm-message) { background:var(--sp-surface); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kn-item.is-unread,.kn-item:hover,.rm-message.rm-mine,.kn-tab.is-active) { background:var(--sp-soft); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kn-item-title,.kns-share-title,.kns-share-popup p,.rd-purpose p) { color:var(--sp-ink); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-type-badge,.student-active-list,.kns-office-accounts-status) { background:#1f4d32; color:#b3f2ca; border-color:#39714c; }
+html[data-staff-portal][data-staff-theme="dark"] :is(.badge-pending,.rd-status[data-status="pending"]) { background:#4a391b; color:#ffe0a0; }
+html[data-staff-portal][data-staff-theme="dark"] :is(.badge-processing,.rd-status[data-status="processing"]) { background:#1e4056; color:#b2defc; }
+html[data-staff-portal][data-staff-theme="dark"] :is(.badge-approved,.rd-status[data-status="approved"]) { background:#1f4d32; color:#b3f2ca; }
+html[data-staff-portal][data-staff-theme="dark"] :is(.badge-rejected,.rd-status[data-status="rejected"]) { background:#522c2a; color:#ffc3bf; }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-form-message,.kn-feedback,.rm-notice,.rd-status-notice)[data-state="error"] { color:#ffb5af; }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-terms-panel,.kns-terms-form,.kns-list-preview,.kns-list-table-wrap,.kns-office-accounts-table-wrap,.kns-office-registration-fields) { border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-post-modal,.kns-terms-modal,.kns-list-modal,.kns-office-accounts-modal,.kns-office-registration-modal,.kns-delete-modal)::backdrop { background:#020b07b8; }
+
+/* Nested filters and secondary controls share the same staff palette. */
+.admin-profile .admin-profile-photo-view { padding:0; background:transparent; }
+html[data-staff-portal][data-staff-theme="dark"] .bell-logo { background:transparent; }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-stat-card>img,.kns-feed-heading>img,.kns-share-button>img) { filter:brightness(0) invert(.85); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.request-filters,.kns-list-filters,.kns-office-accounts-selected,.rd-file-preview,.rm-file,.kns-terms-note,.kns-terms-planned) { background:var(--sp-raised); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-list-secondary,.kns-terms-cancel,.kns-terms-record-button,.kns-terms-record-tabs button,.kns-terms-pagination button,.kns-office-registration-cancel,.kns-office-accounts-cancel,.kns-office-accounts-row-delete,.request-eye-btn,.rm-icon-button) { background:var(--sp-raised); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-terms-current-name,.kns-terms-current-end,.kns-terms-current-heading,.rd-heading-icon,.kns-office-accounts-selected dd) { color:var(--sp-ink); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.request-routing-current,.request-routing-help,.request-routing-history,.request-routing-office,.kns-list-message,.kns-list-footer p,.kns-list-pagination,.kns-terms-intro,.kns-terms-confirm-intro,.kns-terms-permission,.kns-office-accounts-password-help,.kns-office-accounts-selected dt) { color:var(--sp-muted); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-list-reset,.kns-terms-history-link,.kns-terms-edit,.kns-share-media,.kns-share-options a,.kns-share-options button) { color:var(--sp-accent); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-share-options a,.kns-share-options button) { background:var(--sp-raised); border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] .rm-notice { color:#eed2a2; }
+html[data-staff-portal][data-staff-theme="dark"] .request-routing-warning { background:#40351d; color:#ffe0a0; border-color:#78603a; }
+html[data-staff-portal][data-staff-theme="dark"] .kns-terms-message { background:var(--sp-soft); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-list-message[data-error="true"],.kns-terms-message[data-state="error"]) { background:#472925; color:#ffc3bf; border-color:#82534c; }

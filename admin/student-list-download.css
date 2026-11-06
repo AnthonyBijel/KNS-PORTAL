@@ -1,0 +1,55 @@
+.results-main-table-header { height: auto; min-height: 40px; flex-wrap: wrap; gap: 10px; }
+.results-main-table-header > h1 { white-space: nowrap; }
+.results-main-table-header .studentlist-total { width: auto; flex: 0 0 auto; }
+.student-list-tools { display: flex; align-items: center; gap: 12px; flex: 1 1 450px; max-width: 740px; min-width: 0; margin-left: auto; }
+.student-list-tools .searchbox { width: auto; min-width: 0; flex: 1; }
+.student-list-tools .searchbox input { width: 100%; min-width: 0; }
+.kns-student-download { flex: 0 0 auto; font: 14px/1.5 Inter, ui-sans-serif, system-ui, sans-serif; }
+.kns-student-download [hidden] { display: none !important; }
+.kns-student-download svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.kns-student-download button { cursor: pointer; font: inherit; }
+.kns-student-download .kns-list-launch { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 12px; border: 1px solid #0e7a4c; border-radius: 8px; background: #edf8f1; color: #075b36; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.kns-student-download .kns-list-launch:hover { background: #dcefe3; }
+.kns-student-download .kns-list-modal { position: fixed; inset: 0; width: min(960px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px); margin: auto; padding: 26px; overflow-y: auto; border: 1px solid #dfe9e3; border-radius: 16px; background: #fff; color: #172b20; box-shadow: 0 22px 70px #092a2540; text-align: left; }
+.kns-student-download .kns-list-modal, .kns-student-download .kns-list-modal * { box-sizing: border-box; }
+.kns-student-download .kns-list-modal::backdrop { background: #071b1480; }
+.kns-student-download .kns-list-close { position: absolute; top: 16px; right: 16px; display: grid; place-items: center; width: 30px; height: 30px; padding: 5px; border: 0; border-radius: 6px; background: transparent; color: #355443; }
+.kns-student-download .kns-list-close:hover { background: #edf6f0; }
+.kns-student-download .kns-list-eyebrow { color: #168250; font-size: 10px; font-weight: 750; letter-spacing: 1.1px; }
+.kns-student-download .kns-list-modal h2 { margin: 3px 30px 0 0; color: #075b36; font-size: 26px; line-height: 1.25; }
+.kns-student-download .kns-list-intro { margin: 8px 0 20px; color: #58675e; font-size: 13px; }
+.kns-student-download .kns-list-filters { display: grid; grid-template-columns: 1fr 1.7fr .8fr 1fr; gap: 12px; margin: 0; padding: 16px; border: 1px solid #e1ebe5; border-radius: 10px; background: #f6faf7; }
+.kns-student-download .kns-list-field { min-width: 0; }
+.kns-student-download .kns-list-field label { display: block; margin-bottom: 6px; color: #244d35; font-size: 12px; font-weight: 700; }
+.kns-student-download .kns-list-field select { width: 100%; min-width: 0; min-height: 40px; padding: 8px; border: 1px solid #c8d8cd; border-radius: 7px; background: #fff; color: #183b26; font: 12px/1.4 Inter, ui-sans-serif, system-ui, sans-serif; text-overflow: ellipsis; }
+.kns-student-download .kns-list-field select:disabled { background: #eef2ef; color: #718078; }
+.kns-student-download .kns-list-filter-actions { display: flex; justify-content: flex-end; align-items: center; gap: 14px; margin-top: 12px; }
+.kns-student-download .kns-list-reset { margin-right: auto; padding: 5px 0; border: 0; background: none; color: #38614a; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.kns-student-download .kns-list-primary, .kns-student-download .kns-list-secondary { min-height: 38px; padding: 8px 17px; border: 1px solid #087742; border-radius: 8px; background: #078447; color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.kns-student-download .kns-list-primary:hover { background: #066b39; }
+.kns-student-download .kns-list-secondary { background: #fff; color: #075b36; }
+.kns-student-download .kns-list-message { margin: 16px 0; color: #58675e; font-size: 12px; }
+.kns-student-download .kns-list-message[data-error="true"] { padding: 10px 12px; border: 1px solid #edc6c1; border-radius: 7px; background: #fff5f3; color: #a32921; }
+.kns-student-download .kns-list-preview-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; }
+.kns-student-download .kns-list-preview-heading h3 { margin: 0; color: #075b36; font-size: 16px; }
+.kns-student-download .kns-list-count { padding: 3px 10px; border-radius: 20px; background: #e2f4e8; color: #075b36; font-size: 12px; font-weight: 700; }
+.kns-student-download .kns-list-table-scroll { max-height: 330px; overflow: auto; border: 1px solid #dbe7df; border-radius: 9px; }
+.kns-student-download .kns-list-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; line-height: 1.5; text-align: left; }
+.kns-student-download .kns-list-table th { position: sticky; top: 0; padding: 10px 12px; background: #e9f4ed; color: #28513a; font-weight: 700; white-space: nowrap; }
+.kns-student-download .kns-list-table td { padding: 10px 12px; border-top: 1px solid #e4ede7; color: #2d4636; vertical-align: top; overflow-wrap: anywhere; }
+.kns-student-download .kns-list-table tbody tr:nth-child(even) { background: #f8fbf9; }
+.kns-student-download .kns-list-pagination { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 10px; color: #627169; font-size: 11px; }
+.kns-student-download .kns-list-pagination span { margin-right: auto; }
+.kns-student-download .kns-list-pagination button { padding: 5px 9px; border: 1px solid #c8d8cd; border-radius: 6px; background: #fff; color: #28513a; font-size: 11px; }
+.kns-student-download .kns-list-footer { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #e4ede7; }
+.kns-student-download .kns-list-footer p { flex: 1; min-width: 180px; margin: 0; color: #627169; font-size: 11px; }
+.kns-student-download button:disabled { opacity: .5; cursor: default; }
+.kns-student-download button:focus-visible, .kns-student-download select:focus-visible, .kns-student-download [tabindex]:focus-visible { outline: 3px solid #82bc98; outline-offset: 2px; }
+@media (max-width: 700px) {
+    .student-list-tools { flex-basis: 100%; max-width: none; gap: 8px; }
+    .kns-student-download .kns-list-modal { padding: 22px 16px 16px; }
+    .kns-student-download .kns-list-modal h2 { font-size: 22px; }
+    .kns-student-download .kns-list-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; gap: 12px; }
+    .kns-student-download .kns-list-table { min-width: 700px; }
+    .kns-student-download .kns-list-footer p { flex-basis: 100%; }
+}

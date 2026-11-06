@@ -814,6 +814,7 @@
                 values.push(record.request_type, date(record.created_at));
                 values.forEach((value, index) => {
                     const cell = element("td", "", String(value));
+                    if (admin && index < 3) cell.setAttribute("data-staff-content","");
                     if (admin && index === 3) cell.append(element("small", "request-routing-office", record.assigned_office));
                     row.append(cell);
                 });

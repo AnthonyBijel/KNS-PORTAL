@@ -284,6 +284,72 @@ ROUTER;
     $response=$admin->request($endpoint,null,'application/json');$data=json_decode($response['body'],true);
     httpCheck($response['status']===200 && $data['current']['id']===$current['id'],'Term API did not return real current term');
     httpCheck($data['timezone']==='Asia/Manila' && $data['semesters']===KNS_TERM_SEMESTERS,'Term conventions changed');
+    // Verify password confirmation before any term or linked-record changes.
+    $edit=array_replace($current,['action'=>'update','term_id'=>$current['id'],'revision'=>$data['current']['revision'],'csrf'=>$admin->csrf,'official_end_date'=>$today->modify('+29 days')->format('Y-m-d')]);
+    $termState=static function()use($pdo):array {
+        $state=[];
+        foreach(['academic_terms','students','student_enrollments','subject_grades','grade_assessments'] as $table)$state[$table]=$pdo->query('SELECT * FROM '.$table.' ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+        return $state;
+    };
+    $beforeEdit=$termState();
+    foreach([[],['confirmation_password'=>'wrong-password'],['confirmation_password[]'=>'bad'],['confirmation_password'=>str_repeat('x',4097)]] as $credentials){
+        httpCheck($admin->request($endpoint,array_replace($edit,$credentials),'application/json')['status']===422,'Missing/invalid edit password accepted');
+        httpCheck($termState()===$beforeEdit,'Rejected password changed records');
+    }
+    $edit['confirmation_password']='Fixture-staff-password';
+    httpCheck($admin->request($endpoint,array_replace($edit,['csrf'=>'bad']),'application/json')['status']===403,'Edit ignored CSRF');
+    foreach([
+        [['start_date'=>'bad-date'],422],
+        [['academic_year'=>'2026-2028'],422],
+        [['official_end_date'=>$future['start_date']],409],
+        [['academic_year'=>$future['academic_year'],'semester'=>$future['semester']],409],
+        [['term_id'=>$prior['id'],'revision'=>knsAcademicTermRevision($prior)],409],
+        [['term_id'=>$future['id'],'revision'=>knsAcademicTermRevision($future)],409],
+        [['term_id'=>999999,'revision'=>str_repeat('a',64)],404],
+        [['revision'=>''],409],
+    ] as [$changes,$expected])httpCheck($admin->request($endpoint,array_replace($edit,$changes),'application/json')['status']===$expected,'Invalid/inactive term edit accepted');
+    httpCheck($termState()===$beforeEdit,'Rejected edit changed records');
+    $response=$admin->request($endpoint,$edit,'application/json');$edited=json_decode($response['body'],true);
+    httpCheck($response['status']===200 && $edited['current']['official_end_date']===$edit['official_end_date'] && $edited['current']['id']===$current['id'],'Admin confirmed edit failed');
+    httpCheck(!str_contains($response['body'],'Fixture-staff-password') && !str_contains($response['body'],'password_hash'),'Edit exposed credentials');
+    httpCheck($admin->request($endpoint,$edit,'application/json')['status']===409,'Stale edit overwrote newer term');
+    $restore=array_replace($edit,$current,['revision'=>$edited['current']['revision']]);
+    httpCheck($admin->request($endpoint,$restore,'application/json')['status']===200,'Admin restore failed');
+    $registrarEdit=new SetupBrowser($base);$registrarEdit->token();$registrarEdit->request('/php/auth/admin_login.php',['csrf'=>$registrarEdit->csrf,'student_number'=>'fixture.registrar','password'=>'Fixture-staff-password']);$registrarEdit->token();
+    $registrarCalendar=json_decode($registrarEdit->request($endpoint,null,'application/json')['body'],true);
+    httpCheck($registrarCalendar['can_edit'] && !$registrarCalendar['can_schedule'],'Registrar permissions incorrect');
+    $registrarInput=array_replace($edit,['csrf'=>$registrarEdit->csrf,'revision'=>$registrarCalendar['current']['revision']]);
+    $response=$registrarEdit->request($endpoint,$registrarInput,'application/json');$edited=json_decode($response['body'],true);
+    httpCheck($response['status']===200 && $edited['current']['official_end_date']===$edit['official_end_date'],'Registrar confirmed edit failed');
+    $restore=array_replace($registrarInput,$current,['revision'=>$edited['current']['revision']]);
+    httpCheck($registrarEdit->request($endpoint,$restore,'application/json')['status']===200,'Registrar restore failed');
+    $staffIds=$pdo->query('SELECT username,id FROM admin_account')->fetchAll(PDO::FETCH_KEY_PAIR);
+    termReject(fn()=>$calendar->update($edit,(int)$staffIds['fixture.osa']),403,'OSA edited term');
+    $adminInsert->execute(['fixture.other',password_hash('Different-staff-password',PASSWORD_DEFAULT),'Other Registrar','Registrar','Test School','other@example.invalid','09171234567']);
+    termReject(fn()=>$calendar->update(array_replace($edit,['confirmation_password'=>'Different-staff-password']),(int)$staffIds['fixture.admin']),422,'Another staff password confirmed signed-in account');
+    $otherId=(int)$pdo->query("SELECT id FROM admin_account WHERE username='fixture.other'")->fetchColumn();
+    httpCheck($otherId>0,'Inactive confirmation fixture missing');
+    $pdo->prepare('UPDATE admin_account SET is_active=0 WHERE id=?')->execute([$otherId]);
+    termReject(fn()=>$calendar->update(array_replace($edit,['confirmation_password'=>'Different-staff-password']),$otherId),403,'Inactive staff edited term');
+    // Label corrections retain enrollment links and scores; occupied destinations roll back all changes.
+    $pdo->prepare('INSERT INTO subject_grades(student_number,academic_year,semester,subject_code,subject_name,overall_grade) VALUES(?,?,?,?,?,?)')->execute(['TERM-STUDENT',$currentYear,'1st Semester','EDIT101','Edit fixture',93]);
+    $editGradeId=(int)$pdo->lastInsertId();
+    $pdo->prepare('INSERT INTO grade_assessments(student_number,academic_year,semester,grading_period,subject_code,subject_name,assessment_type,assessment_name,score,max_score) VALUES(?,?,?,?,?,?,?,?,?,?)')->execute(['TERM-STUDENT',$currentYear,'1st Sem','Prelim','EDIT101','Edit fixture','quiz','Edit fixture',19,20]);
+    $editAssessmentId=(int)$pdo->lastInsertId();
+    $unusedYear=($schoolYear+10).'-'.($schoolYear+11);
+    $rename=array_replace($edit,['academic_year'=>$unusedYear,'semester'=>'Summer','official_end_date'=>$current['official_end_date'],'revision'=>$calendar->calendar()['current']['revision']]);
+    $calendar->update($rename,(int)$staffIds['fixture.admin']);
+    httpCheck(termStudent($pdo)['academic_year']===$unusedYear && termStudent($pdo)['semester']==='Summer','Rename detached current student profile');
+    foreach(['enrollments','grades','assessments'] as $recordKind)httpCheck(count($calendar->records($current['id'],$recordKind,1)['records'])>=1,'Rename lost '.$recordKind);
+    httpCheck((int)$pdo->query('SELECT overall_grade FROM subject_grades WHERE id='.$editGradeId)->fetchColumn()===93,'Rename changed scores');
+    httpCheck($calendar->records($prior['id'],'grades',1)['records'][0]['academic_year']===$originalGrades[0]['academic_year'],'Rename changed historical grades');
+    $calendar->update(array_replace($rename,$current,['revision'=>$calendar->calendar()['current']['revision']]),(int)$staffIds['fixture.admin']);
+    $pdo->prepare('INSERT INTO grade_assessments(student_number,academic_year,semester,grading_period,subject_code,subject_name,assessment_type,assessment_name,score,max_score) VALUES(?,?,?,?,?,?,?,?,?,?)')->execute(['TERM-STUDENT',$unusedYear,'Summer','Prelim','CONFLICT','Conflict fixture','quiz','Conflict fixture',1,2]);
+    $conflictId=(int)$pdo->lastInsertId();$beforeConflict=$termState();
+    termReject(fn()=>$calendar->update($rename,(int)$staffIds['fixture.admin']),409,'Rename merged existing records');
+    httpCheck($termState()===$beforeConflict,'Failed rename did not roll back records');
+    $pdo->prepare('DELETE FROM subject_grades WHERE id=?')->execute([$editGradeId]);
+    $pdo->prepare('DELETE FROM grade_assessments WHERE id IN (?,?)')->execute([$editAssessmentId,$conflictId]);
     $summer=['csrf'=>$admin->csrf,'academic_year'=>$currentYear,'semester'=>'Summer','start_date'=>$today->modify('+91 days')->format('Y-m-d'),'official_end_date'=>$today->modify('+120 days')->format('Y-m-d')];
     httpCheck($admin->request($endpoint,array_replace($summer,['csrf'=>'bad']),'application/json')['status']===403,'Calendar ignored CSRF');
     httpCheck($admin->request($endpoint,array_replace($summer,['start_date'=>'bad-date']),'application/json')['status']===422,'Calendar accepted invalid date');
@@ -373,7 +439,7 @@ ROUTER;
         $artifacts=getenv('KNS_TEST_ARTIFACTS')?:sys_get_temp_dir().'/kns-academic-term-review';
         if(!is_dir($artifacts))mkdir($artifacts,0700,true);
         $browserConfig=$temporary.'/browser.json';
-        file_put_contents($browserConfig,json_encode(['base'=>$base,'cookies'=>array_values($admin->cookies),'temporary'=>$temporary,'artifacts'=>$artifacts,'summer'=>$summer],JSON_THROW_ON_ERROR));
+        file_put_contents($browserConfig,json_encode(['base'=>$base,'cookies'=>array_values($admin->cookies),'temporary'=>$temporary,'artifacts'=>$artifacts,'summer'=>$summer,'staff_password'=>'Fixture-staff-password','registrar_cookies'=>array_values($registrar->cookies)],JSON_THROW_ON_ERROR));
         $command=['C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-File',$root.'/tests/academic_terms_browser.ps1','-ConfigPath',$browserConfig];
         $browser=proc_open($command,[0=>['pipe','r'],1=>['pipe','w'],2=>['pipe','w']],$browserPipes,$root,null,['bypass_shell'=>true]);fclose($browserPipes[0]);
         $output=stream_get_contents($browserPipes[1]);fclose($browserPipes[1]);$errors=stream_get_contents($browserPipes[2]);fclose($browserPipes[2]);
