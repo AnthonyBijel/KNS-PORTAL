@@ -4,6 +4,8 @@ require __DIR__ . '/../php/auth/session.php';
 requireStudent();
 
 require __DIR__ . '/../db.php';
+require_once __DIR__ . '/../php/student/settings-common.php';
+$studentPortalPreferences = knsStudentPreferences($pdo, currentStudentId());
 
 $stmt = $pdo->prepare(
     'SELECT *
@@ -57,9 +59,10 @@ $initials = strtoupper(
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= e($studentPortalPreferences['language']) ?>" data-student-portal data-student-theme="<?= e($studentPortalPreferences['theme']) ?>" data-student-language="<?= e($studentPortalPreferences['language']) ?>">
 
 <head>
+    <script src="../js/tab-session.js?v=<?= filemtime(__DIR__ . '/../js/tab-session.js') ?>"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard.org</title>
@@ -68,6 +71,8 @@ $initials = strtoupper(
     <link rel="stylesheet" href="../request/messenger.css?v=<?= filemtime(__DIR__ . '/../request/messenger.css') ?>">
     <link rel="stylesheet" href="notifications.css?v=<?= filemtime(__DIR__ . '/notifications.css') ?>">
     <link rel="stylesheet" href="announcement-gallery.css?v=<?= filemtime(__DIR__ . '/announcement-gallery.css') ?>">
+    <link rel="stylesheet" href="../admin/staff-settings.css?v=<?= filemtime(__DIR__ . '/../admin/staff-settings.css') ?>">
+    <link rel="stylesheet" href="student-portal.css?v=<?= filemtime(__DIR__ . '/student-portal.css') ?>">
 </head>
 
 <body>
@@ -179,6 +184,9 @@ $initials = strtoupper(
     <script src="../request/messenger.js?v=<?= filemtime(__DIR__ . '/../request/messenger.js') ?>"></script>
     <script src="notifications.js?v=<?= filemtime(__DIR__ . '/notifications.js') ?>"></script>
     <script src="announcement-share.js?v=<?= filemtime(__DIR__ . '/announcement-share.js') ?>"></script>
+    <script src="../admin/staff-translations.js?v=<?= filemtime(__DIR__ . '/../admin/staff-translations.js') ?>"></script>
+    <script src="student-portal.js?v=<?= filemtime(__DIR__ . '/student-portal.js') ?>"></script>
+    <script src="student-settings.js?v=<?= filemtime(__DIR__ . '/student-settings.js') ?>"></script>
     <script src="dashboard.js?v=<?= filemtime(__DIR__ . '/dashboard.js') ?>"></script>
     <script src="announcement-gallery.js?v=<?= filemtime(__DIR__ . '/announcement-gallery.js') ?>"></script>
 </body>

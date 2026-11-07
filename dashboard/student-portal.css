@@ -1,0 +1,58 @@
+/* Student account presentation and the shared Settings widget. */
+html[data-student-portal] { color-scheme:light; }
+.student-info-container[data-student-theme] { --ks-bg:#fff; --ks-field:#fff; --ks-text:#14291c; --ks-muted:#58675f; --ks-border:#d8e2dc; --ks-soft:#eff9f1; --ks-accent:#078537; }
+.student-info-container[data-student-theme="dark"] { --ks-bg:#17221c; --ks-field:#202e25; --ks-text:#edf6ef; --ks-muted:#b2c3b8; --ks-border:#3d5144; --ks-soft:#233d2c; --ks-accent:#20a854; }
+.student-info-container>.profile { position:relative; }
+.student-info-container>.profile .student-name { padding-right:34px; }
+.kns-staff-settings .ks-form textarea { display:block; width:100%; min-width:0; min-height:66px; padding:8px 10px; border:1px solid var(--ks-border); border-radius:7px; background:var(--ks-field); color:var(--ks-text); font:13px/1.4 Inter,ui-sans-serif,system-ui,sans-serif; resize:vertical; }
+html[data-student-portal][data-student-theme="dark"] {
+    color-scheme:dark; --sp-bg:#101914; --sp-surface:#1b2921; --sp-raised:#24352b;
+    --sp-field:#16231c; --sp-ink:#edf5ef; --sp-muted:#b4c6ba; --sp-line:#405749;
+    --sp-accent:#8fe0ae; --sp-soft:#244533;
+}
+html[data-student-portal][data-student-theme="dark"] body { background:var(--sp-bg); color:var(--sp-ink); }
+html[data-student-portal][data-student-theme="dark"] .main-content-contianer { background:var(--sp-bg); color:var(--sp-ink); }
+html[data-student-portal][data-student-theme="dark"] :is(.header-main-contianer,.header-left-box,.header-right-box,.bell-contianer,.middle-text,.last-tex-box,.student-notification-bell) { background:var(--sp-surface); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-student-portal][data-student-theme="dark"] .sidebar-contianer { background:linear-gradient(140deg,#0b2117,#163a27); }
+html[data-student-portal][data-student-theme="dark"] :is(.header-main-contianer,.sidebar-contianer) :is(p,h1,a) { color:var(--sp-ink); }
+html[data-student-portal][data-student-theme="dark"] :is(.sidebar-logo,.bell-logo,.sidebar-navigator img,.logout-logo,.info-type+img) { filter:brightness(0) invert(.9); }
+html[data-student-portal][data-student-theme="dark"] :is(.student-info-header,.header-request-box,.tagline-contianer,.greeting-contianer,.kn-titlebar,.rm-header) { background:linear-gradient(115deg,#173b28,#1d573a); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-student-portal][data-student-theme="dark"] :is(.profile,.student-information,.post-content,.announcement-empty,.main-results,.request-main-container,.my-requests-card,.rm-panel,.kns-notifications,.kns-share-popup,.assessment-modal) { background:var(--sp-surface); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-student-portal][data-student-theme="dark"] :is(.fullname-box,.studentID-box,.course-box,.yearlevel-box,.section-box,.email-box,.contact-box,.address-box,.birthday-box,.guardian-box,.sa-highlights,.post-image,.sa-media-gallery>a,.academicsemyear,.assessment-button,.request-option-type,.file-request-selection,.rm-history,.rm-compose,.kn-footer,.rm-file) { background:var(--sp-raised); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-student-portal][data-student-theme="dark"] :is(.main-content-contianer,.kns-notifications,.rm-panel,.kns-share-popup) :is(h1,h2,h3,h4,label,legend) { color:var(--sp-ink); }
+html[data-student-portal][data-student-theme="dark"] :is(.student-name,.info-type,.sa-publisher,.sa-highlights,.request-file-type,.rd-purpose) :is(p,strong,span) { color:var(--sp-ink); }
+html[data-student-portal][data-student-theme="dark"] :is(.description-text,.sa-post-meta,.sa-highlights-label,.sa-post-expiry,.course-bottom,.request-review,.selection-summary,.assessment-result-details,.requests-entries,.my-requests-title p,.rm-time,.kn-description,.kn-context,.kn-time,.kn-date-group,.kn-empty) { color:var(--sp-muted); }
+html[data-student-portal][data-student-theme="dark"] :is(.sa-highlights,.sa-highlights-label,.share-button) { border-color:var(--sp-line); }
+html[data-student-portal][data-student-theme="dark"] :is(.announcement-type-selection,.sa-search-field,.sa-category-select,.requests-search,.requests-status-filter,.request-search,.search-input) { background:var(--sp-field); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-student-portal][data-student-theme="dark"] :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),select,textarea) { background-color:var(--sp-field); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-student-portal][data-student-theme="dark"] :is(input,textarea)::placeholder { color:#98afa0; opacity:1; }
+html[data-student-portal][data-student-theme="dark"] option { background:var(--sp-field); color:var(--sp-ink); }
+html[data-student-portal][data-student-theme="dark"] :is(.grades-table,.assessment-table,.my-requests-table) :is(th,td) { background:var(--sp-surface); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-student-portal][data-student-theme="dark"] :is(.grades-table,.assessment-table,.my-requests-table) th { background:var(--sp-raised); }
+html[data-student-portal][data-student-theme="dark"] :is(.see-more-btn,.share-button,.kn-read-all,.kn-history,.kns-share-media,.rm-sender) { color:var(--sp-accent); }
+html[data-student-portal][data-student-theme="dark"] :is(.announcement-type,.assessment-button button,.requests-pagination button,.kn-tab,.rm-older,.rm-icon-button,.request-action.view,.kns-share-options a,.kns-share-options button) { background:var(--sp-raised); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-student-portal][data-student-theme="dark"] :is(.announcement-type.selected,.assessment-button button.active,.requests-pagination .current-page,.kn-tab.is-active,.kn-item.is-unread,.rm-message.rm-mine) { background:var(--sp-soft); color:var(--sp-ink); border-color:var(--sp-accent); }
+html[data-student-portal][data-student-theme="dark"] :is(.kn-item,.rm-message) { background:var(--sp-surface); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-student-portal][data-student-theme="dark"] :is(.kn-item-title,.kns-share-title,.kns-share-popup p,.kns-share-description) { color:var(--sp-ink); }
+html[data-student-portal][data-student-theme="dark"] :is(.sa-type-badge,.request-status.approved) { background:#1f4d32; color:#b3f2ca; }
+html[data-student-portal][data-student-theme="dark"] .request-status.pending { background:#4a391b; color:#ffe0a0; }
+html[data-student-portal][data-student-theme="dark"] .request-status.processing { background:#1e4056; color:#b2defc; }
+html[data-student-portal][data-student-theme="dark"] .request-status.rejected { background:#522c2a; color:#ffc3bf; }
+html[data-student-portal][data-student-theme="dark"] :is(#student-photo-message[data-state="error"],#academic-results-message[data-state="error"]) { color:#ffc3bf; }
+html[data-student-portal][data-student-theme="dark"] #student-photo-message[data-state="success"] { color:#b3f2ca; }
+.student-info-container[data-student-theme="dark"] .kns-staff-settings .ks-feedback[data-error="true"] { background:#472925; color:#ffc3bf; border-color:#82534c; }
+.student-info-container[data-student-theme="dark"] .kns-staff-settings .ks-feedback[data-warning="true"] { background:#40351d; color:#ffe0a0; border-color:#78603a; }
+
+html[data-student-portal][data-student-theme="dark"] :is(.sa-search label,.grades-card,.assessment,.upload-box,.file-item) { background:var(--sp-raised); color:var(--sp-ink); border-color:var(--sp-line); }
+html[data-student-portal][data-student-theme="dark"] :is(.announcement-type span,.upload-title,.file-item span,.grade-note,.grades-card>p,.request-content-header p) { color:var(--sp-ink); }
+html[data-student-portal][data-student-theme="dark"] .sa-search svg { stroke:var(--sp-muted); }
+html[data-student-portal][data-student-theme="dark"] .assessment-button button.selected { background:var(--sp-soft); color:var(--sp-ink); border-color:var(--sp-accent); }
+html[data-student-portal][data-student-theme="dark"] .student-information>h2 { background:var(--sp-soft); color:var(--sp-ink); }
+html[data-student-portal][data-student-theme="dark"] .left-right-box img { filter:brightness(0) invert(.9); }
+
+html[data-student-portal][data-student-theme="dark"] .bell-logo { background:transparent; }
+html[data-student-portal][data-student-theme="dark"] .share-button img { filter:brightness(0) invert(.9); }
+html[data-student-portal][data-student-theme="dark"] .profile-status { background:var(--sp-soft); border-color:var(--sp-line); }
+html[data-student-portal][data-student-theme="dark"] .student-name .profile-status span { color:#b3f2ca; }
+html[data-student-portal][data-student-language="fil"] .greeting-contianer { height:auto; min-height:160px; }
+html[data-student-portal][data-student-language="fil"] .welcome-text-box { height:auto; }

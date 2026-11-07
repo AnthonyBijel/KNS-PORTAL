@@ -16,6 +16,7 @@ function e($value)
 <html lang="<?= e($portalPreferences['language']) ?>" data-staff-portal data-staff-theme="<?= e($portalPreferences['theme']) ?>" data-staff-language="<?= e($portalPreferences['language']) ?>">
 
 <head>
+    <script src="../js/tab-session.js?v=<?= filemtime(__DIR__ . '/../js/tab-session.js') ?>"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard.org</title>

@@ -57,9 +57,7 @@ if (
         header('Location: ../../login.php');
         exit;
     }
-    session_regenerate_id(true);
-    // Replace all previous account data, including the other account role.
-    $_SESSION = [];
+    knsBeginAccountSession();
 
     $_SESSION['student_id'] = (int) $student['id'];
     $_SESSION['csrf'] = bin2hex(random_bytes(32));
