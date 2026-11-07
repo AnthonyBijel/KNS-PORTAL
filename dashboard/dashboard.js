@@ -37,9 +37,10 @@ async function loadPage(page, context = {}) {
         initAnnouncement(container);
         academicResultsCleanup = initAcademicResults(container);
         initStudentPhoto(container);
+        window.KNSStudentSettings?.init(container);
         requestMessengerCleanup = window.KNSRequests.init(container, "student");
         if (context.fromNotification) {
-            const target = page.includes("overview.php") ? ".overview-button" : ".may-request-button";
+            const target = page.includes("overview.php") ? ".overview-button" : page.includes("studentInformation.php") ? ".student-information-button" : ".may-request-button";
             document.querySelectorAll(".overview-button,.results-button,.may-request-button,.student-information-button")
                 .forEach(button => button.classList.toggle("selected", button.matches(target)));
         }
@@ -196,10 +197,10 @@ if (initialStudentPage.includes("studentInformation")) {
 loadPage(initialStudentPage);
 window.KNSNotifications.init({
     navigate: async notification => {
-        const page = notification.type === "announcement" ? "../module/overview.php" : "../module/request.html";
+        const page = notification.type === "announcement" ? "../module/overview.php" : notification.type === "activity" ? "../module/studentInformation.php" : "../module/request.html";
         const context = notification.type === "announcement"
             ? {announcementId: notification.announcement_id, fromNotification: true}
-            : {requestId: notification.request_id, fromNotification: true};
+            : notification.type === "activity" ? {fromNotification: true} : {requestId: notification.request_id, fromNotification: true};
         const opened = await loadPage(page, context);
         if (!opened) throw new Error("Unable to open this notification. Please try again.");
     }

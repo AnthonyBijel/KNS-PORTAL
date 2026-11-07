@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/../request/messenger-common.php';
+require_once __DIR__ . '/settings-common.php';
 
 if ($requestActor['role'] !== 'student') requestFail(403, 'Student notifications are only available to the signed-in student.');
 $method = $_SERVER['REQUEST_METHOD'];
@@ -35,7 +36,10 @@ function notificationPublic(array $row): array
     $description = preg_replace('/\s+/u', ' ', trim($row['description'] ?? ''));
     $description = mb_strlen($description) > 160 ? mb_substr($description, 0, 157) . '…' : $description;
     $status = $row['event_status'] ?? null;
-    if ($type === 'announcement') {
+    if ($type === 'activity') {
+        $title = 'Account activity';
+        $context = 'Your account';
+    } elseif ($type === 'announcement') {
         $title = 'New announcement';
         $context = $row['category'];
     } elseif ($type === 'request_status') {
@@ -76,19 +80,29 @@ function notificationCursor(array $row): string
 
 $studentId = $requestActor['id'];
 try {
-    $feed = notificationFeed();
+    $preferences = knsStudentPreferences($pdo, $studentId);
+    $feed = 'SELECT * FROM (' . notificationFeed() . ') enabled WHERE '
+        . "(source_type = 'announcement' AND " . (int) $preferences['notify_announcements'] . ') OR '
+        . "(source_type <> 'announcement' AND " . (int) $preferences['notify_requests'] . ')';
+    $feedParams = [$studentId];
+    if ($preferences['installed'] && $preferences['notify_activity']) {
+        $feed .= " UNION ALL SELECT 'activity' COLLATE utf8mb4_unicode_ci, a.id, NULL, NULL,
+            NULL, NULL, NULL, a.description, NULL, NULL, a.created_at
+            FROM student_account_activity a WHERE a.student_id = ?";
+        $feedParams[] = $studentId;
+    }
     if ($method === 'POST') {
         $action = requestText($_POST, 'action', 30, true);
         $pdo->beginTransaction();
         if ($action === 'read') {
             $type = requestText($_POST, 'type', 30, true);
-            if (!in_array($type, ['announcement', 'message', 'request_status'], true)) {
+            if (!in_array($type, ['announcement', 'message', 'request_status', 'activity'], true)) {
                 throw new InvalidArgumentException('Invalid notification type.');
             }
             $id = requestInteger($_POST['source_id'] ?? null);
             $stmt = $pdo->prepare('SELECT e.*, NULL AS read_at FROM (' . $feed .
                 ') e WHERE e.source_type = ? AND e.source_id = ? LIMIT 1');
-            $stmt->execute([$studentId, $type, $id]);
+            $stmt->execute([...$feedParams, $type, $id]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$row) {
                 $pdo->rollBack();
@@ -107,7 +121,7 @@ try {
                 SELECT ?, e.source_type, e.source_id FROM (' . $feed . ') e
                 WHERE 1 = 1
                 ON DUPLICATE KEY UPDATE read_at = student_notification_reads.read_at');
-            $stmt->execute([$studentId, $studentId]);
+            $stmt->execute([$studentId, ...$feedParams]);
         } elseif ($action === 'read_request') {
             $requestId = requestInteger($_POST['request_id'] ?? null);
             $lastMessageId = requestInteger($_POST['last_message_id'] ?? null);
@@ -128,14 +142,14 @@ try {
     $filter = requestText($_GET, 'filter', 10);
     if (!in_array($filter, ['', 'all', 'unread'], true)) throw new InvalidArgumentException('Invalid notification filter.');
     $where = $filter === 'unread' ? ['n.source_id IS NULL'] : [];
-    $params = [$studentId, $studentId];
+    $params = [...$feedParams, $studentId];
     $cursor = requestText($_GET, 'before', 512);
     if ($cursor !== '') {
         $decoded = base64_decode($cursor, true);
         $position = $decoded === false ? null : json_decode($decoded, true);
         if (!is_array($position) || !is_string($position['at'] ?? null)
             || !preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$/D', $position['at'])
-            || !in_array($position['type'] ?? null, ['announcement', 'message', 'request_status'], true)) {
+            || !in_array($position['type'] ?? null, ['announcement', 'message', 'request_status', 'activity'], true)) {
             throw new InvalidArgumentException('Invalid notification page.');
         }
         $id = requestInteger($position['id'] ?? null);
@@ -147,7 +161,7 @@ try {
     $join = ' FROM (' . $feed . ') e LEFT JOIN student_notification_reads n
         ON n.student_id = ? AND n.source_type = e.source_type AND n.source_id = e.source_id';
     $counts = $pdo->prepare('SELECT COUNT(*) AS total, COALESCE(SUM(n.source_id IS NULL), 0) AS unread' . $join);
-    $counts->execute([$studentId, $studentId]);
+    $counts->execute([...$feedParams, $studentId]);
     $totals = $counts->fetch(PDO::FETCH_ASSOC);
     $stmt = $pdo->prepare('SELECT e.*, n.read_at' . $join .
         ($where ? ' WHERE ' . implode(' AND ', $where) : '') .

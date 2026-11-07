@@ -9,6 +9,7 @@ unset($_SESSION['login_error']);
 <html lang="en">
 
 <head>
+    <script src="js/tab-session.js?v=<?= filemtime(__DIR__ . '/js/tab-session.js') ?>"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>

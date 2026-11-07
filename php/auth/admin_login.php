@@ -36,8 +36,7 @@ require_once __DIR__ . '/staff-accounts.php';
 $account = knsStaffAuthenticate($pdo, $adminUsername, $adminPassword);
 
 if ($account !== null) {
-    session_regenerate_id(true);
-    $_SESSION = [];
+    knsBeginAccountSession();
     if ($account['role'] === 'Administrator') {
         $_SESSION['admin_id'] = $account['id'];
         $_SESSION['admin_name'] = $account['full_name'];

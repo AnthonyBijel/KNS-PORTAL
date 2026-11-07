@@ -2,6 +2,7 @@
 
 require __DIR__ . '/../php/auth/session.php';
 requireStudent();
+require_once __DIR__ . '/../php/student/settings-common.php';
 
 require __DIR__ . '/../db.php';
 
@@ -77,7 +78,8 @@ $profilePhoto = !empty($student['profile_photo'])
     : '../asset/logo/user (1).png';
 ?>
 
-<div class="student-info-container">
+<?php $studentPreferences = knsStudentPreferences($pdo, currentStudentId()); ?>
+<div class="student-info-container" data-student-theme="<?= e($studentPreferences['theme']) ?>" data-student-language="<?= e($studentPreferences['language']) ?>">
 
     <div class="student-info-header">
         <h1>STUDENT INFORMATION</h1>
@@ -85,6 +87,7 @@ $profilePhoto = !empty($student['profile_photo'])
     </div>
 
     <div class="profile">
+        <?php require __DIR__ . '/student-settings-panel.php'; ?>
 
         <form id="student-photo-form" class="student-photo-form"
             action="../php/student/upload_profile_photo.php" method="post" enctype="multipart/form-data">
@@ -182,7 +185,7 @@ $profilePhoto = !empty($student['profile_photo'])
                     <img src="../asset/logo/envelope.png" alt="">
                     <div class="info-type">
                         <h1>Email</h1>
-                        <p><?= e($student['email'] ?: 'Not yet provided') ?></p>
+                        <p data-student-profile="email"><?= e($student['email'] ?: 'Not yet provided') ?></p>
                     </div>
                 </div>
 
@@ -190,7 +193,7 @@ $profilePhoto = !empty($student['profile_photo'])
                     <img src="../asset/logo/chat-bubble-call.png" alt="">
                     <div class="info-type">
                         <h1>Contact Number</h1>
-                        <p><?= e($student['contact_number'] ?: 'Not yet provided') ?></p>
+                        <p data-student-profile="contact"><?= e($student['contact_number'] ?: 'Not yet provided') ?></p>
                     </div>
                 </div>
 
@@ -198,7 +201,7 @@ $profilePhoto = !empty($student['profile_photo'])
                     <img src="../asset/logo/postal-address (1).png" alt="">
                     <div class="info-type">
                         <h1>Address</h1>
-                        <p><?= e($student['address'] ?: 'Not yet provided') ?></p>
+                        <p data-student-profile="address"><?= e($student['address'] ?: 'Not yet provided') ?></p>
                     </div>
                 </div>
 

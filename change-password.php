@@ -48,6 +48,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
 <!doctype html>
 <html lang="en">
 <head>
+    <script src="js/tab-session.js?v=<?= filemtime(__DIR__ . '/js/tab-session.js') ?>"></script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Create your password - KNS Portal</title>

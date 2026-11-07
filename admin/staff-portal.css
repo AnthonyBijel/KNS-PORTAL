@@ -66,3 +66,10 @@ html[data-staff-portal][data-staff-theme="dark"] .rm-notice { color:#eed2a2; }
 html[data-staff-portal][data-staff-theme="dark"] .request-routing-warning { background:#40351d; color:#ffe0a0; border-color:#78603a; }
 html[data-staff-portal][data-staff-theme="dark"] .kns-terms-message { background:var(--sp-soft); color:var(--sp-ink); border-color:var(--sp-line); }
 html[data-staff-portal][data-staff-theme="dark"] :is(.kns-list-message[data-error="true"],.kns-terms-message[data-state="error"]) { background:#472925; color:#ffc3bf; border-color:#82534c; }
+
+/* Keep announcement highlights and request icons readable in dark mode. */
+html[data-staff-portal][data-staff-theme="dark"] :is(.kns-highlights,.kns-post-media,.kns-media-gallery>a) { background:var(--sp-raised); color:var(--sp-ink); }
+html[data-staff-portal][data-staff-theme="dark"] .kns-highlights>img { filter:brightness(0) invert(.9); }
+html[data-staff-portal][data-staff-theme="dark"] .request-eye-btn svg { stroke:currentColor; }
+html[data-staff-portal][data-staff-theme="dark"] .request-eye-btn:is(:hover,:focus-visible) { background:var(--sp-soft); border-color:var(--sp-accent); }
+html[data-staff-portal][data-staff-theme="dark"] .request-eye-btn:focus-visible { outline:2px solid var(--sp-accent); outline-offset:2px; }

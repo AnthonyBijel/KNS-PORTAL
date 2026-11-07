@@ -313,7 +313,7 @@
                 render();
             } else load("more");
         });
-        if (admin) window.addEventListener("kns-staff-preferences-changed", () => load("reset"));
+        window.addEventListener(admin ? "kns-staff-preferences-changed" : "kns-student-preferences-changed", () => load("reset"));
         window.addEventListener("resize", position);
         window.addEventListener("scroll", position, {passive: true, capture: true});
         document.addEventListener("visibilitychange", () => {
